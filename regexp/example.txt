@@ -1,0 +1,8 @@
+any character between 'a' and 'b'
+the string "abc"
+line starting with any digit
+either the string "abc" or the string "cde"
+line ending with any digit, followed by any non-digit character
+any character between 'a' and 'b'
+the string "abc", followed by any space character
+zero or more repetitions of any non-word character

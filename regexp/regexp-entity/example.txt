@@ -1,0 +1,1 @@
+line beginning with the string \"abc\", followed by any character between 'd' and 'e'

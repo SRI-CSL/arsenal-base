@@ -1,0 +1,15 @@
+OASISFormat: 0.4
+Name: ppx_deriving_arsenal
+Version: 0.1
+Synopsis: ppx for the arsenal project
+Authors: Stephane Graham-Lengrand
+License: LGPL-3.0 with OCaml linking exception
+Plugins: DevFiles (0.4)
+BuildTools: ocamlbuild
+FilesAB: META.ab
+
+Library "ppx_deriving_arsenal"
+  Path: .
+  Modules: Ppx_deriving_arsenal
+  BuildDepends: ppx_deriving.api, ppx_tools.metaquot, ppx_deriving.std, sexplib, ppx_deriving_random.ppx
+  CompiledObject: best

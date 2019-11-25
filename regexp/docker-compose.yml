@@ -1,0 +1,29 @@
+version: '2.1'
+services:
+  entity:
+    image: arsenal-docker.cse.sri.com/regexp-entity:0.0.2
+    environment:
+      HOST: entity
+      PORT: 8080
+    ports:
+      - 8060:8080
+  nl2cst:
+    image: arsenal-docker.cse.sri.com/arsenal-nl2cst:1.4.0
+    volumes:
+      - ./models:/opt/models:ro
+    environment:
+      NL2CST_HOST: nl2cst
+      NL2CST_PORT: 8080
+      MODEL_ROOT: /opt/models/regexp_2019-09-26
+    ports:
+      - 8070:8080
+  ui:
+    image: arsenal-docker.cse.sri.com/regexp-ui:1.0.0
+    environment:
+      HOST: ui
+    ports:
+      - 8080:8080
+  reformulate:
+    image: arsenal-docker.cse.sri.com/regexp-reformulate:1.1.0
+    ports:
+      - 8090:8080

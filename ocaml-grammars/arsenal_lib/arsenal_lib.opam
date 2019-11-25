@@ -1,0 +1,39 @@
+opam-version: "2.0"
+name: "arsenal_lib"
+synopsis: "Arsenal generation and reformulation"
+description: "Arsenal generation and reformulation"
+maintainer: "Stephane Graham-Lengrand <stephane.graham-lengrand@csl.sri.com>"
+authors: "Stephane Graham-Lengrand <stephane.graham-lengrand@csl.sri.com>"
+# license: "none yet"
+# homepage: "none yet"
+# bug-reports: "no way"
+depends: [
+  "ocaml" {>= "4.06" & < "4.08"}
+  "ocamlbuild"
+  "ocamlfind"
+  "sexplib"
+  "yojson"
+  "cohttp-lwt"
+  "cohttp-lwt-unix"
+  "webmachine"
+  "ppx_deriving_random"
+  "ppx_deriving_arsenal"
+]
+build: [
+    "ocamlbuild" "-use-ocamlfind"
+    "src/arsenal_lib.a" "src/base_grammar.a" "src/reformulate.a"
+    "src/arsenal_lib.cma" "src/base_grammar.cma" "src/reformulate.cma"
+    "src/arsenal_lib.cmxa" "src/base_grammar.cmxa" "src/reformulate.cmxa"
+]
+install: [
+  "ocamlfind" "install" "arsenal" "src/META"
+  "_build/src/arsenal_lib.cmx" "_build/src/arsenal_options.cmx" "_build/src/base_grammar.cmx" "_build/src/base_grammar_pp.cmx" "_build/src/reformulate.cmx"
+  "_build/src/arsenal_lib.cmo" "_build/src/arsenal_options.cmo" "_build/src/base_grammar.cmo" "_build/src/base_grammar_pp.cmo" "_build/src/reformulate.cmo"
+  "_build/src/arsenal_lib.cmi" "_build/src/arsenal_options.cmi" "_build/src/base_grammar.cmi" "_build/src/base_grammar_pp.cmi" "_build/src/reformulate.cmi"
+  "_build/src/arsenal_lib.cma" "_build/src/base_grammar.cma" "_build/src/reformulate.cma"
+  "_build/src/arsenal_lib.a" "_build/src/base_grammar.a" "_build/src/reformulate.a"
+  "_build/src/arsenal_lib.cmxa" "_build/src/base_grammar.cmxa" "_build/src/reformulate.cmxa"
+]
+remove: [
+  "ocamlfind" "remove" "arsenal"
+]

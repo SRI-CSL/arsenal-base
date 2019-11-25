@@ -1,0 +1,27 @@
+true: annot, bin_annot
+<**/.svn>: -traverse
+<**/.svn>: not_hygienic
+".bzr": -traverse
+".bzr": not_hygienic
+".hg": -traverse
+".hg": not_hygienic
+".git": -traverse
+".git": not_hygienic
+"_darcs": -traverse
+"_darcs": not_hygienic
+
+true: debug, optimize(3), unbox_closures
+
+<src/*>  : package(str),\
+           package(sexplib),\
+           package(yojson),\
+           package(ppx_deriving.std),\
+           package(ppx_deriving_arsenal)
+
+<src/reformulate.*> : package(lwt),\
+                      package(cohttp),\
+                      package(cohttp-lwt),\
+                      package(cohttp-lwt-unix),\
+                      package(webmachine),\
+                      thread
+

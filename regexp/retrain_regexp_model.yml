@@ -1,0 +1,66 @@
+prepare_model_training:
+    image: ocaml/opam2:alpine
+    stage: setup
+    only:
+        changes:
+            - ../ocaml-grammars/**/*
+            - generate-reformulate/*
+
+    script:
+        - opam switch 4.07
+        - eval $(opam env)
+        - sudo apk add --no-cache m4 linux-headers ncurses
+        - opam pin add ppx_deriving_random git+https://github.com/disteph/ppx_deriving_random.git
+        - opam pin add -y ppx_deriving_arsenal $CI_PROJECT_DIR/ocaml-grammars/ppx_arsenal
+        - opam pin -y arsenal_lib $CI_PROJECT_DIR/ocaml-grammars/arsenal_lib
+        - opam install $CI_PROJECT_DIR/regexp/generate-reformulate/arsenal_re.opam --deps-only
+        - eval $(opam env)
+        - cd $CI_PROJECT_DIR/regexp/generate-reformulate
+        - ocamlbuild -use-ocamlfind src/REgenerate.native
+
+    artifacts:
+         paths:
+            - $CI_PROJECT_DIR/regexp/generate-reformulate/_build
+
+generate_grammar_data:
+    image: ocaml/opam2:alpine
+    stage: test
+    only:
+        changes:
+           - ../ocaml-grammars/**/*
+           - generate-reformulate/*
+    dependencies:
+        - prepare_model_training
+    script: 
+        - mkdir -p $CI_PROJECT_DIR/generate
+        - $CI_PROJECT_DIR/regexp/generate-reformulate/_build/src/REgenerate.native 100 -polish -types > $CI_PROJECT_DIR/generate/data.txt
+    artifacts:
+         paths:
+            - $CI_PROJECT_DIR/generate
+
+train_model:
+    image: pytorch/pytorch
+    stage: training
+    only:
+        changes:
+           - ../ocaml-grammars/**/*
+           - generate-reformulate/*
+    dependencies:
+        - generate_grammar_data
+    script:
+        - pip install matplotlib flask tqdm scipy torchvision
+        - pip install tensorflow==1.14
+        - mkdir -p $CI_PROJECT_DIR/modeltraining
+        - mv $CI_PROJECT_DIR/generate/data.txt $CI_PROJECT_DIR/modeltraining/
+        - cd $CI_PROJECT_DIR/modeltraining
+        - head -n 80 data.txt > eng-pn.train.txt 
+        - tail -n 20 data.txt > eng-pn.val.txt
+        - ls -la
+        - cd $CI_PROJECT_DIR/seq2seq/
+        - python --version
+        - python src/train_seq2seq_single.py -data_root $CI_PROJECT_DIR/modeltraining/ -output_name testmodel -input_lang eng -output_lang pn -init_type "re" -iters 100 -save_every 10
+    artifacts:
+         paths:
+            -  $CI_PROJECT_DIR/seq2seq/output
+
+        

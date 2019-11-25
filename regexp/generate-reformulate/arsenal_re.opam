@@ -1,0 +1,22 @@
+opam-version: "2.0"
+name: "arsenalRE"
+synopsis: "Arsenal generation and reformulation for Regular Expressions"
+description: "Arsenal generation and reformulation for regular expressions"
+maintainer: "Stephane Graham-Lengrand <stephane.graham-lengrand@csl.sri.com>"
+authors: "Stephane Graham-Lengrand <stephane.graham-lengrand@csl.sri.com>"
+# license: "none yet"
+# homepage: "none yet"
+# bug-reports: "no way"
+depends: [
+  "ocaml" {>= "4.06" & < "4.08"}
+  "ocamlbuild"
+  "ocamlfind"
+  "sexplib"
+  "yojson"
+  "cohttp-lwt"
+  "cohttp-lwt-unix"
+  "webmachine"
+  "ppx_deriving_random"
+  "ppx_deriving_arsenal"
+  "arsenal_lib"
+]

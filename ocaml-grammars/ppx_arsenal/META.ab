@@ -1,0 +1,9 @@
+version = "${pkg_version}"
+description = "[@@deriving arsenal]"
+
+requires(-ppx_driver) = "ppx_deriving,ppx_deriving_random.ppx,ppx_deriving_yojson"
+ppxopt(-ppx_driver) = "ppx_deriving,./ppx_deriving_arsenal.cma"
+requires(ppx_driver) = "ppx_deriving.api,ppx_deriving_random.ppx,ppx_deriving_yojson"
+archive(ppx_driver, byte) = "ppx_deriving_arsenal.cma"
+archive(ppx_driver, native) = "ppx_deriving_arsenal.cmxa"
+exists_if = "ppx_deriving_arsenal.cma"

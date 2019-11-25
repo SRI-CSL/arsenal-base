@@ -1,0 +1,32 @@
+opam-version: "2.0"
+name: "ppx_deriving_arsenal"
+synopsis: "Syntax extension for Arsenal"
+description: "Syntax extension for Arsenal"
+maintainer: "Stephane Graham-Lengrand <stephane.graham-lengrand@csl.sri.com>"
+authors: "Stephane Graham-Lengrand <stephane.graham-lengrand@csl.sri.com>"
+# homepage: ""
+# bug-reports: ""
+license: "LGPL-3.0 with OCaml linking exception"
+build: [
+  ["oasis" "setup"]
+  ["ocaml" "setup.ml" "-configure" "--prefix" prefix]
+  ["ocaml" "setup.ml" "-build"]
+]
+install: [
+  ["ocaml" "setup.ml" "-install"]
+]
+remove: [
+  ["ocamlfind" "remove" "ppx_deriving_arsenal"]
+]
+depends: [
+  "ocaml" {>= "4.06" & < "4.08"}
+  "oasis" {build}
+  "ocamlfind" {build}
+  "sexplib" {>= "v0.11.0" & <= "v0.12.0"}
+  "ppx_deriving"
+  "ppx_tools"
+  "yojson"
+  "ppx_deriving_yojson"
+  "ppx_deriving_random"
+]
+flags: light-uninstall

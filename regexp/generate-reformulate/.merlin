@@ -1,0 +1,3 @@
+PKG lwt cohttp cohttp-lwt cohttp-lwt-unix webmachine str ppx_deriving.std sexplib ppx_deriving_arsenal arsenal
+S _build/src
+B _build/src
