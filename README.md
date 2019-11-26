@@ -1,8 +1,6 @@
 # ARSENAL Base
 
-This repository contains the ARSENAL base repo.
-
-This can be used as the foundation for building domain-specific instantiations of
+This repo can be used as the foundation for building domain-specific instantiations of
 ARSENAL. To create such an instantiation, it is recommended that this repo is
 *forked*. This allows you to create pull requests in case of any improvements to
 the base files, while keeping your domain-specific content separate.
