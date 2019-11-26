@@ -9,8 +9,7 @@ services:
     ports:
       - 8060:8080
   nl2cst:
-    build:
-      context: ../seq2seq
+    build: ../seq2seq
     image: arsenal-docker.cse.sri.com/arsenal-nl2cst:latest
     volumes:
       - ./models:/opt/models:ro
