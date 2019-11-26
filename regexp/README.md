@@ -35,7 +35,16 @@ and gives outputs that are regular expressions as well as optionl concrete synta
 
 ## Building the Docker Images
 
-Run `docker-compose build` in the current directory to build all the docker images for the regexp example.
+To build all the docker images for the regexp example, execute the command
+
+  docker-compose build
+
+in the current directory.
+
+To rebuild a specific image, or several images but not all, append the corresponding
+service names from the docker-compose file at the end of the command, e.g.,
+
+  docker-compose build ui entity
 
 ## Running The Demo
 
