@@ -1,5 +1,13 @@
-FROM openjdk:8-alpine
+# Stage 1. Build the uberjar using Leiningen
+FROM clojure AS noop-entity-builder
+ADD /project.clj /opt/
+ADD /src /opt/src
+WORKDIR /opt
+RUN lein ring uberjar
 
+
+# Stage 2. Run the uberjar in a fresh Java image
+FROM openjdk:8-alpine
 RUN apk --no-cache add shadow
 
 ENV \
@@ -17,7 +25,7 @@ RUN groupadd -r compojure -g 433 && useradd -u 431 -r -g compojure -d /opt/compo
 USER compojure
 
 # Add the service uberjar
-COPY target/noop-entity-0.1.0-SNAPSHOT-standalone.jar /opt/compojure/noop-entity.jar
+COPY --from=noop-entity-builder /opt/target/noop-entity-0.1.0-SNAPSHOT-standalone.jar /opt/compojure/noop-entity.jar
 
 WORKDIR /opt/compojure
 

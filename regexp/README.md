@@ -10,19 +10,19 @@
 
 ## Overview
 This directory contains an example of Arsenal applied to the natural language description
-of regular expressions. 
+of regular expressions.
 
 You can either run the demo using pre-canned Docker images or you can compile the source code
 (as needed) and run on your native system.  
 
-Whether running from Docker images or from native-built source code, you can process input text and 
+Whether running from Docker images or from native-built source code, you can process input text and
 choose the output options with the command-line tool "gen_regexps.py".
-When running from Docker images you can also choose to use a graphical user interface to take in 
+When running from Docker images you can also choose to use a graphical user interface to take in
 input and choose between various output options.
 
 The custom components of this demo are:
 - a regular expression domain entity processor to identify entities from natural language text, found in `regexp-entity/entity.py`
-- a regular expression domain grammar and its pretty-printing functions as well as a current model 
+- a regular expression domain grammar and its pretty-printing functions as well as a current model
 that has been trained on the current grammar and its pretty-printing functions, found in `generate-reformulate/src`
 - an option GUI found in `regexp-ui/src`
 
@@ -33,26 +33,9 @@ The standard Arsenal components of this demo are:
 When running a model, Arsenal takes inputs that are natural-language (NL) sentences representing regular expression syntax
 and gives outputs that are regular expressions as well as optionl concrete syntax trees (CSTs) or reformulations of the original input.
 
-## Run from Docker Images
-### Setup
-First, you will need to authenticate to SRI's Artifactory server, which
-is where our docker images are kept. You only need to do this once.
+## Building the Docker Images
 
-1. Retrieve your encrypted password.
-   - Go to https://artifactory.sri.com
-   - Log in using your E-number and associated password.
-   - Click on your e-number in the upper right part of the screen.
-   - Click on the button next to "API key" to generate a key.
-   - Click the "copy" button next the API key field to copy it to the clipboard.
-
-2. In your console, run the command
-  `docker login -u <e-number> arsenal-docker.cse.sri.com`
-
-  When prompted for a password, paste in the key from step (1) above.
-  You should see a login success message.
-
-If you ever see a authentication error from Docker, try re-doing the
-above steps.
+Run `docker-compose build` in the current directory to build all the docker images for the regexp example.
 
 ## Running The Demo
 
@@ -63,7 +46,7 @@ To run the demo, from the regexp directory, execute the command
 To use the UI, point a browser at http://localhost:8080.
 Sample input is in the file "example.txt"
 
-To use the command line interface gen_regexps.py, see the instructions for running 
+To use the command line interface gen_regexps.py, see the instructions for running
 native local executables (INSERT LINK)
 
 To quit a demo, hit ctrl+c in the same terminal (possibly several times),
@@ -71,31 +54,11 @@ and then
 
   docker-compose down -v
 
-## Creating Local Docker Images 
-
-If you modify any of the source code but still want to use the Docker runtime method, you
-can build your own local Docker images which will take precedence over their equivalently
-versioned images at Artifactory. 
-
-For each component go to the appropriate directory and use the "bash build.sh" command to 
-build a local Docker image.  The version used is set by the text file named VERSION in the directory.
-Building a local Docker image does not upload it to Artifactory and is only available for your
-local use. 
-
-Note that the docker-compose.yml file dictates which image version numbers should be used. If you 
-change the VERSION files, you may need to also change the docker-compose.yml file to match.
-
-Directories with build.sh scripts for each module:
-UI:  <arsenal_root>/regexp/regexp-ui
-NL2CST: <arsenal_root>/seq2seq
-ENTITY PROCESSOR: <arsenal_root>/regexp/regexp-entity
-REFORMULATE: <arsenal_root>/regexp/generate-reformulate
-
 ## Running Components Manually
 
 It is possible to run the regexp example directly from locally built source code (without use of Docker containers)
 
-NL2CST 
+NL2CST
 The code is the Arsenal core and is found under <arsenal_root>/seq2seq and is written in Python and doesn't require additional compilation.
 
 ENTITY PROCESSOR
@@ -103,12 +66,12 @@ The code is specific to the regular expression example and is found under <arsen
 doesn't require any additional compilation.
 
 REFORMULATION
-The code is specific to the regular expression example and is found under <arsenal_root>/regexp/generate-reformulate. 
-It is written in ocaml and relies on Arsenal core libraries found in <arsenal_root>/ocaml-grammars. 
+The code is specific to the regular expression example and is found under <arsenal_root>/regexp/generate-reformulate.
+It is written in ocaml and relies on Arsenal core libraries found in <arsenal_root>/ocaml-grammars.
 
 The defined grammar is used to generate a model that is used by the NL2CST processor. Most changes to the grammar would
 require generating a new model to have Arsenal work properly.
-If you make changes to either the core ocaml libraries or the regular expression grammar, you need to do the following. 
+If you make changes to either the core ocaml libraries or the regular expression grammar, you need to do the following.
 
 # Rebuild the grammar component like this:
 From the <arsenal_root>/regepx directory
@@ -137,7 +100,7 @@ The `gen_regexps.py` tool allows you to process input text at the command line.
 The default output will be the regexp equivalent to the natural language input text.
 
 ```bash
-$python gen_regexps.py example.txt 
+$python gen_regexps.py example.txt
 ```
 
 Optional output, which can be compbined:
@@ -159,13 +122,13 @@ $python gen_regexps.py example.txt -e
 
 ## Output Example
 
-Running the gen_regexps.py process using an innput file with just one sentence in it and using all the output flags 
+Running the gen_regexps.py process using an innput file with just one sentence in it and using all the output flags
 generates first the interim (debuggin) "ENTITIES" version of the input sentence with the original text and any regular-expression matching
 entities pulled out and replaced with substitions.
 The concrete syntax tree version of the sentence is shown is in the CSTs" section of the output.  This output shows the entity-replaced version
-of the input text and then the CST that represents that sentence.  For more information about the format of CSTs, see the 
+of the input text and then the CST that represents that sentence.  For more information about the format of CSTs, see the
 [Understanding Concrete Syntax Trees document](../doc/Understanding-Concrete-Syntax-Trees.md)
-The regular expression interpretation of the input text is followed by a randomized generated language version of the regular expression as defined by the REreformulate.native executable. 
+The regular expression interpretation of the input text is followed by a randomized generated language version of the regular expression as defined by the REreformulate.native executable.
 
 ```bash
 $cat one.txt
@@ -237,6 +200,3 @@ Regular Expressions:
 (abc\s)
 string String_1{"abc"}, and then a space character
 ```
-
-
-

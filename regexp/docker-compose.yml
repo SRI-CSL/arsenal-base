@@ -1,14 +1,17 @@
 version: '2.1'
 services:
   entity:
-    image: arsenal-docker.cse.sri.com/regexp-entity:0.0.2
+    build: regexp-entity
+    image: arsenal-docker.cse.sri.com/regexp-entity:latest
     environment:
       HOST: entity
       PORT: 8080
     ports:
       - 8060:8080
   nl2cst:
-    image: arsenal-docker.cse.sri.com/arsenal-nl2cst:1.4.0
+    build:
+      context: ../seq2seq
+    image: arsenal-docker.cse.sri.com/arsenal-nl2cst:latest
     volumes:
       - ./models:/opt/models:ro
     environment:
@@ -18,12 +21,18 @@ services:
     ports:
       - 8070:8080
   ui:
-    image: arsenal-docker.cse.sri.com/regexp-ui:1.0.0
+    build:
+      context: regexp-ui
+      dockerfile: docker/Dockerfile
+    image: arsenal-docker.cse.sri.com/regexp-ui:latest
     environment:
       HOST: ui
     ports:
       - 8080:8080
   reformulate:
-    image: arsenal-docker.cse.sri.com/regexp-reformulate:1.1.0
+    build:
+      context: ../
+      dockerfile: regexp/generate-reformulate/Dockerfile
+    image: arsenal-docker.cse.sri.com/regexp-reformulate:latest
     ports:
       - 8090:8080

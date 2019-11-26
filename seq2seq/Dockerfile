@@ -7,7 +7,6 @@ RUN conda install -c conda-forge \
 RUN mkdir -p /opt/models && \
   mkdir -p /opt/src
 # We split up the following to make the build/deploy faster when we only change the source code
-COPY models /opt/models
 COPY src /opt/src      
 WORKDIR /opt/src
 ENV PYTHONPATH=${PYTHONPATH}:/opt/src
