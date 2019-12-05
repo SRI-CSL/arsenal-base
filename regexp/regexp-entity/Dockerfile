@@ -1,4 +1,5 @@
 FROM continuumio/miniconda3
+RUN conda update openssl ca-certificates certifi
 RUN conda install -c conda-forge web.py cheroot && conda clean --all
 WORKDIR /opt
 ADD . /opt
