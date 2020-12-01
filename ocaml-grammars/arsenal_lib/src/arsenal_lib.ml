@@ -287,39 +287,72 @@ type 'a distribution = ('a*float) list
 (****************)
 (* For printing *)
 
-type print       = Format.formatter ->  unit
-type 'b pp       = Format.formatter -> 'b -> unit
-type ('a,'b) spp = 'a -> 'b pp
+type print = Format.formatter ->  unit
+type 'a pp = 'a -> print
 
-let pp_string s fmt () = fprintf fmt s
+let return s fmt = Format.fprintf fmt "%s" s
+let noop     fmt = ()
 
-let pp_list ?(sep=",") ?last pp_arg fmt l =
-  let rec aux fmt l =
-    match l, last with
-    | [], _  -> ()
-    | [a], _ -> pp_arg fmt a
-    | [a;b], Some last -> fprintf fmt "%a%s %a" pp_arg a last pp_arg b
-    | a::tail, _ -> fprintf fmt "%a%s %a" pp_arg a sep aux tail
-  in
-  aux fmt l  
+type 'a formatted =
+  | F : ('a , Format.formatter, unit) format -> 'a formatted
+  | FormatApply : ('a -> 'b) formatted * 'a -> 'b formatted
+  | Noop : unit formatted
 
-let pick l _ =
+let rec print : type a. a formatted -> formatter -> a = function
+  | F s    -> fun fmt -> Format.fprintf fmt s
+  | FormatApply(a,b) -> fun fmt -> print a fmt b
+  | Noop -> noop
+
+let (//) a b = FormatApply(a,b)
+
+let pick l =
   let sum = List.fold_right (fun (_,a) sofar -> a+sofar) l 0 in
   let rec aux n = function
     | [] -> raise(Conversion("No natural language rendering left to pick from"))
     | (s,i)::tail -> if (n < i) then s else aux (n-i) tail
   in aux (Random.int sum) l
 
-let choose l = pick l () |> Lazy.force
-
 let toString a =
   let buf = Buffer.create 255 in
   let fmt = Format.formatter_of_buffer buf in
-  a (Format.fprintf fmt);
+  let () = a fmt in
   Format.fprintf fmt "%!";
   Buffer.contents buf
 
-let stringOf f a = toString (fun p->p "%a" f a)
+let pp_list ?(sep=",") ?last pp_arg l =
+  let rec aux l =
+    match l, last with
+    | [], _  -> noop
+    | [a], _ -> pp_arg a
+    | [a;b], Some last -> F "%t%s %t" // pp_arg a // last // pp_arg b |> print
+    | a::tail, _ -> F "%t%s %t" // pp_arg a // sep // aux tail |> print
+  in
+  aux l
+
+(* Easy choose *)
+(* For lists of strings *)
+let (!!)  l fmt = (pick(List.map (fun s -> s, 1) l) |> return) fmt
+let (!!!) l fmt = (pick l |> return) fmt
+(* For lists of %t functions *)
+let (!~)  l fmt = pick(List.map (fun s -> s,1) l) fmt
+let (!~~) l fmt = pick l fmt
+let (!&)  l _ = pick(List.map (fun s -> s,1) l)
+(* For lists of anything *)
+let (!&&) l _ = pick l
+(* For lists of formatted *)
+let (!?)  l fmt = (pick(List.map (fun s -> s,1) l) |> print) fmt
+let (!??) l fmt = (pick l |> print) fmt
+
+(* Easy weights *)
+let (?~) b   = if b then 1 else 0
+let (~?) b   = if b then 0 else 1
+let (??~) o  = match o with Some _ -> 1 | None -> 0
+let (~??) o  = 1 - ??~o
+let (++) w1 w2 = 1 - (w1 * w2)
+
+(* Easy extension of pp function to option type *)
+let (?+) pp_arg = function Some x -> pp_arg x | None -> noop
+let (?++) = function Some x -> true | None -> false
 
 (*************************************************)
 (* Small extension of the standard Result module *)
@@ -357,14 +390,14 @@ module Entity = struct
 
   let typestring arg = "entity<"^arg^">"
 
-  let pp pp_arg fmt e =
-    let pp_kind fmt = function
-      | Some e when not !one_entity_kind -> fprintf fmt "%a" pp_arg e
-      | _ -> fprintf fmt "Entity"
+  let pp pp_arg e =
+    let pp_kind = function
+      | Some e when not !one_entity_kind -> F "%a" // pp_arg // e |> print
+      | _ -> return "Entity"
     in
     match e.substitution with
-    | Some nl -> fprintf fmt "%a_%i{%s}" pp_kind e.kind e.counter nl
-    | None -> fprintf fmt "%a_%i" pp_kind e.kind e.counter
+    | Some nl -> F "%t_%i{%s}" // pp_kind e.kind // e.counter // nl |> print
+    | None    -> F "%t_%i" // pp_kind e.kind // e.counter |> print
 
   let random random_arg s =
     incr PPX_Random.counter;

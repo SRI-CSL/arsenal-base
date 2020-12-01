@@ -42,7 +42,7 @@ module Grammar = struct
     for i = 1 to n do
       let t = PPX_Random.init() |> grammar.random in
       (* if !check_opt  then check sentence_to_yojson sentence_of_yojson sexp_of_sentence sentence_of_sexp t; *)
-      if !print_nl   then print_string(stringOf grammar.pp t);
+      if !print_nl   then print_string(toString(grammar.pp t));
       if !print_json then print_tab(JSON.to_string(grammar.to_yojson t));
       if !print_sexp then print_tab(Sexp.to_string(grammar.sexp_of t));
       if !print_polish then print_tab(Polish.to_string(Polish.of_sexp(grammar.sexp_of t)));

@@ -22,7 +22,7 @@ let reformulate cst_of_yojson pp_cst ~howmany json_string =
           let rec aux i sofar =
             if i=0
             then sofar
-            else aux (i-1) ((`String (stringOf pp_cst cst))::sofar)
+            else aux (i-1) ((`String (toString (pp_cst cst)))::sofar)
           in
           let warning (`NoSubst s) = `String("no_substitution in "^s) in
           let warnings = List.map warning !Entity.warnings in

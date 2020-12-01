@@ -7,33 +7,6 @@ open Base_grammar
 (************************)
 (* Pretty-print helpers *)
 
-(* Easy choose *)
-(* print string *)
-let (>>) s fmt  = fprintf fmt "%s" s
-(* For lists of strings *)
-let (!!)  l fmt = choose(List.map (fun s -> lazy (s>>fmt), 1) l)
-let (!!!) l fmt = choose(List.map (fun (s,i) -> lazy (s>>fmt),i) l)
-(* For lists of %t functions *)
-let (!~)  l fmt = choose(List.map (fun s -> lazy(s fmt),1) l)
-let (!~~) l fmt = choose(List.map (fun (s,i) -> lazy(s fmt),i) l)
-(* For lists of 'a *)
-let (!&)  l ()  = choose(List.map (fun s -> lazy s,1) l)
-let (!&&)  l () = choose(List.map (fun (s,i) -> lazy s,i) l)
-(* For lists of lazy things *)
-let (!?)  l  = choose(List.map (fun s -> s,1) l)
-let (!??) l  = choose l
-
-(* Easy weights *)
-let (?~) b   = if b then 1 else 0
-let (~?) b   = if b then 0 else 1
-let (??~) o  = match o with Some _ -> 1 | None -> 0
-let (~??) o  = 1 - ??~o
-let (++) w1 w2 = 1 - (w1 * w2)
-
-(* Easy extension of pp function to option type *)
-let (?+) pp_arg fmt = function Some x -> pp_arg fmt x | None -> !![""] fmt
-let (?++) = function Some x -> true | None -> false
-
 type verb = {
   vplural : bool;
   (* person  : [`First | `Second | `Third ];
@@ -76,30 +49,30 @@ let nplural state = if state.nplural then "s" else ""
 let bnot b = if b then "" else " not"
 let bno b = if b then "" else " no"
 
-let pos_be state fmt = !?[
-    lazy (fprintf fmt "%s" (is state));
-    lazy (fprintf fmt "should be");
-    lazy (fprintf fmt "must be");
-    lazy (fprintf fmt "need%s to be" (thirdp state));
+let pos_be state = !?[
+    F "%s" // is state;
+    F "should be";
+    F "must be";
+    F "need%s to be" // thirdp state;
   ]
 
-let neg_be state fmt = !?[
-    lazy (fprintf fmt "%s not" (is state));
-    lazy (fprintf fmt "should not be");
-    lazy (fprintf fmt "must not be");
-    lazy (fprintf fmt "need%s not be" (thirdp state));
-    lazy (fprintf fmt "%s not need to be" (does state));
+let neg_be state = !?[
+    F "%s not" // is state;
+    F "should not be";
+    F "must not be";
+    F "need%s not be" // thirdp state;
+    F "%s not need to be" // does state;
   ]
 
-let pos_have state fmt = !?[
-    lazy (fprintf fmt "%s" (has state));
-    lazy (fprintf fmt "suffer%s from" (thirdp state));
+let pos_have state = !?[
+    F "%s" // has state;
+    F "suffer%s from" // thirdp state;
   ]
 
-let neg_have state fmt = !?[
-    lazy (fprintf fmt "%s not have" (does state));
-    lazy (fprintf fmt "%s no" (has state));
-    lazy (fprintf fmt "%s not suffer from" (does state));
+let neg_have state = !?[
+    F "%s not have" // does state;
+    F "%s no" // has state;
+    F "%s not suffer from" // does state;
   ]
 
 let the = !!["the ";""]
@@ -131,69 +104,69 @@ let needed    = !!["needed"; "necessary"; "mandatory"; "required"]
 (*************)
 (* Terminals *)
 
-let pp_integer = Entity.pp (fun fmt `Integer -> "Integer" >> fmt)
+let pp_integer = Entity.pp (fun fmt `Integer -> return "Integer" fmt)
 
 (**************)
 (* Quantities *)
 
-let pp_range print_arg fmt = function
-  | Exact q        -> !?[lazy (fprintf fmt "%a" print_arg q)]
+let pp_range print_arg = function
+  | Exact q        -> !?[F "%t" // print_arg q]
   | MoreThan q     -> !?[
-      lazy (fprintf fmt "more than %a" print_arg q);
-      lazy (fprintf fmt "at least %a" print_arg q);
-      lazy (fprintf fmt "over %a" print_arg q);
-      lazy (fprintf fmt "%a or more" print_arg q);
+      F "more than %t" // print_arg q;
+      F "at least %t" // print_arg q;
+      F "over %t" // print_arg q;
+      F "%t or more" // print_arg q;
     ]
   | LessThan q     -> !?[
-      lazy (fprintf fmt "less than %a" print_arg q);
-      lazy (fprintf fmt "at most %a" print_arg q);
-      lazy (fprintf fmt "under %a" print_arg q);
-      lazy (fprintf fmt "below %a" print_arg q);
-      lazy (fprintf fmt "%a or less" print_arg q);
-      lazy (fprintf fmt "up to %a" print_arg q);
+      F "less than %t" // print_arg q;
+      F "at most %t" // print_arg q;
+      F "under %t" // print_arg q;
+      F "below %t" // print_arg q;
+      F "%t or less" // print_arg q;
+      F "up to %t" // print_arg q;
     ]
   | Approximately q -> !??[
-      lazy (fprintf fmt "approximately %a" print_arg q),3;
-      lazy (fprintf fmt "about %a" print_arg q),3;
-      lazy (fprintf fmt "roughly %a" print_arg q),1;
+      F "approximately %t" // print_arg q,3;
+      F "about %t" // print_arg q,3;
+      F "roughly %t" // print_arg q,1;
     ]
   | Between(q1,q2) -> !?[
-      lazy (fprintf fmt "between %a and %a" print_arg q1 print_arg q2);
+      F "between %t and %t" // print_arg q1 // print_arg q2;
     ]
 
-let pp_fraction fmt = function
-  | Half -> !!["half"] fmt
-  | Third -> !!["third"] fmt
-  | Quarter -> !!["quarter"] fmt
+let pp_fraction = function
+  | Half    -> !!["half"]
+  | Third   -> !!["third"]
+  | Quarter -> !!["quarter"]
     
-let pp_proportion fmt q =
+let pp_proportion q =
   let s = !!![" of the",1; "",2] in
   match q with
-  | All    -> fprintf fmt "all%t " s
-  | NoneOf -> fprintf fmt "none of the "
-  | Most   -> fprintf fmt "most%t " s
-  | Few    -> fprintf fmt "few%t " s
-  | Many   -> !?[ lazy(fprintf fmt "many%t " s); lazy(fprintf fmt "numerous%t " s)]
-  | Several-> fprintf fmt "several "
-  | Range p   -> fprintf fmt "%a " (pp_range pp_integer) p
-  | Percent p -> fprintf fmt "%a percent of %t" (pp_range pp_integer) p the
-  | Fraction p -> fprintf fmt "%a of %t" (pp_range pp_fraction) p the
+  | All    -> F "all%t " // s  |> print
+  | NoneOf -> F "none of the " |> print
+  | Most   -> F "most%t " // s |> print
+  | Few    -> F "few%t " // s  |> print
+  | Many   -> !?[ F "many%t " // s; F "numerous%t " // s]
+  | Several-> F "several " |> print
+  | Range p   -> F "%t " // pp_range pp_integer p |> print
+  | Percent p -> F "%t percent of %t" // pp_range pp_integer p // the |> print
+  | Fraction p -> F "%t of %t" // pp_range pp_fraction p // the |> print
     
 
-let pp_proportion_option fmt = function
-  | None    -> fprintf fmt "%t" (article pd_noun)
-  | Some pe -> fprintf fmt "%a" pp_proportion pe
+let pp_proportion_option = function
+  | None    -> F "%t" // article pd_noun  |> print
+  | Some pe -> F "%t" // pp_proportion pe |> print
 
-let pp_time_unit state fmt = function
-  | Second -> fprintf fmt "second%s" (nplural state)
-  | Minute -> fprintf fmt "minute%s" (nplural state)
-  | Hour -> fprintf fmt "hour%s" (nplural state)
-  | Day  -> fprintf fmt "day%s" (nplural state)
-  | Week -> fprintf fmt "week%s" (nplural state)
-  | Month -> fprintf fmt "month%s" (nplural state)
-  | Year  -> fprintf fmt "year%s" (nplural state)
+let pp_time_unit state = function
+  | Second -> F "second%s" // nplural state |> print
+  | Minute -> F "minute%s" // nplural state |> print
+  | Hour   -> F "hour%s"   // nplural state |> print
+  | Day    -> F "day%s"    // nplural state |> print
+  | Week   -> F "week%s"   // nplural state |> print
+  | Month  -> F "month%s"  // nplural state |> print
+  | Year   -> F "year%s"   // nplural state |> print
 
 let pp_range_aux pp_arg =
-  pp_range (fun fmt (Time(i,a)) -> fprintf fmt "%a %a" pp_integer i pp_arg a)
+  pp_range (fun (Time(i,a)) -> F "%t %t" // pp_integer i // pp_arg a |> print)
     
-let pp_q_time fmt (QT range) = pp_range_aux (pp_time_unit pd_noun) fmt range
+let pp_q_time (QT range) = pp_range_aux (pp_time_unit pd_noun) range

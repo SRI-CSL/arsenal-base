@@ -4,43 +4,6 @@ open Sexplib.Std
 open Arsenal_lib
 open Base_grammar
 
-(************************)
-(* Pretty-print helpers *)
-
-(* Easy choose *)
-
-val ( >> ) : string -> print (* print string *)
-
-(* For lists of strings, possibly weighted random pick *)
-val ( !! ) : string list -> print
-val ( !!! ) : (string * int) list -> print
-
-(* For lists of %t functions *)
-val ( !~ ) : print list -> print
-val ( !~~ ) : (print * int) list -> print
-
-(* For lists of 'a *)
-val ( !& ) : 'a list -> unit -> 'a
-val ( !&& ) : ('a * int) list -> unit -> 'a
-
-(* For lists of lazy things *)
-val ( !? ) : unit Lazy.t list -> unit
-val ( !?? ) : (unit Lazy.t * int) list -> unit
-
-
-(* Easy weights *)
-val ( ?~ ) : bool -> int (* true -> 1 | false -> 0 *)
-val ( ~? ) : bool -> int (* true -> 0 | false -> 1 *)
-val ( ??~ ) : 'a option -> int (* has option -> 1 else 0 *)
-val ( ~?? ) : 'a option -> int (* has option -> 0 else 1 *)
-val ( ++ ) : int -> int -> int (* Logical OR *)
-
-(* Easy extension of pp function to option type *)
-val ( ?+ ) : 'a pp -> 'a option pp (* empty string if not present *)
-
-(* has the option? *)
-val ( ?++ ) : 'a option -> bool
-
 (*******************************)
 (* Elements of English grammar *)
 

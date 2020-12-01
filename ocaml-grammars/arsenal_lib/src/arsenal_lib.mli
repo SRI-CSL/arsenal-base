@@ -78,14 +78,58 @@ type 'a distribution = ('a*float) list
 (****************)
 (* For printing *)
 
-type print       = Format.formatter ->  unit
-type 'b pp       = Format.formatter -> 'b -> unit
-type ('a,'b) spp = 'a -> 'b pp
+type print = Format.formatter ->  unit
+type 'a pp = 'a -> print
+
+val return : string pp
+val noop   : print
+
+type 'a formatted =
+  | F : ('a , Format.formatter, unit) format -> 'a formatted
+  | FormatApply : ('a -> 'b) formatted * 'a  -> 'b formatted
+  | Noop : unit formatted
+
+val print : 'a formatted -> formatter -> 'a
+val (//)  : ('a -> 'b) formatted -> 'a  -> 'b formatted
+
+val pick  : ('a * int) list -> 'a
+
+val toString : print -> string
 
 val pp_list : ?sep:string -> ?last:string -> 'a pp -> 'a list pp
-val choose  : ('a Sexplib.Std.Lazy.t * int) list -> 'a
 
-val stringOf : 'a pp -> 'a -> string
+
+(* Easy choose *)
+
+(* For lists of strings, possibly weighted random pick *)
+val ( !! )  : string list pp
+val ( !!! ) : (string * int) list pp
+
+(* For lists of %t functions *)
+val ( !~ )  : print list pp
+val ( !~~ ) : (print * int) list pp
+
+(* For lists of anything *)
+val ( !& )  : 'a list -> _ -> 'a
+val ( !&& ) : ('a * int) list -> _ -> 'a
+
+(* For lists of formatted *)
+val ( !? )  : 'a formatted list -> Format.formatter -> 'a
+val ( !?? ) : ('a formatted * int) list -> Format.formatter -> 'a
+
+(* Easy weights *)
+val ( ?~ ) : bool -> int (* true -> 1 | false -> 0 *)
+val ( ~? ) : bool -> int (* true -> 0 | false -> 1 *)
+val ( ??~ ) : 'a option -> int (* has option -> 1 else 0 *)
+val ( ~?? ) : 'a option -> int (* has option -> 0 else 1 *)
+val ( ++ ) : int -> int -> int (* Logical OR *)
+
+(* Easy extension of pp function to option type *)
+val ( ?+ ) : 'a pp -> 'a option pp (* empty string if not present *)
+
+(* has the option? *)
+val ( ?++ ) : 'a option -> bool
+
 
 (*************************************************)
 (* Small extension of the standard Result module *)
@@ -110,7 +154,7 @@ sig
   val strict : float ref
 
   type 'a t
-  val pp     : 'a pp -> 'a t pp
+  val pp     : (Format.formatter -> 'a -> unit) -> 'a t pp
   val random : ('b PPX_Random.t) -> 'b t PPX_Random.t
   val to_yojson : ('a -> JSON.t) -> 'a t -> JSON.t
   val sexp_of : (('a -> Sexplib.Sexp.t)*string) -> 'a t -> Sexplib.Sexp.t
@@ -122,6 +166,6 @@ sig
     ?counter:int ->
     ?substitution:string option -> unit -> ('a t, 'b) Result.result
   val of_yojson : (JSON.t -> ('a, _) Result.result) -> JSON.t -> ('a t, string) Result.result
-  val pick : ('a * float) list -> 'b -> 'a
+  val pick : ('a * float) list -> 'a
 end
 
