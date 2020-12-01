@@ -492,7 +492,7 @@ module Entity = struct
       else { kind = Some(arg (Sexp.Atom s)); counter; substitution = Some nl }
     | Sexp.List _ as sexp -> raise(Conversion("Entity.t_of_sexp: list S-expresion "^Sexp.to_string sexp^" cannot be an entity"))
 
-  let pick l = pick(List.map (fun (x,i) -> x, Float.(to_int(pow i !strict))) l)
+  let pick l _ = pick(List.map (fun (x,i) -> x, Float.(to_int(pow i !strict))) l)
 
 end
 

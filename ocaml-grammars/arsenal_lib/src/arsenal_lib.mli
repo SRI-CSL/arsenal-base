@@ -166,6 +166,6 @@ sig
     ?counter:int ->
     ?substitution:string option -> unit -> ('a t, 'b) Result.result
   val of_yojson : (JSON.t -> ('a, _) Result.result) -> JSON.t -> ('a t, string) Result.result
-  val pick : ('a * float) list -> 'a
+  val pick : ('a * float) list -> _ -> 'a
 end
 
