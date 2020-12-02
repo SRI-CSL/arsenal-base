@@ -125,7 +125,8 @@ val ( ~?? ) : 'a option -> int (* has option -> 0 else 1 *)
 val ( ++ ) : int -> int -> int (* Logical OR *)
 
 (* Easy extension of pp function to option type *)
-val ( ?+ ) : 'a pp -> 'a option pp (* empty string if not present *)
+val ( +? ) : 'a pp -> print -> 'a option pp
+val ( ?+ ) : 'a pp -> 'a option pp (* noop if not present *)
 
 (* has the option? *)
 val ( ?++ ) : 'a option -> bool

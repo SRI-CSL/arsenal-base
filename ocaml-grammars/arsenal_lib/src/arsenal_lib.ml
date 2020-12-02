@@ -336,9 +336,9 @@ let (!!!) l fmt = (pick l |> return) fmt
 (* For lists of %t functions *)
 let (!~)  l fmt = pick(List.map (fun s -> s,1) l) fmt
 let (!~~) l fmt = pick l fmt
-let (!&)  l _ = pick(List.map (fun s -> s,1) l)
 (* For lists of anything *)
-let (!&&) l _ = pick l
+let (!&)  l _   = pick(List.map (fun s -> s,1) l)
+let (!&&) l _   = pick l
 (* For lists of formatted *)
 let (!?)  l fmt = (pick(List.map (fun s -> s,1) l) |> print) fmt
 let (!??) l fmt = (pick l |> print) fmt
@@ -351,7 +351,8 @@ let (~??) o  = 1 - ??~o
 let (++) w1 w2 = 1 - (w1 * w2)
 
 (* Easy extension of pp function to option type *)
-let (?+) pp_arg = function Some x -> pp_arg x | None -> noop
+let (+?) pp1 pp2  = function Some x -> pp1 x | None -> pp2
+let (?+) pp_arg = pp_arg +? noop
 let (?++) = function Some x -> true | None -> false
 
 (*************************************************)
