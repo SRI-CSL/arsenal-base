@@ -292,7 +292,8 @@ type 'a pp = 'a -> print
 
 let return s fmt = Format.fprintf fmt "%s" s
 let noop     fmt = ()
-
+let (^^) pp1 pp2 fmt = pp1 fmt; pp2 fmt
+                 
 type 'a formatted =
   | F : ('a , Format.formatter, unit) format -> 'a formatted
   | FormatApply : ('a -> 'b) formatted * 'a -> 'b formatted

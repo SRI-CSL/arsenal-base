@@ -81,6 +81,7 @@ type 'a distribution = ('a*float) list
 type print = Format.formatter ->  unit
 type 'a pp = 'a -> print
 
+val (^^)   : print -> print -> print
 val return : string pp
 val noop   : print
 
