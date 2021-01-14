@@ -141,7 +141,7 @@ let main ~port cst_of_yojson pp_cst =
   let routes = [
     ("/"           , fun () -> new hello cst_of_yojson pp_cst);
   ] in
-  let callback (ch,conn) request body =
+  let callback (_ch,_conn) request body =
     let open Cohttp in
     (* Perform route dispatch. If [None] is returned, then the URI path did not
      * match any of the route patterns. In this case the server should return a
@@ -179,7 +179,7 @@ let main ~port cst_of_yojson pp_cst =
    *   [curl -H"Accept:text/plain" "http://localhost:8080"]
    *   [curl -H"Accept:application/json" "http://localhost:8080"]
   *)
-  let conn_closed (ch,conn) =
+  let conn_closed (ch,_conn) =
     Printf.printf "connection %s closed\n%!"
       (Sexplib.Sexp.to_string_hum (Conduit_lwt_unix.sexp_of_flow ch))
   in

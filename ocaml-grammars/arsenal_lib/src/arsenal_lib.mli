@@ -1,7 +1,6 @@
 open Format
 
 open Sexplib
-open Std
 
 (* Useful abbreviation *)
 module JSON = Yojson.Safe

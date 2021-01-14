@@ -1,0 +1,30 @@
+opam-version: "2.0"
+name: "arsenal"
+synopsis: "Arsenal generation and reformulation"
+description: "Arsenal generation and reformulation"
+maintainer: "Stephane Graham-Lengrand <stephane.graham-lengrand@csl.sri.com>"
+authors: "Stephane Graham-Lengrand <stephane.graham-lengrand@csl.sri.com>"
+# license: "none yet"
+# homepage: "none yet"
+# bug-reports: "no way"
+depends: [
+  "ocaml" {>= "4.06" & < "4.08"}
+  "dune"
+  "ocamlfind"
+  "sexplib"
+  "yojson"
+  "cohttp-lwt"
+  "cohttp-lwt-unix"
+  "webmachine"
+  "ppx_deriving_random"
+  "ppx_deriving_arsenal"
+]
+build: [
+    "dune" "build"
+]
+install: [
+  "dune" "install"
+]
+remove: [
+  "ocamlfind" "remove" "arsenal"
+]

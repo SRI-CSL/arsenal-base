@@ -1,7 +1,6 @@
 open Format
 
 open Sexplib
-open Std
 
 module JSON = Yojson.Safe
 
@@ -13,7 +12,6 @@ exception Conversion of string
 module PPX_Sexp = struct  
   let print_types = ref false (* Does not print types in S-expressions *)
 
-  let atom = ":"
   let constructor cst ty =
     if !print_types then Sexp.List [Sexp.Atom ":"; Sexp.Atom cst; Sexp.Atom ty]
     else Sexp.Atom cst
@@ -208,7 +206,7 @@ let sexp_of_int i =
 let liststring c str = PPX_Sexp.constructor c (typestring_list str)
 let optstring c str = PPX_Sexp.constructor c (typestring_option str)
 
-let rec sexp_of_list (arg,str) l =
+let sexp_of_list (arg,str) l =
   if List.length l = 0 then liststring "Nil" str
   else Sexp.List((liststring "List" str) :: List.map arg l)
 
@@ -216,7 +214,7 @@ let sexp_of_option (arg,str) = function
   | None   -> optstring "None" str
   | Some a -> Sexp.List[optstring "Some" str; arg a]
 
-let rec list_of_sexp arg = function
+let list_of_sexp arg = function
   | Sexp.Atom "Nil" -> []
   | Sexp.List(Sexp.Atom "List"::(_::_ as l)) -> List.map arg l
   | sexp -> raise(Conversion("list_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode a list"))
@@ -291,7 +289,7 @@ type print = Format.formatter ->  unit
 type 'a pp = 'a -> print
 
 let return s fmt = Format.fprintf fmt "%s" s
-let noop     fmt = ()
+let noop     _fmt = ()
 let (^^) pp1 pp2 fmt = pp1 fmt; pp2 fmt
                  
 type 'a formatted =
@@ -354,7 +352,7 @@ let (++) w1 w2 = 1 - (w1 * w2)
 (* Easy extension of pp function to option type *)
 let (+?) pp1 pp2  = function Some x -> pp1 x | None -> pp2
 let (?+) pp_arg = pp_arg +? noop
-let (?++) = function Some x -> true | None -> false
+let (?++) = function Some _ -> true | None -> false
 
 (*************************************************)
 (* Small extension of the standard Result module *)

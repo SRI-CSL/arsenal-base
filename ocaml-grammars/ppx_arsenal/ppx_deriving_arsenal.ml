@@ -19,8 +19,8 @@ open Location
 open Asttypes
 open Parsetree
 open Ast_helper
-open Ast_convenience
-    
+open Ppx_deriving.Ast_convenience
+
 module TypeString = struct
 
   let deriver_name = "typestring"
@@ -35,10 +35,11 @@ module TypeString = struct
 
   (* Generator Type *)
 
-  let typestring_type_of_decl ~options ~path type_decl =
+  let typestring_type_of_decl ~options ~path:_path type_decl =
     parse_options options;
+    let loc = type_decl.ptype_loc in
     Ppx_deriving.poly_arrow_of_type_decl
-      (fun var -> [%type: string])
+      (fun _var -> [%type: string])
       type_decl
       [%type: string]
 
@@ -53,11 +54,17 @@ module TypeString = struct
 
   let str_of_type ~options ~path type_decl =
     parse_options options;
+    let loc = type_decl.ptype_loc in
     let path = Ppx_deriving.path_of_type_decl ~path type_decl in
     let type_string = Ppx_deriving.mangle_type_decl (`Prefix "typestring") type_decl in
     let typestring_func =
       let aux param sofar =
-        let param = Exp.ident(mknoloc(Longident.parse("poly_"^param.txt))) in
+        let param = "poly_"^param.txt
+                    |> Lexing.from_string
+                    |> Parse.longident
+                    |> mknoloc
+                    |> Exp.ident
+        in
         [%expr [%e sofar]^"<"^[%e param]^">"]
       in
       Ppx_deriving.fold_right_type_decl aux type_decl
@@ -74,7 +81,7 @@ module TypeString = struct
     [Str.value Recursive
        (List.concat (List.map (str_of_type ~options ~path) type_decls));
      Str.value Nonrecursive
-       [Vb.mk (Pat.constraint_ (pvar "derivers") [%type: string])
+       [Vb.mk (Pat.constraint_ (pvar "derivers") (let loc = Location.none in [%type: string]))
           (List.fold_right
              (fun deriver sofar -> deriver.Ppx_deriving.name^" "^sofar)
              derivers "" |> Const.string |> Exp.constant
@@ -98,7 +105,7 @@ module SexpPPX = struct
   let argl = Printf.sprintf "a%s"
 
   let pattn typs   = List.mapi (fun i _ -> pvar (argn i)) typs
-  let pattl labels = List.map (fun { pld_name = { txt = n } } -> n, pvar (argl n)) labels
+  let pattl labels = List.map (fun { pld_name = { txt = n; _ } ; _ } -> n, pvar (argl n)) labels
 
   let raise_errorf = Ppx_deriving.raise_errorf
 
@@ -110,14 +117,23 @@ module SexpPPX = struct
 
   (* Generator Type *)
 
-  let sexp_type_of_decl ~options ~path type_decl =
+  let sexp_type_of_decl ~options ~path:_path type_decl =
+    let loc = type_decl.ptype_loc in
     parse_options options;
     let typ = Ppx_deriving.core_type_of_type_decl type_decl in
     let typ =
       match type_decl.ptype_manifest with
-      | Some {ptyp_desc = Ptyp_variant (_, Closed, _)} ->
-        let ptyp_desc = Ptyp_variant ([Rinherit typ], Open, None) in
-        {ptyp_desc; ptyp_loc = Location.none; ptyp_attributes = []}
+      | Some {ptyp_desc = Ptyp_variant (_, Closed, _) ; _ } ->
+         let row_field = {
+             prf_desc = Rinherit typ;
+             prf_loc = typ.ptyp_loc;
+             prf_attributes = [];
+           }
+         in
+         {ptyp_desc = Ptyp_variant ([row_field], Open, None);
+          ptyp_loc  = Location.none;
+          ptyp_loc_stack  = [];
+          ptyp_attributes = []}
       | _ -> typ
     in
     Ppx_deriving.poly_arrow_of_type_decl
@@ -126,83 +142,94 @@ module SexpPPX = struct
 
   (* Generator Function *)
   let atom cnstr typestring_expr =
+    let loc = typestring_expr.pexp_loc in
     let cnstr = cnstr |> Const.string |> Exp.constant in
     [%expr PPX_Sexp.constructor [%e cnstr ] [%e typestring_expr ] ]
 
   let ident prefix typestr =
     Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix prefix) typestr))
 
-  let efst x = [%expr fst [%e x ]]
-  let esnd x = [%expr snd [%e x ]]
+  let efst loc x = [%expr fst [%e x ]]
+  let esnd loc x = [%expr snd [%e x ]]
     
   let expr_of_typ typestring_expr typ =
-    let rec expr_of_typ = function
+    let rec expr_of_typ x : expression =
+      let loc = x.ptyp_loc in
+      match x with
 
       (* Referencing another type, possibly polymorphic: typs are the types arguments *)
-      | {ptyp_desc = Ptyp_constr ({txt = lid}, typs)} ->
-        let sexp = ident "sexp_of" lid in
+      | {ptyp_desc = Ptyp_constr ({txt = lid ; _}, typs) ; _} ->
+        let sexp    = ident "sexp_of" lid in
         let typestr = ident "typestring" lid in
-        let args = List.map expr_of_typ typs in
-        let typestr_args = List.map esnd args in
+        let args    = List.map expr_of_typ typs in
+        let typestr_args = List.map (esnd loc) args in
         [%expr [%e app sexp args], [%e app typestr typestr_args]]
 
       (* typ is a product type: we don't deal with those *)
-      | {ptyp_desc = Ptyp_tuple typs} ->
+      | {ptyp_desc = Ptyp_tuple _ ; _} ->
         raise_errorf "Please do not use tuples in deriver %s, always use a constructor." deriver_name
 
       (* typ is a variant type: we construct the expression pair (f,typestring),
          where f is a pattern-matching function over inhabitants of typ,
          and typestring is the string representing typ *)
-      | {ptyp_desc = Ptyp_variant (fields, _, _); ptyp_loc} ->
+      | {ptyp_desc = Ptyp_variant (fields, _, _) ; _} ->
 
         (* treat_field constructs a pattern-matching case for one constructor (field) *)
         let treat_field field =
           let variant label popt = Pat.variant label.txt popt in
           match field with
-          | Rtag (label, _, true, []) ->
+          | Rtag (label, true, []) ->
             Exp.case (variant label None) (atom label.Location.txt typestring_expr)
-          | Rtag (label, _, false, typs) ->
+          | Rtag (label, false, typs) ->
             let aux i typ = [%expr fst [%e expr_of_typ typ] [%e evar (argn i)] ] in
             let aux' sofar e = [%expr [%e e] :: [%e sofar] ] in
             let args = typs |> List.mapi aux |> List.fold_left aux' [%expr [] ] in
             Exp.case (variant label (Some [%pat? x]))
               [%expr Sexp.List ([%e atom label.Location.txt typestring_expr] :: List.rev [%e args] ) ] 
 
-          | Rinherit({ ptyp_desc = Ptyp_constr (tname, _) } as typ) ->
+          | Rinherit({ ptyp_desc = Ptyp_constr (tname, _) ; _ } as typ) ->
             Exp.case [%pat? [%p Pat.type_ tname] as x] (expr_of_typ typ)
           | _ ->
             raise_errorf ~loc:typ.ptyp_loc "Cannot derive %s for %s."
               deriver_name (Ppx_deriving.string_of_core_type typ)
         in
+        let treat_field field = treat_field field.prf_desc in
         let cases = fields |> List.map treat_field in
         [%expr [%e Exp.function_ cases], [%e typestring_expr ] ]
 
       (* typ is one of our type parameters: we have been given the value as an argument *)
-      | {ptyp_desc = Ptyp_var name} -> evar ("poly_" ^ name)
+      | {ptyp_desc = Ptyp_var name ; _} -> evar ("poly_" ^ name)
       (* typ is an alias: we traverse *)
-      | {ptyp_desc = Ptyp_alias (typ, _)} -> expr_of_typ typ
+      | {ptyp_desc = Ptyp_alias (typ, _) ; _} -> expr_of_typ typ
       (* Can't deal with any other kinds of types *)
-      | {ptyp_loc} ->
+      | {ptyp_loc ; _} ->
         raise_errorf ~loc:ptyp_loc "Cannot derive %s for %s."
           deriver_name (Ppx_deriving.string_of_core_type typ)
     in
     expr_of_typ typ    
 
-  let expr_of_type_decl ({ptype_loc = loc} as type_decl) =
+  let expr_of_type_decl type_decl =
+    let loc = type_decl.ptype_loc in
     let typestring_expr =
       let aux param sofar =
-        let param = Exp.ident(mknoloc(Longident.parse("poly_"^param.txt))) in
+        let param =
+          "poly_"^param.txt
+          |> Lexing.from_string
+          |> Parse.longident
+          |> mknoloc
+          |> Exp.ident
+        in
         [%expr [%e sofar]^"<"^(snd [%e param])^">"]
       in
       Ppx_deriving.fold_right_type_decl aux type_decl
         (type_decl.ptype_name.txt |> Const.string |> Exp.constant)
     in
     match type_decl.ptype_kind, type_decl.ptype_manifest with
-    | Ptype_abstract, Some manifest -> expr_of_typ typestring_expr manifest |> efst
+    | Ptype_abstract, Some manifest -> expr_of_typ typestring_expr manifest |> efst loc
 
     | Ptype_variant cs, _ ->
 
-      let treat_field { pcd_name = { txt = name' }; pcd_args } =
+      let treat_field { pcd_name = { txt = name' ; _ }; pcd_args ; _ } =
         match pcd_args with
 
         | Parsetree.Pcstr_tuple [] ->
@@ -224,7 +251,7 @@ module SexpPPX = struct
       let cases = cs |> List.map treat_field in
       Exp.function_ cases
 
-    | Ptype_record fields, _ ->
+    | Ptype_record _fields, _ ->
       raise_errorf ~loc "Cannot derive %s for record type." deriver_name
     | Ptype_abstract, None ->
       raise_errorf ~loc "Cannot derive %s for fully abstract type." deriver_name
@@ -283,11 +310,11 @@ let ( #+ ) deriver1 deriver2 =
     ~type_decl_sig
     ~type_ext_sig
     ~module_type_decl_sig
-    ();;
+    ()
 
 let ( #++ ) deriver1 deriver2 = 
   match Ppx_deriving.lookup deriver2 with
-  | None -> raise_errorf "Deriver %s was not loaded; check the libraries in your build" deriver2
+  | None -> failwith("Deriver "^ deriver2 ^ " was not loaded; check the libraries in your build")
   | Some deriver2 -> deriver1 #+ deriver2
 
 
@@ -295,4 +322,4 @@ let arsenal = TypeString.deriver #+ SexpPPX.deriver #++ "random" #++ "yojson"
 
 let () = Ppx_deriving.register { arsenal with name = "arsenal" };;
 
-let () = Ppx_deriving.(add_register_hook(fun deriver -> raise_errorf "Deriver %s is being loaded late" deriver.name))
+(* let () = Ppx_deriving.(add_register_hook(fun deriver -> raise_errorf "Deriver %s is being loaded late" deriver.name)) *)

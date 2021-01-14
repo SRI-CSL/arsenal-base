@@ -17,8 +17,7 @@ true: debug, optimize(3), unbox_closures
                                      package(cohttp-lwt),\
                                      package(cohttp-lwt-unix),\
                                      package(webmachine),\
-                                     package(arsenal.reformulate),\
-                                     package(arsenal.base_grammar),\
+                                     package(arsenal),\
                                      thread
 
 <src*/*reformulate.ml{,i,y}>  : package(lwt),\
@@ -26,21 +25,18 @@ true: debug, optimize(3), unbox_closures
                                 package(cohttp-lwt),\
                                 package(cohttp-lwt-unix),\
                                 package(webmachine),\
-                                package(arsenal.reformulate),\
-                                package(arsenal.base_grammar),\
+                                package(arsenal),\
                                 thread
 
 <src*/*.{native,byte}>  : package(ppx_deriving.std),\
                           package(ppx_deriving_arsenal),\
                           package(str),\
                           package(sexplib),\
-                          package(arsenal.lib),\
-                          package(arsenal.base_grammar)
+                          package(arsenal)
 
                         
 <src*/*.ml{,i,y}>    : package(ppx_deriving.std),\
                        package(ppx_deriving_arsenal),\
                        package(sexplib),\
-                       package(arsenal.lib),\
-                       package(arsenal.base_grammar)
+                       package(arsenal)
 

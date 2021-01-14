@@ -1,0 +1,6 @@
+(library
+ (public_name ppx_deriving_arsenal)
+ (libraries ppxlib ppx_deriving.api ppx_deriving_random ppx_deriving_yojson ppx_deriving.std)
+ (preprocess (pps ppxlib.metaquot))
+ (synopsis "[@@deriving arsenal]")
+ (kind ppx_deriver))

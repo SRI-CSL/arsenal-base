@@ -1,6 +1,4 @@
 open Sexplib
-open Sexplib.Std
-
 open Arsenal_lib
 
 (*************)
