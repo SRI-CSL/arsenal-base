@@ -20,6 +20,8 @@ open Parsetree
 open Ast_helper
 open Ppx_deriving.Ast_convenience
 
+let str2exp x = x |> Const.string |> Exp.constant
+
 let fully_qualified path str =
   let aux sofar modul = sofar ^ modul ^ "$" in
   (List.fold_left aux "" path)^str
@@ -73,7 +75,7 @@ module TypeString = struct
         [%expr [%e sofar]^"<"^[%e param]^">"]
       in
       Ppx_deriving.fold_right_type_decl aux type_decl
-        (fully_qualified path type_decl.ptype_name.txt |> Const.string |> Exp.constant)
+        (fully_qualified path type_decl.ptype_name.txt |> str2exp)
     in
     let typestring_type = typestring_type_of_decl ~options ~path type_decl in
     let typestring_var = pvar type_string in
@@ -105,7 +107,10 @@ module SexpPPX = struct
 
   let argn = Printf.sprintf "a%d"
 
-  let pattn typs   = List.mapi (fun i _ -> pvar (argn i)) typs
+  let pattn typs    = List.mapi (fun i _ -> pvar (argn i)) typs
+  let pattn_named l =
+    let aux i x = mkloc (Lident x.pld_name.txt) x.pld_name.loc, pvar (argn i) in
+    List.mapi aux l
 
   let parse_options = List.iter @@ fun (name, pexp) ->
     match name with
@@ -141,8 +146,7 @@ module SexpPPX = struct
   (* Generator Function *)
   let atom cnstr typestring_expr =
     let loc = typestring_expr.pexp_loc in
-    let cnstr = cnstr |> Const.string |> Exp.constant in
-    [%expr PPX_Sexp.constructor [%e cnstr ] [%e typestring_expr ] ]
+    [%expr PPX_Sexp.constructor [%e str2exp cnstr ] [%e typestring_expr ] ]
 
   let expr_of_typ typestring_expr typ =
     let rec expr_of_typ x : expression =
@@ -214,36 +218,44 @@ module SexpPPX = struct
         [%expr [%e sofar]^"<"^(snd [%e param])^">"]
       in
       Ppx_deriving.fold_right_type_decl aux type_decl
-        (fully_qualified path type_decl.ptype_name.txt |> Const.string |> Exp.constant)
+        (fully_qualified path type_decl.ptype_name.txt |> str2exp)
     in
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_abstract, Some manifest -> expr_of_typ typestring_expr manifest |> efst loc
 
     | Ptype_variant cs, _ ->
 
-      let treat_field { pcd_name = { txt = name' ; _ }; pcd_args ; _ } =
-        match pcd_args with
-
-        | Parsetree.Pcstr_tuple [] ->
-           let qualifname' = fully_qualified path name' in
-           Exp.case (pconstr name' []) (atom qualifname' typestring_expr)
-
-        | Parsetree.Pcstr_tuple typs ->
+       let treat_field { pcd_name = { txt = name' ; _ }; pcd_args ; _ } =
+         let aux pat typs =
            let aux i typ =
              [%expr fst [%e expr_of_typ typestring_expr typ] [%e evar (argn i)] ]
            in
            let aux' sofar e = [%expr [%e e] :: [%e sofar] ] in
            let args = typs |> List.mapi aux |> List.fold_left aux' [%expr [] ] in
            let qualifname' = fully_qualified path name' in
-           Exp.case (pconstr name' (pattn typs))
+           Exp.case pat
              [%expr Sexp.List ( [%e atom qualifname' typestring_expr] :: List.rev [%e args] ) ]
+         in
+         match pcd_args with
 
-        | Parsetree.Pcstr_record _ ->
-          raise_errorf ~loc "Cannot derive %s for constructors with records." deriver_name
-      in
-      
-      let cases = cs |> List.map treat_field in
-      Exp.function_ cases
+         | Parsetree.Pcstr_tuple [] ->
+            let qualifname' = fully_qualified path name' in
+            Exp.case (pconstr name' []) (atom qualifname' typestring_expr)
+
+         | Parsetree.Pcstr_tuple typs -> aux (pconstr name' (pattn typs)) typs
+
+         | Parsetree.Pcstr_record l ->
+            let typs = List.map (fun x -> x.pld_type) l in
+            let pconstr name args =
+              let args = Some (Ast_helper.Pat.record args Closed) in
+              Ast_helper.Pat.construct (mknoloc (Lident name)) args
+            in
+            aux (pconstr name' (pattn_named l)) typs
+
+       in
+       
+       let cases = cs |> List.map treat_field in
+       Exp.function_ cases
 
     | Ptype_record _fields, _ ->
       raise_errorf ~loc "Cannot derive %s for record type." deriver_name
@@ -252,6 +264,7 @@ module SexpPPX = struct
     | Ptype_open, _ ->
       raise_errorf ~loc "Cannot derive %s for open type." deriver_name
 
+   
 
   (* Signature and Structure Components *)
 
@@ -330,8 +343,7 @@ module JSONdesc = struct
        (* treat_field constructs a pattern-matching case for one constructor (field) *)
        begin
          match field.prf_desc with
-         | Rtag (label, _, []) ->
-            label.txt |> Const.string |> Exp.constant
+         | Rtag (label, _, []) -> str2exp label.txt
 
          | _ ->
             raise_errorf ~loc:typ.ptyp_loc "Cannot derive %s for %s."
@@ -350,16 +362,20 @@ module JSONdesc = struct
   let list loc elts =
     let aux sofar arg =  [%expr [%e arg] :: [%e sofar]] in
     let l = elts |> List.rev |> List.fold_left aux [%expr [] ] in
-    [%expr `List [%e l ] ]
+    [%expr [%e l ] ]
 
   let build_alternative loc cons args : expression =
-    [%expr `Assoc [ "constructor", `String [%e cons |> Const.string |> Exp.constant] ;
-                    "arguments", [%e list loc args] ] ]
+    [%expr `Assoc [ "constructor", `String [%e str2exp cons] ;
+                    "arguments", `List [%e list loc args] ] ]
+
+  let build_alternative_named loc cons args : expression =
+    [%expr `Assoc [ "constructor", `String [%e str2exp cons] ;
+                    "arguments", `Assoc [%e list loc args] ] ]
 
   let build_type loc typ alternatives : expression =
     [%expr `Assoc [ "nodetype" , `String "type_decl";
                     "name", `String [%e typ] ;
-                    "alternatives", [%e list loc alternatives ] ] ]
+                    "alternatives", `List [%e list loc alternatives ] ] ]
     
   let build_abbrev loc typ body : expression =
     [%expr `Assoc [ "nodetype" , `String "abbreviation";
@@ -393,8 +409,13 @@ module JSONdesc = struct
           let args = typs |> List.map aux in
           build_alternative loc (fully_qualified path name') args
 
-        | Parsetree.Pcstr_record _ ->
-          raise_errorf ~loc "Cannot derive %s for constructors with records." deriver_name
+        | Parsetree.Pcstr_record args ->
+           let aux (x : label_declaration) =
+             [%expr [%e str2exp x.pld_name.txt],
+              `String [%e expr_of_typ x.pld_type] ]
+           in
+          let args = args |> List.map aux in
+          build_alternative_named loc (fully_qualified path name') args
       in
       
       cs |> List.map treat_field |> build_type loc typestring_expr
