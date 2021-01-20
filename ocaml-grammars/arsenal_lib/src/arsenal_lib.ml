@@ -1,3 +1,4 @@
+open Containers
 open Format
 
 open Sexplib
@@ -36,6 +37,22 @@ module PPX_Sexp = struct
 
 end
 
+module JSONindex = struct
+  let index = ref []
+  module JSONhashtbl = Hashtbl.Make(String)
+  let marked = JSONhashtbl.create 100
+  type t = JSON.t ref
+  let mem s  = JSONhashtbl.mem marked s
+  let find s = !(JSONhashtbl.find marked s)
+  let mark s : t = 
+    let result = ref (`List []) in
+    JSONhashtbl.add marked s result;
+    result
+  let add (mark : t) json =
+    mark := json;
+    index := json::!index
+  let out() = `List(!index |> List.rev) 
+end
 
 let exn f a = match f a with
   | Ok a -> a
@@ -142,7 +159,7 @@ module Polish = struct
     
   let to_string =
     let aux sofar s =
-      let ending = if (String.length sofar == 0) then sofar else " "^sofar in
+      let ending = if (String.length sofar = 0) then sofar else " "^sofar in
       s^ending
     in
     List.fold_left aux ""
@@ -194,6 +211,8 @@ let typestring_bool = "bool"
 let typestring_int = "int"
 let typestring_list str = "list<"^str^">"
 let typestring_option str = "option<"^str^">"
+let json_desc_list _ () = ()
+let json_desc_option _ () = ()
 
 let sexp_of_bool b =
   let c = if b then "true" else "false" in
@@ -240,21 +259,21 @@ end
 
 let depth state = Float.of_int(state.PPX_Random.depth+1)
 
-let random_int _  = Random.int 10
+let random_int state = Random.int 10 state.PPX_Random.rstate
 let random_bool _ = Random.bool ()
 
-let random_ascii _ =
+let random_ascii state =
   let max = 127-32 in
-  Char.chr((Random.int max) + 32)
+  Char.chr((Random.int max state.PPX_Random.rstate) + 32)
 
-let random_ascii_pair _ =
+let random_ascii_pair state =
   let max = 127-32 in
-  let a,b = Random.int max, Random.int max in
+  let a,b = Random.int max state.PPX_Random.rstate, Random.int max state.PPX_Random.rstate in
   if a < b then Char.chr(a+32), Char.chr(b+32)
   else Char.chr(b+32), Char.chr(a+32)
 
 let random_option ?(p=0.5) random_arg state =
-  let b = Random.float 1. in
+  let b = Random.float 1. state.PPX_Random.rstate in
   if Float.(b <= p) then None else Some(random_arg state)
 
 let ( +? ) random_arg w = random_option ~p:w random_arg
@@ -266,14 +285,14 @@ let random_list ?(min=1) ?max ?(empty=0.5) random_arg state =
     if i < min ||
         match length with
         | Some l when i < l -> true
-        | None when Float.(Random.float 1. > empty) -> true
+        | None when Float.(Random.float 1. state.PPX_Random.rstate > empty) -> true
         | _ -> false
     then aux ?length (i+1) ((random_arg state)::accu)
     else accu
   in
   match max with
   | None   -> aux 0 []
-  | Some m -> aux ~length:((Random.int (m + 1 - min) + min)) 0 []
+  | Some m -> aux ~length:((Random.int (m + 1 - min) state.PPX_Random.rstate + min)) 0 []
 
 let string_of_char = String.make 1
 let random_string state =
@@ -309,7 +328,9 @@ let pick l =
   let rec aux n = function
     | [] -> raise(Conversion("No natural language rendering left to pick from"))
     | (s,i)::tail -> if (n < i) then s else aux (n-i) tail
-  in aux (Random.int sum) l
+  in
+  let state = PPX_Random.init() in
+  aux (Random.int sum state.rstate) l
 
 let toString a =
   let buf = Buffer.create 255 in
@@ -389,6 +410,11 @@ module Entity = struct
   }
 
   let typestring arg = "entity<"^arg^">"
+  let json_desc arg () =
+    let mark = JSONindex.mark arg in
+    JSONindex.add mark (`Assoc [ "nodetype" , `String "entity";
+                                 "name" , `String("entity<"^arg^">");
+                                 "kind", `String arg ])
 
   let pp pp_arg e =
     let pp_kind = function
@@ -484,15 +510,15 @@ module Entity = struct
   let t_of_sexp arg = function
     | Sexp.Atom s ->
       let s,counter = exn to_id s in
-      if s = "Entity" then { kind = None; counter; substitution = None }
+      if String.equal s "Entity" then { kind = None; counter; substitution = None }
       else { kind = Some(arg (Sexp.Atom s)); counter; substitution = None }
     | Sexp.List[Sexp.Atom s;Sexp.Atom nl] ->
       let s,counter = exn to_id s in
-      if s = "Entity" then { kind = None; counter; substitution = Some nl }
+      if String.equal s "Entity" then { kind = None; counter; substitution = Some nl }
       else { kind = Some(arg (Sexp.Atom s)); counter; substitution = Some nl }
     | Sexp.List _ as sexp -> raise(Conversion("Entity.t_of_sexp: list S-expresion "^Sexp.to_string sexp^" cannot be an entity"))
 
-  let pick l _ = pick(List.map (fun (x,i) -> x, Float.(to_int(pow i !strict))) l)
+  let pick l _ = pick(List.map (fun (x,i) -> x, Stdlib.Float.(to_int(pow i !strict))) l)
 
 end
 

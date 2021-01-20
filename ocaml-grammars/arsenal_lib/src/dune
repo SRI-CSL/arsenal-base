@@ -1,7 +1,7 @@
 (library
  (name arsenal)
  (public_name arsenal)
- (libraries ppx_deriving.std ppx_deriving_yojson str yojson sexplib lwt cohttp cohttp-lwt cohttp-lwt-unix webmachine)
+ (libraries containers ppx_deriving.std ppx_deriving_yojson str yojson sexplib lwt cohttp cohttp-lwt cohttp-lwt-unix webmachine)
  (preprocess (pps ppx_deriving_arsenal))
  (synopsis "Arsenal library")
 )

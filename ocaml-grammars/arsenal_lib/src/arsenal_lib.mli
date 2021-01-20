@@ -1,3 +1,4 @@
+open Containers
 open Format
 
 open Sexplib
@@ -13,6 +14,16 @@ module PPX_Sexp : sig
   val constructor : string -> string -> Sexp.t
 end
 
+
+module JSONindex : sig
+  type t
+  val mem : string -> bool
+  val find : string -> JSON.t
+  val mark : string -> t
+  val add : t -> JSON.t -> unit
+  val out : unit -> JSON.t
+end
+     
 exception Conversion of string
 val exn : ('a -> ('b, string) result) -> 'a -> 'b
 val json_of_sexp : Sexplib.Sexp.t -> JSON.t
@@ -43,6 +54,8 @@ val typestring_bool: string
 val typestring_int : string
 val typestring_list: string -> string
 val typestring_option: string -> string
+val json_desc_list: string -> unit -> unit
+val json_desc_option: string -> unit -> unit
 
 val sexp_of_bool   : bool -> Sexplib.Sexp.t
 val sexp_of_int    : int -> Sexplib.Sexp.t
@@ -160,6 +173,7 @@ sig
   val to_yojson : ('a -> JSON.t) -> 'a t -> JSON.t
   val sexp_of : (('a -> Sexplib.Sexp.t)*string) -> 'a t -> Sexplib.Sexp.t
   val typestring : string -> string
+  val json_desc : string -> unit -> unit
   val to_id : string -> (string * int, string) result
   val entity_mk :
     string ->
