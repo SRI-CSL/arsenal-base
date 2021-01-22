@@ -358,29 +358,58 @@ module JSONdesc = struct
        raise_errorf ~loc:ptyp_loc "Cannot derive %s for %s."
          deriver_name (Ppx_deriving.string_of_core_type typ)
 
-
-  let list loc elts =
+  let list loc ?(init=[%expr []]) elts =
     let aux sofar arg =  [%expr [%e arg] :: [%e sofar]] in
-    let l = elts |> List.rev |> List.fold_left aux [%expr [] ] in
+    let l = elts |> List.rev |> List.fold_left aux init in
     [%expr [%e l ] ]
 
-  let build_alternative loc cons args : expression =
-    [%expr `Assoc [ "constructor", `String [%e str2exp cons] ;
-                    "arguments", `List [%e list loc args] ] ]
+  (* let build_alternative loc cons args : expression =
+   *   [%expr `Assoc [ "constructor", `String [%e str2exp cons] ;
+   *                   "arguments", `List [%e list loc args] ] ] *)
 
-  let build_alternative_named loc cons args : expression =
-    [%expr `Assoc [ "constructor", `String [%e str2exp cons] ;
-                    "arguments", `Assoc [%e list loc args] ] ]
+  let argn i = Printf.sprintf "arg%d" i
+
+  type argument = {
+      name : string;
+      typ  : expression;
+      optional : bool
+    }
+
+  let build_alternative loc cons args : expression * expression =
+    let prefix s   = [%expr `String ("#/definitions/"^[%e s ]) ] in
+    let cons       = str2exp cons in
+    let req arg    = not arg.optional in
+    let name arg   = str2exp arg.name in
+    let nameString arg = [%expr `String [%e name arg]] in
+    let required   = List.filter req args |> List.map nameString |> list loc in
+    let format arg = [%expr [%e name arg],
+                     `Assoc ["$ref", [%e prefix arg.typ ] ] ]
+    in
+    prefix cons,
+    [%expr
+        [%e cons],
+     `Assoc [
+         "type", `String "object";
+         "required", `List [%e required];
+         "properties",
+         `Assoc 
+             (("constructor", `Assoc [ "type",    `String "string";
+                                       "pattern", `String [%e cons] ])
+                :: [%e List.map format args |> list loc ])  ] ]
 
   let build_type loc typ alternatives : expression =
-    [%expr `Assoc [ "nodetype" , `String "type_decl";
-                    "name", `String [%e typ] ;
-                    "alternatives", `List [%e list loc alternatives ] ] ]
-    
+    let aux (name,_) = [%expr `Assoc [ "$ref", [%e name]]] in
+    let references = List.map aux alternatives |> list loc in
+    let init = 
+      [%expr
+         [ [%e typ],
+           `Assoc ["anyOf", `List [%e references ] ] ] ]
+    in
+    List.map snd alternatives |> list loc ~init
+        
   let build_abbrev loc typ body : expression =
-    [%expr `Assoc [ "nodetype" , `String "abbreviation";
-                    "name", `String [%e typ] ;
-                    "body", [%e body] ] ]
+    [%expr [ [%e typ], `Assoc [ "nodetype" , `String "abbreviation";
+                                "body", [%e body] ] ] ]
     
   (* Treating a type declaration 
        type foo = ...
@@ -405,17 +434,21 @@ module JSONdesc = struct
 
         | Parsetree.Pcstr_tuple typs -> (* typs is the list t1 ... tp *)
            (* we build the JSON { "constructor" : "C"; "arguments" : args } *)
-          let aux typ = [%expr `String [%e expr_of_typ typ] ] in
-          let args = typs |> List.map aux in
-          build_alternative loc (fully_qualified path name') args
+           let aux i typ = { name = argn i;
+                             typ = expr_of_typ typ;
+                             optional = false }
+           in
+           let args = typs |> List.mapi aux in
+           build_alternative loc (fully_qualified path name') args
 
         | Parsetree.Pcstr_record args ->
            let aux (x : label_declaration) =
-             [%expr [%e str2exp x.pld_name.txt],
-              `String [%e expr_of_typ x.pld_type] ]
+             { name = x.pld_name.txt;
+               typ  = expr_of_typ x.pld_type;
+               optional = false }
            in
-          let args = args |> List.map aux in
-          build_alternative_named loc (fully_qualified path name') args
+           let args = args |> List.map aux in
+           build_alternative loc (fully_qualified path name') args
       in
       
       cs |> List.map treat_field |> build_type loc typestring_expr
@@ -450,9 +483,9 @@ module JSONdesc = struct
           then
             begin
               let mark = JSONindex.mark [%e typestring_expr] in
-              let json = [%e expr_of_type_decl ~path typestring_expr type_decl ] in
+              let json_list = [%e expr_of_type_decl ~path typestring_expr type_decl ] in
               Format.(fprintf err_formatter) "Registering type %s\n" [%e typestring_expr];
-              JSONindex.add mark json
+              JSONindex.add mark json_list
             end
       ]
     else

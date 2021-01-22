@@ -41,17 +41,17 @@ module JSONindex = struct
   let index = ref []
   module JSONhashtbl = Hashtbl.Make(String)
   let marked = JSONhashtbl.create 100
-  type t = JSON.t ref
+  type t = (string * JSON.t) list ref
   let mem s  = JSONhashtbl.mem marked s
   let find s = !(JSONhashtbl.find marked s)
   let mark s : t = 
-    let result = ref (`List []) in
+    let result = ref [] in
     JSONhashtbl.add marked s result;
     result
-  let add (mark : t) json =
-    mark := json;
-    index := json::!index
-  let out() = `List(!index |> List.rev) 
+  let add (mark : t) l =
+    mark := l;
+    List.iter (fun json -> index := json::!index) l
+  let out() = `Assoc ["definitions", `Assoc(!index |> List.rev)] 
 end
 
 let exn f a = match f a with
@@ -412,9 +412,9 @@ module Entity = struct
   let typestring arg = "entity<"^arg^">"
   let json_desc arg () =
     let mark = JSONindex.mark arg in
-    JSONindex.add mark (`Assoc [ "nodetype" , `String "entity";
-                                 "name" , `String("entity<"^arg^">");
-                                 "kind", `String arg ])
+    JSONindex.add mark ["entity<"^arg^">",
+                        `Assoc [ "nodetype" , `String "entity";
+                                 "kind", `String arg ]]
 
   let pp pp_arg e =
     let pp_kind = function

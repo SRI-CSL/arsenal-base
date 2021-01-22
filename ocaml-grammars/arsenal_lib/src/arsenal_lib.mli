@@ -18,9 +18,9 @@ end
 module JSONindex : sig
   type t
   val mem : string -> bool
-  val find : string -> JSON.t
+  val find : string -> (string*JSON.t) list
   val mark : string -> t
-  val add : t -> JSON.t -> unit
+  val add : t -> (string*JSON.t) list -> unit
   val out : unit -> JSON.t
 end
      
