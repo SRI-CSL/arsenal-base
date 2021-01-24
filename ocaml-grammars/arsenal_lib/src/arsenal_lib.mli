@@ -21,7 +21,7 @@ module JSONindex : sig
   val find : string -> (string*JSON.t) list
   val mark : string -> t
   val add : t -> (string*JSON.t) list -> unit
-  val out : unit -> JSON.t
+  val out : id:string -> description:string -> JSON.t
 end
      
 exception Conversion of string
@@ -165,22 +165,16 @@ module Entity :
 sig
   val one_entity_kind : bool ref
   val warnings : [ `NoSubst of string ] list ref
-  val strict : float ref
+  val strict   : float ref
 
-  type 'a t
-  val pp     : (Format.formatter -> 'a -> unit) -> 'a t pp
-  val random : ('b PPX_Random.t) -> 'b t PPX_Random.t
-  val to_yojson : ('a -> JSON.t) -> 'a t -> JSON.t
-  val sexp_of : (('a -> Sexplib.Sexp.t)*string) -> 'a t -> Sexplib.Sexp.t
-  val typestring : string -> string
-  val json_desc : string -> unit -> unit
+  type 'a t [@@deriving arsenal]
+  val pp    : (Format.formatter -> 'a -> unit) -> 'a t pp
   val to_id : string -> (string * int, string) result
   val entity_mk :
     string ->
     ?kind:'a option ->
     ?counter:int ->
     ?substitution:string option -> unit -> ('a t, 'b) Result.result
-  val of_yojson : (JSON.t -> ('a, _) Result.result) -> JSON.t -> ('a t, string) Result.result
   val pick : ('a * float) list -> _ -> 'a
 end
 

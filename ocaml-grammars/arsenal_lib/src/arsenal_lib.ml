@@ -51,7 +51,18 @@ module JSONindex = struct
   let add (mark : t) l =
     mark := l;
     List.iter (fun json -> index := json::!index) l
-  let out() = `Assoc ["definitions", `Assoc(!index |> List.rev)] 
+  let out ~id ~description =
+    let toptype = match !index with
+      | [] -> failwith "No entry point given"
+      | (toptype,_)::_ -> toptype
+    in
+    `Assoc [
+        "$schema", `String "http://json-schema.org/schema#";
+        "$id",     `String id;
+        "description", `String description;
+        "$ref",     `String("#/definitions/"^ toptype);
+        "definitions", `Assoc (!index |> List.rev )
+      ]
 end
 
 let exn f a = match f a with
@@ -209,8 +220,8 @@ end
 
 let typestring_bool = "bool"
 let typestring_int = "int"
-let typestring_list str = "list<"^str^">"
-let typestring_option str = "option<"^str^">"
+let typestring_list str = "list("^str^")"
+let typestring_option str = "option("^str^")"
 let json_desc_list _ () = ()
 let json_desc_option _ () = ()
 
@@ -404,17 +415,26 @@ module Entity = struct
   let strict = ref 1.5
   
   type 'a t = {
-    kind : 'a option;
-    counter : int;
+    kind         : 'a option;
+    counter      : int;
     substitution : string option
   }
 
-  let typestring arg = "entity<"^arg^">"
+  let typestring arg = "entity("^arg^")"
   let json_desc arg () =
     let mark = JSONindex.mark arg in
-    JSONindex.add mark ["entity<"^arg^">",
-                        `Assoc [ "nodetype" , `String "entity";
-                                 "kind", `String arg ]]
+    JSONindex.add mark
+      [ typestring arg,
+        `Assoc [ "type",       `String "object";
+                 "required",   `List [`String "counter"]; 
+                 "properties", `Assoc [
+                                   "entity",       `Assoc ["type", `String "boolean"];
+                                   "kind",         `Assoc ["type", `String "string"];
+                                   "counter",      `Assoc ["type", `String "integer"];
+                                   "substitution", `Assoc ["type", `String "string"]
+                                 ]
+          ]
+      ]
 
   let pp pp_arg e =
     let pp_kind = function

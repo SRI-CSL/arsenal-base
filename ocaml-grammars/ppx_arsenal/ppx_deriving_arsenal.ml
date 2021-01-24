@@ -72,7 +72,7 @@ module TypeString = struct
                     |> mknoloc
                     |> Exp.ident
         in
-        [%expr [%e sofar]^"<"^[%e param]^">"]
+        [%expr [%e sofar]^"("^[%e param]^")"]
       in
       Ppx_deriving.fold_right_type_decl aux type_decl
         (fully_qualified path type_decl.ptype_name.txt |> str2exp)
@@ -215,7 +215,7 @@ module SexpPPX = struct
           |> mknoloc
           |> Exp.ident
         in
-        [%expr [%e sofar]^"<"^(snd [%e param])^">"]
+        [%expr [%e sofar]^"("^(snd [%e param])^")"]
       in
       Ppx_deriving.fold_right_type_decl aux type_decl
         (fully_qualified path type_decl.ptype_name.txt |> str2exp)
@@ -375,22 +375,23 @@ module JSONdesc = struct
       optional : bool
     }
 
+  let prefix loc s = [%expr `String ("#/definitions/"^[%e s ]) ]
+
   let build_alternative loc cons args : expression * expression =
-    let prefix s   = [%expr `String ("#/definitions/"^[%e s ]) ] in
     let cons       = str2exp cons in
     let req arg    = not arg.optional in
     let name arg   = str2exp arg.name in
     let nameString arg = [%expr `String [%e name arg]] in
     let required   = List.filter req args |> List.map nameString |> list loc in
     let format arg = [%expr [%e name arg],
-                     `Assoc ["$ref", [%e prefix arg.typ ] ] ]
+                     `Assoc ["$ref", [%e prefix loc arg.typ ] ] ]
     in
-    prefix cons,
+    prefix loc cons,
     [%expr
         [%e cons],
      `Assoc [
          "type", `String "object";
-         "required", `List [%e required];
+         "required", `List (`String "constructor"::[%e required]);
          "properties",
          `Assoc 
              (("constructor", `Assoc [ "type",    `String "string";
@@ -408,8 +409,9 @@ module JSONdesc = struct
     List.map snd alternatives |> list loc ~init
         
   let build_abbrev loc typ body : expression =
-    [%expr [ [%e typ], `Assoc [ "nodetype" , `String "abbreviation";
-                                "body", [%e body] ] ] ]
+      [%expr
+         [ [%e typ],
+           `Assoc ["anyOf", `List [ `Assoc [ "$ref", [%e body]] ] ] ] ]
     
   (* Treating a type declaration 
        type foo = ...
@@ -423,7 +425,7 @@ module JSONdesc = struct
     let loc = type_decl.ptype_loc in (* location of the type declaration *)
     match type_decl.ptype_kind, type_decl.ptype_manifest with
     | Ptype_abstract, Some {ptyp_desc = Ptyp_constr ({txt = lid ; _}, typs) ; _} ->
-       build_abbrev loc typestring_expr [%expr `String [%e call loc lid typs]]
+       build_abbrev loc typestring_expr (prefix loc (call loc lid typs))
 
     | Ptype_variant cs, _ -> (* foo is a variant type with a series of constructors C1 ... Cm *)
 
@@ -464,7 +466,7 @@ module JSONdesc = struct
 
   let expr_of_type_decl in_grammar ~path type_decl =
     let loc = type_decl.ptype_loc in (* location of the type declaration *)
-    let typestring_expr = (* building the string "foo<poly_a>...<poly_n>"*)
+    let typestring_expr = (* building the string "foo(poly_a)...(poly_n)"*)
       let aux param sofar =
         ("poly_"^param.txt
          |> Lexing.from_string
