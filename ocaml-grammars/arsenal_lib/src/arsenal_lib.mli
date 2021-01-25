@@ -26,7 +26,7 @@ end
      
 exception Conversion of string
 val exn : ('a -> ('b, string) result) -> 'a -> 'b
-val json_of_sexp : Sexplib.Sexp.t -> JSON.t
+(* val json_of_sexp : Sexplib.Sexp.t -> JSON.t *)
 val json_clean : JSON.t -> JSON.t
 
 (* A module for Polish notation *)

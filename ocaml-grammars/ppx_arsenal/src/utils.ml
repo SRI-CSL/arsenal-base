@@ -1,0 +1,34 @@
+(* Copyright (C) 2019 Stephane.Graham-Lengrand <disteph@gmail.com> (2019)
+ *
+ * This library is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version, with the OCaml static compilation exception.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library.  If not, see <http://www.gnu.org/licenses/>.
+ *)
+
+open Longident
+open Asttypes
+open Parsetree
+open Ast_helper
+open Ppx_deriving.Ast_convenience
+
+let str2exp x = x |> Const.string |> Exp.constant
+
+let fully_qualified path str =
+  let aux sofar modul = sofar ^ modul ^ "$" in
+  (List.fold_left aux "" path)^str
+
+let raise_errorf = Ppx_deriving.raise_errorf
+
+let ident prefix typestr =
+  Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix prefix) typestr))
+let efst loc x = [%expr fst [%e x ]]
+let esnd loc x = [%expr snd [%e x ]]
