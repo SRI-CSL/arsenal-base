@@ -96,11 +96,6 @@ and expr_of_typ typ : expression*bool*bool =
      raise_errorf ~loc:ptyp_loc "Cannot derive %s for %s."
        deriver_name (Ppx_deriving.string_of_core_type typ)
 
-let list loc ?(init=[%expr []]) elts =
-  let aux sofar arg =  [%expr [%e arg] :: [%e sofar]] in
-  let l = elts |> List.rev |> List.fold_left aux init in
-  [%expr [%e l ] ]
-
 let argn i = Printf.sprintf "arg%d" i
 
 type argument = {
@@ -119,12 +114,13 @@ let build_alternative loc cons args : expression * expression =
   let nameString arg = [%expr `String [%e name arg]] in
   let required   = List.filter req args |> List.map nameString |> list loc in
   let format arg =
+    let common = [%expr `Assoc ["$ref", [%e prefix loc arg.typ ] ] ] in
     if arg.list then
       [%expr [%e name arg],
-       `Assoc ["type", `String "array" ; "$ref", [%e prefix loc arg.typ ] ] ]
+       `Assoc ["type", `String "array" ;
+               "items", [%e common ] ] ]
     else
-      [%expr [%e name arg],
-       `Assoc ["$ref", [%e prefix loc arg.typ ] ] ]
+      [%expr [%e name arg], [%e common] ]
   in
   prefix loc cons,
   [%expr

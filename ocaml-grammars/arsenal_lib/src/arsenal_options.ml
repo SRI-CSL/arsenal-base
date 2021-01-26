@@ -39,7 +39,7 @@ module Grammar = struct
 
   let generate grammar n =
     let print_tab s = print_string ("\t"^s) in
-    for i = 1 to n do
+    for _ = 1 to n do
       let t = PPX_Random.init() |> grammar.random in
       (* if !check_opt  then check sentence_to_yojson sentence_of_yojson sexp_of_sentence sentence_of_sexp t; *)
       if !print_nl   then print_string(toString(grammar.pp t));

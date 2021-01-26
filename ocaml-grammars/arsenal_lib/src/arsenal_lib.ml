@@ -10,7 +10,13 @@ module JSON = Yojson.Safe
 
 exception Conversion of string
 
-module PPX_Sexp = struct  
+module PPX_Sexp = struct
+
+  type 'a t = {
+      to_sexp : 'a -> Sexp.t;
+      of_sexp : Sexp.t -> 'a;
+    }
+
   let print_types = ref false (* Does not print types in S-expressions *)
 
   let constructor cst ty =
@@ -229,9 +235,28 @@ let sexp_of_bool b =
   let c = if b then "true" else "false" in
   PPX_Sexp.constructor c typestring_bool
 
+let bool_of_sexp = function
+  | Sexp.Atom "true" -> true
+  | Sexp.Atom "false" -> false
+  | sexp -> raise(Conversion("bool_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode a boolean"))
+
+let sexp_conv_bool = PPX_Sexp.{
+      to_sexp = sexp_of_bool;
+      of_sexp = bool_of_sexp
+                     }
+
 let sexp_of_int i =
   let c = string_of_int i in
   PPX_Sexp.constructor c typestring_int
+
+let int_of_sexp = function
+  | Sexp.Atom s -> int_of_string s
+  | sexp -> raise(Conversion("int_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode an int"))
+
+let sexp_conv_int = PPX_Sexp.{
+      to_sexp = sexp_of_int;
+      of_sexp = int_of_sexp
+                    }
 
 let liststring c str = PPX_Sexp.constructor c (typestring_list str)
 let optstring c str = PPX_Sexp.constructor c (typestring_option str)
@@ -240,20 +265,30 @@ let sexp_of_list (arg,str) l =
   if List.length l = 0 then liststring "Nil" str
   else Sexp.List((liststring "List" str) :: List.map arg l)
 
-let sexp_of_option (arg,str) = function
-  | None   -> optstring "None" str
-  | Some a -> Sexp.List[optstring "Some" str; arg a]
-
 let list_of_sexp arg = function
   | Sexp.Atom "Nil" -> []
   | Sexp.List(Sexp.Atom "List"::(_::_ as l)) -> List.map arg l
   | sexp -> raise(Conversion("list_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode a list"))
+
+let sexp_conv_list (arg,str) = PPX_Sexp.{
+      to_sexp = sexp_of_list (arg.to_sexp,str);
+      of_sexp = list_of_sexp arg.of_sexp
+                               }
+  
+let sexp_of_option (arg,str) = function
+  | None   -> optstring "None" str
+  | Some a -> Sexp.List[optstring "Some" str; arg a]
 
 let option_of_sexp arg = function
   | Sexp.Atom "None" -> None
   | Sexp.List[Sexp.Atom "Some";a] -> Some(arg a)
   | sexp -> raise(Conversion("list_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode an option"))
 
+let sexp_conv_option (arg,str) = PPX_Sexp.{
+    to_sexp = sexp_of_option (arg.to_sexp,str);
+    of_sexp = option_of_sexp arg.of_sexp
+  }
+  
 
 (******************)
 (* For random AST *)
@@ -465,11 +500,11 @@ module Entity = struct
     | Some entity -> `List[base; `String entity]
     | None -> `List[base]
 
-  let sexp_of (arg,argt) e =
+  let to_sexp (arg,argt) e =
     let base =
       match e.kind with
       | Some k when not !one_entity_kind ->
-        let cst = PPX_Sexp.get_cst ~who:"Entity.sexp_of" (arg k) in
+        let cst = PPX_Sexp.get_cst ~who:"Entity.sexp_of" (arg.PPX_Sexp.to_sexp k) in
         PPX_Sexp.constructor (cst^"_"^string_of_int e.counter) (typestring argt)
       | _ -> Sexp.Atom("Entity_"^string_of_int e.counter)
     in
@@ -477,6 +512,13 @@ module Entity = struct
     | Some entity -> Sexp.List[base;Sexp.Atom entity]
     | None -> base 
 
+  let of_sexp _ _ = failwith ""
+
+  let sexp_conv arg = PPX_Sexp.{
+      to_sexp = to_sexp arg;
+      of_sexp = of_sexp arg;
+    }
+            
   let entity_mk s ?(kind=None) ?(counter=0) ?(substitution=None) () =
     (match substitution with None -> warnings := (`NoSubst s)::!warnings | Some _ -> ());
     Result.Ok { kind; counter; substitution }

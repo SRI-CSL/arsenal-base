@@ -10,8 +10,16 @@ module JSON = Yojson.Safe
 (* Conversions between json, S-expressions, Polish notation *)
 
 module PPX_Sexp : sig
+  type 'a t = {
+      to_sexp : 'a -> Sexp.t;
+      of_sexp : Sexp.t -> 'a;
+    }
   val print_types : bool ref (* Print types in S-expressions? *)
   val constructor : string -> string -> Sexp.t
+  val throw    : ?who:tag -> Sexp.t -> _
+  val is_atom  : Sexp.t -> bool
+  val get_cst  : ?who:tag -> Sexp.t -> tag
+  val get_type : ?who:tag -> Sexp.t -> tag
 end
 
 
@@ -57,10 +65,10 @@ val typestring_option: string -> string
 val json_desc_list: string -> unit -> unit
 val json_desc_option: string -> unit -> unit
 
-val sexp_of_bool   : bool -> Sexplib.Sexp.t
-val sexp_of_int    : int -> Sexplib.Sexp.t
-val sexp_of_list   : (('a -> Sexplib.Sexp.t)*string) -> 'a list -> Sexplib.Sexp.t
-val sexp_of_option : (('a -> Sexplib.Sexp.t)*string) -> 'a option -> Sexplib.Sexp.t
+val sexp_conv_bool   : bool PPX_Sexp.t
+val sexp_conv_int    : int PPX_Sexp.t
+val sexp_conv_list   : (('a PPX_Sexp.t)*string) -> 'a list PPX_Sexp.t
+val sexp_conv_option : (('a PPX_Sexp.t)*string) -> 'a option PPX_Sexp.t
 
 (******************)
 (* For random AST *)

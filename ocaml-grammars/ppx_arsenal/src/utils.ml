@@ -32,3 +32,13 @@ let ident prefix typestr =
   Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix prefix) typestr))
 let efst loc x = [%expr fst [%e x ]]
 let esnd loc x = [%expr snd [%e x ]]
+
+let list loc ?(init=[%expr []]) elts =
+  let aux sofar arg =  [%expr [%e arg] :: [%e sofar]] in
+  elts |> List.rev |> List.fold_left aux init
+
+let list_pat loc ?(init=[%pat? []]) elts =
+  let aux sofar arg =  [%pat? [%p arg] :: [%p sofar]] in
+  elts |> List.rev |> List.fold_left aux init
+
+let default_case loc = Exp.case [%pat? sexp ] [%expr PPX_Sexp.throw sexp ]

@@ -61,8 +61,8 @@ let sexp_type_of_decl ~options ~path:_path type_decl =
     | _ -> typ
   in
   Ppx_deriving.poly_arrow_of_type_decl
-    (fun var -> [%type: ([%t var] -> Sexp.t) * string ])
-    type_decl [%type: [%t typ] -> Sexp.t ]
+    (fun var -> [%type: [%t var] PPX_Sexp.t * string ])
+    type_decl [%type: [%t typ] PPX_Sexp.t ]
 
 (* Generator Function *)
 let atom cnstr typestring_expr =
@@ -76,7 +76,7 @@ let expr_of_typ typestring_expr typ =
 
     (* Referencing another type, possibly polymorphic: typs are the types arguments *)
     | {ptyp_desc = Ptyp_constr ({txt = lid ; _}, typs) ; _} ->
-       let sexp    = ident "sexp_of" lid in
+       let sexp    = ident "sexp_conv" lid in
        let typestr = ident "typestring" lid in
        let args    = List.map expr_of_typ typs in
        let typestr_args = List.map (esnd loc) args in
@@ -94,25 +94,39 @@ let expr_of_typ typestring_expr typ =
        (* treat_field constructs a pattern-matching case for one constructor (field) *)
        let treat_field field =
          let variant label popt = Pat.variant label.txt popt in
-         match field with
+         match field.prf_desc with
          | Rtag (label, true, []) ->
-            Exp.case (variant label None) (atom label.txt typestring_expr)
+            Exp.case (variant label None) (atom label.txt typestring_expr),
+            Exp.case
+              [%pat? p ]
+              ~guard:
+              [%expr PPX_Sexp.(is_atom p && String.equal (get_cst p) [%e str2exp label.txt ]) ]
+              (Exp.variant label.txt None)
+            
          | Rtag (label, false, typs) ->
             let aux i typ = [%expr fst [%e expr_of_typ typ] [%e evar (argn i)] ] in
             let aux' sofar e = [%expr [%e e] :: [%e sofar] ] in
             let args = typs |> List.mapi aux |> List.fold_left aux' [%expr [] ] in
-            Exp.case (variant label (Some [%pat? x]))
-              [%expr Sexp.List ([%e atom label.Location.txt typestring_expr] :: List.rev [%e args] ) ] 
-
+            Exp.case
+              (variant label (Some [%pat? x]))
+              [%expr Sexp.List ([%e atom label.txt typestring_expr] :: List.rev [%e args] ) ],
+            failwith ""
+            
          | Rinherit({ ptyp_desc = Ptyp_constr (tname, _) ; _ } as typ) ->
-            Exp.case [%pat? [%p Pat.type_ tname] as x] (expr_of_typ typ)
+            Exp.case [%pat? [%p Pat.type_ tname] as x] (expr_of_typ typ),
+            failwith ""
+            
          | _ ->
             raise_errorf ~loc:typ.ptyp_loc "Cannot derive %s for %s."
               deriver_name (Ppx_deriving.string_of_core_type typ)
        in
-       let treat_field field = treat_field field.prf_desc in
        let cases = fields |> List.map treat_field in
-       [%expr [%e Exp.function_ cases], [%e typestring_expr ] ]
+       let cases1 = cases |> List.map fst in
+       let cases2 = cases |> List.map snd |> List.rev |> List.cons (default_case loc) |> List.rev
+       in
+       [%expr PPX_Sexp.{ to_sexp = [%e Exp.function_ cases1];
+                         of_sexp = [%e Exp.function_ cases2] },
+        [%e typestring_expr ] ]
 
     (* typ is one of our type parameters: we have been given the value as an argument *)
     | {ptyp_desc = Ptyp_var name ; _} -> evar ("poly_" ^ name)
@@ -147,36 +161,65 @@ let expr_of_type_decl ~path type_decl =
   | Ptype_variant cs, _ ->
 
      let treat_field { pcd_name = { txt = name' ; _ }; pcd_args ; _ } =
-       let aux pat typs =
-         let aux i typ =
-           [%expr fst [%e expr_of_typ typestring_expr typ] [%e evar (argn i)] ]
-         in
-         let aux' sofar e = [%expr [%e e] :: [%e sofar] ] in
-         let args = typs |> List.mapi aux |> List.fold_left aux' [%expr [] ] in
+       let build_case pat_to_sexp exp_of_sexp typs =
          let qualifname' = fully_qualified path name' in
-         Exp.case pat
-           [%expr Sexp.List ( [%e atom qualifname' typestring_expr] :: List.rev [%e args] ) ]
+         let aux_to_sexp i typ =
+           [%expr (fst [%e expr_of_typ typestring_expr typ]).PPX_Sexp.to_sexp [%e evar (argn i)] ]
+         in
+         let aux_of_sexp i typ =
+           [%expr (fst [%e expr_of_typ typestring_expr typ]).PPX_Sexp.of_sexp [%e evar (argn i)] ]
+         in
+         let args_to_sexp = typs |> List.mapi aux_to_sexp |> list loc in
+         let args_of_sexp = typs |> List.mapi aux_of_sexp in
+         Exp.case pat_to_sexp
+           [%expr Sexp.List ( [%e atom qualifname' typestring_expr] :: [%e args_to_sexp] ) ],
+         Exp.case
+           [%pat? Sexp.List ( p :: [%p pattn typs |> list_pat loc ]) ]
+           ~guard:
+           [%expr PPX_Sexp.(is_atom p && String.equal (get_cst p) [%e str2exp qualifname' ]) ]
+           (Exp.construct (mknoloc (Lident name')) (exp_of_sexp args_of_sexp))
+
        in
        match pcd_args with
 
        | Parsetree.Pcstr_tuple [] ->
           let qualifname' = fully_qualified path name' in
-          Exp.case (pconstr name' []) (atom qualifname' typestring_expr)
+          Exp.case (pconstr name' []) (atom qualifname' typestring_expr),
+          Exp.case
+            [%pat? p ]
+            ~guard:
+            [%expr PPX_Sexp.(is_atom p && String.equal (get_cst p) [%e str2exp qualifname' ]) ]
+            (Exp.construct (mknoloc (Lident name')) None)
 
-       | Parsetree.Pcstr_tuple typs -> aux (pconstr name' (pattn typs)) typs
+       | Parsetree.Pcstr_tuple typs ->
+          let build_tuple = function
+            | [] -> None
+            | [a] -> Some a
+            | l -> Some(Exp.tuple l)
+          in
+          build_case (pconstr name' (pattn typs)) build_tuple typs
 
        | Parsetree.Pcstr_record l ->
           let typs = List.map (fun x -> x.pld_type) l in
           let pconstr name args =
-            let args = Some (Ast_helper.Pat.record args Closed) in
-            Ast_helper.Pat.construct (mknoloc (Lident name)) args
+            let args = Some (Pat.record args Closed) in
+            Pat.construct (mknoloc (Lident name)) args
           in
-          aux (pconstr name' (pattn_named l)) typs
+          let aux label_dec arg = mknoloc(Lident label_dec.pld_name.txt), arg in
+          let build_record args = match List.map2 aux l args with
+            | [] -> None
+            | l -> Some(Exp.record l None)
+          in
+          build_case (pconstr name' (pattn_named l)) build_record typs
 
      in
      
      let cases = cs |> List.map treat_field in
-     Exp.function_ cases
+     let cases1 = cases |> List.map fst in
+     let cases2 = cases |> List.map snd |> List.rev |> List.cons (default_case loc) |> List.rev
+     in
+     [%expr PPX_Sexp.{ to_sexp = [%e Exp.function_ cases1];
+                       of_sexp = [%e Exp.function_ cases2] } ]
 
   | Ptype_record _fields, _ ->
      raise_errorf ~loc "Cannot derive %s for record type." deriver_name
@@ -193,7 +236,7 @@ let sig_of_type ~options ~path type_decl =
   parse_options options;
   [Sig.value
      (Val.mk
-        (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "sexp_of") type_decl))
+        (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "sexp_conv") type_decl))
         (sexp_type_of_decl ~options ~path type_decl))]
 
 let str_of_type ~options ~path type_decl =
@@ -202,7 +245,7 @@ let str_of_type ~options ~path type_decl =
   let sexp_func = expr_of_type_decl ~path type_decl in
   let sexp_type = sexp_type_of_decl ~options ~path type_decl in
   let sexp_var =
-    pvar (Ppx_deriving.mangle_type_decl (`Prefix "sexp_of") type_decl) in
+    pvar (Ppx_deriving.mangle_type_decl (`Prefix "sexp_conv") type_decl) in
   [Vb.mk (Pat.constraint_ sexp_var sexp_type)
      (Ppx_deriving.poly_fun_of_type_decl type_decl sexp_func)]
 
