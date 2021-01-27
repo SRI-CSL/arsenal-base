@@ -42,9 +42,9 @@ let ( #++ ) deriver1 deriver2 =
   | Some deriver2 -> deriver1 #+ deriver2
 
 
-let arsenal = TypeString.deriver #+ SexpPPX.deriver #++ "random" #++ "yojson" #+ JSONdesc.deriver
+let arsenal = TypeString.deriver #+ Serialise.deriver #++ "random" #+ JSONdesc.deriver
 
-let () = Ppx_deriving.register SexpPPX.deriver;;
+let () = Ppx_deriving.register Serialise.deriver;;
 let () = Ppx_deriving.register TypeString.deriver;;
 let () = Ppx_deriving.register JSONdesc.deriver;;
 let () = Ppx_deriving.register { arsenal with name = "arsenal" };;

@@ -33,6 +33,10 @@ let ident prefix typestr =
 let efst loc x = [%expr fst [%e x ]]
 let esnd loc x = [%expr snd [%e x ]]
 
+let json_list loc ?(init=[%expr []]) elts =
+  let aux sofar arg =  [%expr PPX_Serialise.json_cons [%e arg] [%e sofar]] in
+  elts |> List.rev |> List.fold_left aux init
+
 let list loc ?(init=[%expr []]) elts =
   let aux sofar arg =  [%expr [%e arg] :: [%e sofar]] in
   elts |> List.rev |> List.fold_left aux init
@@ -41,4 +45,4 @@ let list_pat loc ?(init=[%pat? []]) elts =
   let aux sofar arg =  [%pat? [%p arg] :: [%p sofar]] in
   elts |> List.rev |> List.fold_left aux init
 
-let default_case loc = Exp.case [%pat? sexp ] [%expr PPX_Sexp.throw sexp ]
+let default_case loc = Exp.case [%pat? sexp ] [%expr PPX_Serialise.sexp_throw sexp ]

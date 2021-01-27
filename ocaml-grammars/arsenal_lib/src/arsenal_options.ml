@@ -22,7 +22,7 @@ let options =
     ("-polish", Set print_polish, "\tprint polish output");
     ("-arity_sep", String(fun s -> Polish.arity := s), "\tin Polish notation, specify separator between token and its arity (default is '#')");
     ("-one-entity", Set Entity.one_entity_kind, "\tin natural language, only use 1 kind of entities");
-    ("-types", Set PPX_Sexp.print_types, "\tdisplay types in generated data");
+    ("-types", Set PPX_Serialise.print_types, "\tdisplay types in generated data");
     ("-no-nl", Clear print_nl, "\tprint disable natural language output");
     ("-check", Set check_opt, "\tcheck output");
     ("-strict-entities", Float(fun f -> Entity.strict := f), "\thow strict entity kinds should be considered (0. : they are ignored; +infty: very strictly enforced)");

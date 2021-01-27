@@ -16,7 +16,6 @@ B /Users/e29546/.opam/4.11.1+flambda/lib/ppx_deriving/ord
 B /Users/e29546/.opam/4.11.1+flambda/lib/ppx_deriving/show
 B /Users/e29546/.opam/4.11.1+flambda/lib/ppx_deriving/std
 B /Users/e29546/.opam/4.11.1+flambda/lib/ppx_deriving_random
-B /Users/e29546/.opam/4.11.1+flambda/lib/ppx_deriving_yojson
 B /Users/e29546/.opam/4.11.1+flambda/lib/ppxlib
 B /Users/e29546/.opam/4.11.1+flambda/lib/ppxlib/ast
 B /Users/e29546/.opam/4.11.1+flambda/lib/ppxlib/print_diff
@@ -43,7 +42,6 @@ S /Users/e29546/.opam/4.11.1+flambda/lib/ppx_deriving/ord
 S /Users/e29546/.opam/4.11.1+flambda/lib/ppx_deriving/show
 S /Users/e29546/.opam/4.11.1+flambda/lib/ppx_deriving/std
 S /Users/e29546/.opam/4.11.1+flambda/lib/ppx_deriving_random
-S /Users/e29546/.opam/4.11.1+flambda/lib/ppx_deriving_yojson
 S /Users/e29546/.opam/4.11.1+flambda/lib/ppxlib
 S /Users/e29546/.opam/4.11.1+flambda/lib/ppxlib/ast
 S /Users/e29546/.opam/4.11.1+flambda/lib/ppxlib/print_diff

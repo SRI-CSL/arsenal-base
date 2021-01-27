@@ -127,15 +127,15 @@ let build_alternative loc cons args : expression * expression =
       [%e cons],
    `Assoc [
        "type", `String "object";
-       "required", `List (`String "constructor"::[%e required]);
+       "required", `List (`String ":constructor"::[%e required]);
        "properties",
        `Assoc 
-         (("constructor", `Assoc [ "type",    `String "string";
-                                   "pattern", `String [%e cons] ])
+         ((":constructor", `Assoc [ "type",    `String "string";
+                                    "pattern", `String [%e cons] ])
           :: [%e List.map format args |> list loc ])  ] ]
 
 (* let build_alternative loc cons args : expression =
- *   [%expr `Assoc [ "constructor", `String [%e str2exp cons] ;
+ *   [%expr `Assoc [ ":constructor", `String [%e str2exp cons] ;
  *                   "arguments", `List [%e list loc args] ] ] *)
 
 
@@ -176,7 +176,7 @@ let expr_of_type_decl ~path typestring_expr type_decl =
        match pcd_args with
 
        | Parsetree.Pcstr_tuple typs -> (* typs is the list t1 ... tp *)
-          (* we build the JSON { "constructor" : "C"; "arguments" : args } *)
+          (* we build the JSON { ":constructor" : "C"; "arguments" : args } *)
           let aux i typ =
             let typ, optional, list = expr_of_typ typ in
             { name = argn i; typ; optional; list }

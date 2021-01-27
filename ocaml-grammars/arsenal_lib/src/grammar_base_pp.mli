@@ -1,5 +1,5 @@
 open Arsenal_lib
-open Base_grammar
+open Grammar_base
 
 (*******************************)
 (* Elements of English grammar *)

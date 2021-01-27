@@ -9,17 +9,20 @@ module JSON = Yojson.Safe
 (************************************************************)
 (* Conversions between json, S-expressions, Polish notation *)
 
-module PPX_Sexp : sig
+module PPX_Serialise : sig
   type 'a t = {
+      to_json : 'a -> JSON.t;
       to_sexp : 'a -> Sexp.t;
       of_sexp : Sexp.t -> 'a;
     }
+  val print_null  : bool ref (* Does not print null values in JSON *)
+  val json_cons   : (string * JSON.t) -> (string * JSON.t) list -> (string * JSON.t) list
   val print_types : bool ref (* Print types in S-expressions? *)
-  val constructor : string -> string -> Sexp.t
-  val throw    : ?who:tag -> Sexp.t -> _
-  val is_atom  : Sexp.t -> bool
-  val get_cst  : ?who:tag -> Sexp.t -> tag
-  val get_type : ?who:tag -> Sexp.t -> tag
+  val sexp_constructor : string -> string -> Sexp.t
+  val sexp_throw    : ?who:tag -> Sexp.t -> _
+  val sexp_is_atom  : Sexp.t -> bool
+  val sexp_get_cst  : ?who:tag -> Sexp.t -> tag
+  val sexp_get_type : ?who:tag -> Sexp.t -> tag
 end
 
 
@@ -34,8 +37,6 @@ end
      
 exception Conversion of string
 val exn : ('a -> ('b, string) result) -> 'a -> 'b
-(* val json_of_sexp : Sexplib.Sexp.t -> JSON.t *)
-val json_clean : JSON.t -> JSON.t
 
 (* A module for Polish notation *)
 module Polish : sig
@@ -46,15 +47,6 @@ module Polish : sig
   val of_string : arity:Char.t -> string -> (string * int) list
 end
 
-(* (\* Function used for checking whether conversions between the formats are correct *\)
- * val check :
- *   ('a -> JSON.t) ->
- *   (JSON.t -> ('a, string) result) ->
- *   ('a -> Sexplib.Sexp.t) ->
- *   (Sexplib.Sexp.t -> 'a) ->
- *   'a ->
- *   unit *)
-
 (********************************************************)
 (* Lists and options: conversions to/from S-expressions *)
 
@@ -62,13 +54,14 @@ val typestring_bool: string
 val typestring_int : string
 val typestring_list: string -> string
 val typestring_option: string -> string
+
 val json_desc_list: string -> unit -> unit
 val json_desc_option: string -> unit -> unit
 
-val sexp_conv_bool   : bool PPX_Sexp.t
-val sexp_conv_int    : int PPX_Sexp.t
-val sexp_conv_list   : (('a PPX_Sexp.t)*string) -> 'a list PPX_Sexp.t
-val sexp_conv_option : (('a PPX_Sexp.t)*string) -> 'a option PPX_Sexp.t
+val serialise_bool   : bool PPX_Serialise.t
+val serialise_int    : int PPX_Serialise.t
+val serialise_list   : (('a PPX_Serialise.t)*string) -> 'a list PPX_Serialise.t
+val serialise_option : (('a PPX_Serialise.t)*string) -> 'a option PPX_Serialise.t
 
 (******************)
 (* For random AST *)

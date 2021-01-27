@@ -15,23 +15,24 @@ let reformulate cst_of_yojson pp_cst ~howmany json_string =
       let id = JSON.Util.member "id" json in
       let cst = JSON.Util.member "cst" json in
       try
-        let jsonl = json_clean cst in
-        print_endline("Cleaned JSON: "^JSON.to_string jsonl);
-        match cst_of_yojson jsonl with
-        | Result.Ok cst ->
-          let rec aux i sofar =
-            if i=0
-            then sofar
-            else aux (i-1) ((`String (toString (pp_cst cst)))::sofar)
-          in
-          let warning (`NoSubst s) = `String("no_substitution in "^s) in
-          let warnings = List.map warning !Entity.warnings in
-          Entity.warnings := [];
-          `Assoc (["id",id;
-                   "reformulations",`List(aux howmany [])]
-                 @(match warnings with [] -> [] | _::_ -> ["warnings", `List warnings]))
-        | Result.Error error ->
-          error_object ~id ~json ("Problem with JSON -> sentence conversion: "^error)
+        failwith "TO DO"
+        (* let jsonl = json_clean cst in
+         * print_endline("Cleaned JSON: "^JSON.to_string jsonl);
+         * match cst_of_yojson jsonl with
+         * | Result.Ok cst ->
+         *   let rec aux i sofar =
+         *     if i=0
+         *     then sofar
+         *     else aux (i-1) ((`String (toString (pp_cst cst)))::sofar)
+         *   in
+         *   let warning (`NoSubst s) = `String("no_substitution in "^s) in
+         *   let warnings = List.map warning !Entity.warnings in
+         *   Entity.warnings := [];
+         *   `Assoc (["id",id;
+         *            "reformulations",`List(aux howmany [])]
+         *          @(match warnings with [] -> [] | _::_ -> ["warnings", `List warnings]))
+         * | Result.Error error ->
+         *   error_object ~id ~json ("Problem with JSON -> sentence conversion: "^error) *)
       with
       | Conversion error ->
         error_object ~id ~json ("Problem with conversion while reading: "^error)

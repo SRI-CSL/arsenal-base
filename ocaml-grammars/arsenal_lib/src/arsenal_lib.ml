@@ -10,36 +10,44 @@ module JSON = Yojson.Safe
 
 exception Conversion of string
 
-module PPX_Sexp = struct
+module PPX_Serialise = struct
 
   type 'a t = {
+      to_json : 'a -> JSON.t;
       to_sexp : 'a -> Sexp.t;
       of_sexp : Sexp.t -> 'a;
     }
 
+  let print_null = ref false (* Does not print null values in JSON *)
+
+  let json_cons (s,v) tail =
+    match v with
+    | `Null when not !print_null -> tail
+    | _ -> (s,v)::tail
+
   let print_types = ref false (* Does not print types in S-expressions *)
 
-  let constructor cst ty =
+  let sexp_constructor cst ty =
     if !print_types then Sexp.List [Sexp.Atom ":"; Sexp.Atom cst; Sexp.Atom ty]
     else Sexp.Atom cst
 
-  let is_atom = function
+  let sexp_is_atom = function
     | Sexp.List [Sexp.Atom ":"; Sexp.Atom _; Sexp.Atom _] when !print_types -> true
     | Sexp.Atom _ when not !print_types -> true
     | _ -> false
-  
-  let throw ?(who="PPX_Sexp") sexp =
+         
+  let sexp_throw ?(who="PPX_Sexp") sexp =
     raise(Conversion(who^": "^Sexp.to_string sexp^" is not a good S-expression"))
 
-  let get_cst ?who = function
+  let sexp_get_cst ?who = function
     | Sexp.List [Sexp.Atom ":"; Sexp.Atom c; Sexp.Atom _] when !print_types -> c
     | Sexp.Atom c when not !print_types -> c
-    | sexp -> throw ?who sexp
+    | sexp -> sexp_throw ?who sexp
 
-  let rec get_type ?who = function
+  let rec sexp_get_type ?who = function
     | Sexp.List [Sexp.Atom ":"; Sexp.Atom _; Sexp.Atom ty] when !print_types -> ty
-    | Sexp.List (s::_)  when !print_types && is_atom s -> get_type ?who s
-    | sexp -> throw ?who sexp
+    | Sexp.List (s::_)  when !print_types && sexp_is_atom s -> sexp_get_type ?who s
+    | sexp -> sexp_throw ?who sexp
 
 end
 
@@ -75,84 +83,43 @@ let exn f a = match f a with
   | Ok a -> a
   | Error s -> raise (Conversion s)
 
-let rec json_of_sexp sexp =
-  match sexp with
-  | Sexp.Atom "true"  -> `Bool true
-  | Sexp.Atom "false" -> `Bool false
-  | Sexp.Atom "None"    -> `Null
-  | Sexp.List[Sexp.Atom "Some"; a] -> json_of_sexp a
-  | Sexp.Atom "Nil"    -> `List[]
-  | Sexp.List(Sexp.Atom "List" :: l) -> `List(List.map json_of_sexp l)
-  | Sexp.List(Sexp.Atom s::t) -> `List(`String s::List.map json_of_sexp t)
-  | Sexp.Atom s     -> `List[`String s]
-  | Sexp.List l     -> `List(List.map json_of_sexp l)
-
-let rec json_clean json = match json with
-  | `Assoc _  ->
-     let node = JSON.Util.member "node" json  in
-     let args =
-       match JSON.Util.member "subtrees" json with
-       | `List l -> l
-       | `Null -> []
-       | a -> [a]
-     in
-     begin
-       match node with
-       | `String "True" | `String "true" | `Bool true -> `Bool true
-       | `String "False" | `String "false" | `Bool false -> `Bool false
-       | `String "None" -> `Null
-       | `String "Some" -> json_clean (List.hd args)
-       | `String "Nil" | `String "List" -> `List(List.map json_clean args)
-       | `String _ | `List _ | `Assoc _ -> `List(node::List.map json_clean args)
-       | `Null ->
-          begin match JSON.Util.member "subtrees" json with
-          | `List args -> `List(List.map json_clean args)
-          | `Null -> `Null
-          | arg -> json_clean arg
-          end
-       | _ -> raise (Conversion("json_clean: the \"node\" field in this JSON should be a string or an entity: "^JSON.to_string json))
-     end
-  | `Null | `Bool _ -> json
-  | `List l   -> `List(List.map json_clean l)
-  | _ -> raise (Conversion("clean_types: this JSON is not good: "^JSON.to_string json))
-
 module Polish = struct
 
   let arity = ref "#"
 
   let of_sexp sexp =
     let mk_token s =
-      if not (PPX_Sexp.is_atom s)
-      then PPX_Sexp.throw ~who:"Polish.of_sexp/mktoken" sexp;
-      let constructor = PPX_Sexp.get_cst ~who:"Polish.of_sexp/mktoken/get_cst" s in
-      if not !PPX_Sexp.print_types
+      if not (PPX_Serialise.sexp_is_atom s)
+      then PPX_Serialise.sexp_throw ~who:"Polish.of_sexp/mktoken" sexp;
+      let constructor = PPX_Serialise.sexp_get_cst ~who:"Polish.of_sexp/mktoken/get_cst" s in
+      if not !PPX_Serialise.print_types
       then constructor
       else
-        let gram_type = PPX_Sexp.get_type ~who:"Polish.of_sexp/mktoken/gram_type" s in
+        let gram_type = PPX_Serialise.sexp_get_type ~who:"Polish.of_sexp/mktoken/gram_type" s in
         constructor^(!arity)^gram_type
     in
     let rec aux accu = function
       | [] -> accu
 
-      | s::totreat when PPX_Sexp.is_atom s ->
+      | s::totreat when PPX_Serialise.sexp_is_atom s ->
         aux ((mk_token s)::accu) totreat
 
-      | (Sexp.List(s::l))::totreat when PPX_Sexp.is_atom s ->
+      | (Sexp.List(s::l))::totreat when PPX_Serialise.sexp_is_atom s ->
         let token = mk_token s in
         let token =
-          if not !PPX_Sexp.print_types
+          if not !PPX_Serialise.print_types
           then 
             let length = List.length l in
             token^(!arity)^string_of_int length
           else
             let aux' sofar s =
-              sofar^(!arity)^(PPX_Sexp.get_type ~who:"Polish.of_sexp/aux'" s)
+              sofar^(!arity)^(PPX_Serialise.sexp_get_type ~who:"Polish.of_sexp/aux'" s)
             in
             List.fold_left aux' token l
         in 
         aux (token::accu) (l @ totreat)
   
-      | _ -> PPX_Sexp.throw ~who:"Polish.of_sexp/general" sexp
+      | _ -> PPX_Serialise.sexp_throw ~who:"Polish.of_sexp/general" sexp
     in
     aux [] [sexp]
 
@@ -231,35 +198,43 @@ let typestring_option str = "option("^str^")"
 let json_desc_list _ () = ()
 let json_desc_option _ () = ()
 
+let json_of_bool b : JSON.t = `Bool b
+
 let sexp_of_bool b =
   let c = if b then "true" else "false" in
-  PPX_Sexp.constructor c typestring_bool
+  PPX_Serialise.sexp_constructor c typestring_bool
 
 let bool_of_sexp = function
   | Sexp.Atom "true" -> true
   | Sexp.Atom "false" -> false
   | sexp -> raise(Conversion("bool_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode a boolean"))
 
-let sexp_conv_bool = PPX_Sexp.{
+let serialise_bool = PPX_Serialise.{
+      to_json = json_of_bool;
       to_sexp = sexp_of_bool;
       of_sexp = bool_of_sexp
                      }
 
+let json_of_int i : JSON.t = `Int i
+
 let sexp_of_int i =
   let c = string_of_int i in
-  PPX_Sexp.constructor c typestring_int
+  PPX_Serialise.sexp_constructor c typestring_int
 
 let int_of_sexp = function
   | Sexp.Atom s -> int_of_string s
   | sexp -> raise(Conversion("int_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode an int"))
 
-let sexp_conv_int = PPX_Sexp.{
+let serialise_int = PPX_Serialise.{
+      to_json = json_of_int;
       to_sexp = sexp_of_int;
       of_sexp = int_of_sexp
                     }
 
-let liststring c str = PPX_Sexp.constructor c (typestring_list str)
-let optstring c str = PPX_Sexp.constructor c (typestring_option str)
+let liststring c str = PPX_Serialise.sexp_constructor c (typestring_list str)
+let optstring c str = PPX_Serialise.sexp_constructor c (typestring_option str)
+
+let json_of_list arg l = `List(List.map arg l)
 
 let sexp_of_list (arg,str) l =
   if List.length l = 0 then liststring "Nil" str
@@ -270,11 +245,16 @@ let list_of_sexp arg = function
   | Sexp.List(Sexp.Atom "List"::(_::_ as l)) -> List.map arg l
   | sexp -> raise(Conversion("list_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode a list"))
 
-let sexp_conv_list (arg,str) = PPX_Sexp.{
-      to_sexp = sexp_of_list (arg.to_sexp,str);
+let serialise_list (arg,str) = PPX_Serialise.{
+      to_json = json_of_list arg.to_json;
+      to_sexp = sexp_of_list (arg.to_sexp, str);
       of_sexp = list_of_sexp arg.of_sexp
                                }
   
+let json_of_option arg = function
+  | None   -> `Null
+  | Some a -> arg a
+
 let sexp_of_option (arg,str) = function
   | None   -> optstring "None" str
   | Some a -> Sexp.List[optstring "Some" str; arg a]
@@ -284,9 +264,10 @@ let option_of_sexp arg = function
   | Sexp.List[Sexp.Atom "Some";a] -> Some(arg a)
   | sexp -> raise(Conversion("list_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode an option"))
 
-let sexp_conv_option (arg,str) = PPX_Sexp.{
-    to_sexp = sexp_of_option (arg.to_sexp,str);
-    of_sexp = option_of_sexp arg.of_sexp
+let serialise_option (arg,str) = PPX_Serialise.{
+      to_json = json_of_option arg.to_json;
+      to_sexp = sexp_of_option (arg.to_sexp,str);
+      of_sexp = option_of_sexp arg.of_sexp
   }
   
 
@@ -486,42 +467,36 @@ module Entity = struct
       counter = !PPX_Random.counter;
       substitution = None }
 
-  let to_yojson arg e =
-    let base =
+  let to_json arg e =
+    let kind l =
       match e.kind with
       | Some k when not !one_entity_kind ->
-        begin match arg k with
-          | `List[`String s] -> `String(s^"_"^string_of_int e.counter)
-          | _ -> raise(Conversion("Entity.to_yojson on "^JSON.to_string(arg k)))
-        end
-      | _ -> `String("Entity_"^string_of_int e.counter)
+         (match arg.PPX_Serialise.to_json k with
+          | `Assoc [":constructor", v] -> ("kind", v)::l
+          | `String _ as v -> ("kind", v)::l
+          | json -> raise(Conversion("JSON is not good for entity kind: "^JSON.to_string json)))
+      | _ -> l
     in
-    match e.substitution with
-    | Some entity -> `List[base; `String entity]
-    | None -> `List[base]
+    let sub l =
+      match e.substitution with
+      | Some entity -> ("substitution", `String entity)::l
+      | None -> l
+    in
+    `Assoc(["counter", `Int e.counter] |> sub |> kind)
 
   let to_sexp (arg,argt) e =
     let base =
       match e.kind with
       | Some k when not !one_entity_kind ->
-        let cst = PPX_Sexp.get_cst ~who:"Entity.sexp_of" (arg.PPX_Sexp.to_sexp k) in
-        PPX_Sexp.constructor (cst^"_"^string_of_int e.counter) (typestring argt)
+         let
+           cst = PPX_Serialise.sexp_get_cst ~who:"Entity.sexp_of" (arg.PPX_Serialise.to_sexp k)
+         in
+         PPX_Serialise.sexp_constructor (cst^"_"^string_of_int e.counter) (typestring argt)
       | _ -> Sexp.Atom("Entity_"^string_of_int e.counter)
     in
     match e.substitution with
     | Some entity -> Sexp.List[base;Sexp.Atom entity]
     | None -> base 
-
-  let of_sexp _ _ = failwith ""
-
-  let sexp_conv arg = PPX_Sexp.{
-      to_sexp = to_sexp arg;
-      of_sexp = of_sexp arg;
-    }
-            
-  let entity_mk s ?(kind=None) ?(counter=0) ?(substitution=None) () =
-    (match substitution with None -> warnings := (`NoSubst s)::!warnings | Some _ -> ());
-    Result.Ok { kind; counter; substitution }
 
   let to_id l =
     let rec aux ?accu l =
@@ -537,48 +512,30 @@ module Entity = struct
     in
     String.split_on_char '_' l |> aux 
 
-  let of_yojson_aux arg placeholder substitution = 
-    match to_id placeholder with
-    | Result.Ok(e,counter) ->
-       begin match arg(`List [`String e]) with
-       | Result.Ok k -> entity_mk placeholder ~kind:(Some k) ~counter ~substitution ()
-       | Result.Error _ -> entity_mk placeholder ~counter ~substitution ()
-       end
-    | Result.Error _ -> entity_mk placeholder ~substitution ()
-    
-  let rec of_yojson arg = function
-    | `String _ as json -> of_yojson arg (`List[json])
-    | `List(`String placeholder::nl) ->
-      let substitution = match nl with
-        | [`String nl]
-        | [`List[`String nl]] -> Some nl
-        | _ -> None
-      in
-      of_yojson_aux arg placeholder substitution
-    | `List[s] -> of_yojson arg s
-    | `Assoc _ as json ->
-       begin
-         match JSON.Util.member "placeholder" json with
-         | `String placeholder ->
-            let substitution = match JSON.Util.member "text" json with
-              | `String text -> Some text
-              | _ -> None
-            in
-            of_yojson_aux arg placeholder substitution
-         | _ -> Result.Error("JSON for an entity cannot be "^JSON.to_string json)
-       end
-    | json -> Result.Error("JSON for an entity cannot be "^JSON.to_string json)
-
-  let t_of_sexp arg = function
+  let of_sexp arg = function
     | Sexp.Atom s ->
       let s,counter = exn to_id s in
       if String.equal s "Entity" then { kind = None; counter; substitution = None }
-      else { kind = Some(arg (Sexp.Atom s)); counter; substitution = None }
+      else { kind = Some(arg.PPX_Serialise.of_sexp (Sexp.Atom s)); counter; substitution = None }
     | Sexp.List[Sexp.Atom s;Sexp.Atom nl] ->
       let s,counter = exn to_id s in
       if String.equal s "Entity" then { kind = None; counter; substitution = Some nl }
-      else { kind = Some(arg (Sexp.Atom s)); counter; substitution = Some nl }
+      else { kind = Some(arg.PPX_Serialise.of_sexp (Sexp.Atom s));
+             counter;
+             substitution = Some nl }
     | Sexp.List _ as sexp -> raise(Conversion("Entity.t_of_sexp: list S-expresion "^Sexp.to_string sexp^" cannot be an entity"))
+
+  let serialise (arg, argt) = PPX_Serialise.{
+        to_json = to_json arg;
+        to_sexp = to_sexp (arg, argt);
+        of_sexp = of_sexp arg;
+                      }
+                    
+
+  let entity_mk s ?(kind=None) ?(counter=0) ?(substitution=None) () =
+    (match substitution with None -> warnings := (`NoSubst s)::!warnings | Some _ -> ());
+    Result.Ok { kind; counter; substitution }
+
 
   let pick l _ = pick(List.map (fun (x,i) -> x, Stdlib.Float.(to_int(pow i !strict))) l)
 
