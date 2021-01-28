@@ -1,38 +1,49 @@
+open Containers
 open Arsenal_lib
-
+open Sexplib
+   
 open Lwt.Infix
 open Cohttp_lwt
 open Cohttp_lwt_unix
 
-let good_object reformulations = `Assoc ["sentences",`List reformulations]
+let good_object reformulations = `Assoc ["result", `List reformulations]
 
 let error_object ?(id=`Null) ?(json=`Null) message =
   `Assoc ["id",id; "error",`String message; "json",json ]
-  
-let reformulate cst_of_yojson pp_cst ~howmany json_string =
+
+let exc s json = raise(Conversion(s^" "^JSON.to_string json))
+                  
+module Dictionary = Hashtbl.Make(String)
+
+let rec json2sexp dictionary = function
+  | `String key when Dictionary.mem dictionary key
+    -> Sexp.List[Sexp.Atom key; Sexp.Atom(Dictionary.find dictionary key)]
+  | `String s -> Sexp.Atom s
+  | `List l   -> Sexp.List(List.map (json2sexp dictionary) l)
+  | json      -> exc "The following JSON is not a Sexp:" json
+
+let reformulate cst_conv cst_process json_string =
   try
     let treat_one json =
       let id = JSON.Util.member "id" json in
       let cst = JSON.Util.member "cst" json in
       try
-        failwith "TO DO"
-        (* let jsonl = json_clean cst in
-         * print_endline("Cleaned JSON: "^JSON.to_string jsonl);
-         * match cst_of_yojson jsonl with
-         * | Result.Ok cst ->
-         *   let rec aux i sofar =
-         *     if i=0
-         *     then sofar
-         *     else aux (i-1) ((`String (toString (pp_cst cst)))::sofar)
-         *   in
-         *   let warning (`NoSubst s) = `String("no_substitution in "^s) in
-         *   let warnings = List.map warning !Entity.warnings in
-         *   Entity.warnings := [];
-         *   `Assoc (["id",id;
-         *            "reformulations",`List(aux howmany [])]
-         *          @(match warnings with [] -> [] | _::_ -> ["warnings", `List warnings]))
-         * | Result.Error error ->
-         *   error_object ~id ~json ("Problem with JSON -> sentence conversion: "^error) *)
+        print_endline("JSON: "^JSON.to_string cst);
+        let options = match JSON.Util.member "options" json with
+          | `Null    -> None
+          | `Assoc l -> Some l
+          | json -> exc "The following JSON is not a list of options:" json
+        in
+        let dictionary = Dictionary.create 10 in
+        let aux (key, value) = match value with
+          | `String s -> Dictionary.add dictionary key s
+          | json -> exc "The substitution for an entity should be a string, not:" json
+        in
+        let () = match JSON.Util.member "substitutions" json with
+          | `Assoc l -> List.iter aux l
+          | json -> exc "The substitution should be a JSON dictionary, not:" json
+        in
+        json2sexp dictionary cst |> cst_conv.PPX_Serialise.of_sexp |> cst_process ?options ~id
       with
       | Conversion error ->
         error_object ~id ~json ("Problem with conversion while reading: "^error)
@@ -66,7 +77,7 @@ end
 (* Create a new class that inherits from [Wm.resource] and provides
  * implementations for its two virtual methods, and overrides some of its default methods.
  *)
-class hello cst_of_yojson pp_cst = object(self)
+class hello cst_conv cst_process = object(self)
   inherit [Body.t] Wm.resource
 
   (* Only allow POST requests to this resource *)
@@ -118,13 +129,9 @@ class hello cst_of_yojson pp_cst = object(self)
 
   (* Process POST request *)
   method process_post rd =
-    let howmany = match Cohttp.Header.get rd.req_headers "howmany" with
-      | None -> 1
-      | Some i -> match int_of_string_opt i with None -> 1 | Some i -> i
-    in
     Body.to_string rd.req_body >>= fun json_string ->
     let resp_body = json_string
-                    |> reformulate cst_of_yojson pp_cst ~howmany
+                    |> reformulate cst_conv cst_process
                     |> JSON.to_string
                     |> Body.of_string
     in
@@ -132,7 +139,7 @@ class hello cst_of_yojson pp_cst = object(self)
 
 end
 
-let main ~port cst_of_yojson pp_cst =
+let main ~port cst_conv cst_process =
   (* The route table. Both routes use the [hello] resource defined above.
    * However, the second one containes the [:what] wildcard in the path. The
    * value of that wildcard can be accessed in the resource by calling
@@ -140,7 +147,7 @@ let main ~port cst_of_yojson pp_cst =
    *   [Wm.Rd.lookup_path_info "what" rd]
   *)
   let routes = [
-    ("/"           , fun () -> new hello cst_of_yojson pp_cst);
+    ("/"           , fun () -> new hello cst_conv cst_process);
   ] in
   let callback (_ch,_conn) request body =
     let open Cohttp in
