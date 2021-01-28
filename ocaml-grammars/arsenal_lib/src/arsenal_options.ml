@@ -28,7 +28,7 @@ let options =
     ("-strict-entities", Float(fun f -> Entity.strict := f), "\thow strict entity kinds should be considered (0. : they are ignored; +infty: very strictly enforced)");
   ]
 
-module Grammar = struct
+module Generate_runtime = struct
 
   type 'a t = {
     random    : PPX_Random.state -> 'a;

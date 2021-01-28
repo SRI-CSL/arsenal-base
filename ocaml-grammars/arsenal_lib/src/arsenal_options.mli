@@ -13,7 +13,7 @@ val howmany : int ref (* Default number of example to generate is 1 *)
 val args : string list ref (* Where the command-line argument will be stacked *)
 val options : (string * Arg.spec * string) list
 
-module Grammar : sig
+module Generate_runtime : sig
 
   type 'a t = {
     random    : PPX_Random.state -> 'a;
