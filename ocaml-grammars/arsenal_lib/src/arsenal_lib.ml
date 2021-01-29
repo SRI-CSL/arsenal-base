@@ -79,6 +79,10 @@ module JSONindex = struct
       ]
 end
 
+let rec sexp2json = function
+  | Sexp.Atom s -> `String s
+  | Sexp.List l -> `List (List.map sexp2json l)
+
 let exn f a = match f a with
   | Ok a -> a
   | Error s -> raise (Conversion s)

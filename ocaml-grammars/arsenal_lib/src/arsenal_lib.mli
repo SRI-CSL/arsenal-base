@@ -9,6 +9,8 @@ module JSON = Yojson.Safe
 (************************************************************)
 (* Conversions between json, S-expressions, Polish notation *)
 
+exception Conversion of string
+
 module PPX_Serialise : sig
   type 'a t = {
       to_json : 'a -> JSON.t;
@@ -25,7 +27,6 @@ module PPX_Serialise : sig
   val sexp_get_type : ?who:tag -> Sexp.t -> tag
 end
 
-
 module JSONindex : sig
   type t
   val mem : string -> bool
@@ -35,7 +36,7 @@ module JSONindex : sig
   val out : id:string -> description:string -> JSON.t
 end
      
-exception Conversion of string
+val sexp2json : Sexp.t -> JSON.t
 val exn : ('a -> ('b, string) result) -> 'a -> 'b
 
 (* A module for Polish notation *)
