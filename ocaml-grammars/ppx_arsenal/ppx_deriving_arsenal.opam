@@ -8,25 +8,22 @@ authors: "Stephane Graham-Lengrand <stephane.graham-lengrand@csl.sri.com>"
 # bug-reports: ""
 license: "LGPL-3.0 with OCaml linking exception"
 build: [
-  ["oasis" "setup"]
-  ["ocaml" "setup.ml" "-configure" "--prefix" prefix]
-  ["ocaml" "setup.ml" "-build"]
+  ["dune" "build"]
 ]
 install: [
-  ["ocaml" "setup.ml" "-install"]
+  ["dune" "install"]
 ]
 remove: [
   ["ocamlfind" "remove" "ppx_deriving_arsenal"]
 ]
 depends: [
-  "ocaml" {>= "4.06" & < "4.08"}
-  "oasis" {build}
+  "ocaml" {>= "4.11" & < "4.12"}
   "ocamlfind" {build}
-  "sexplib" {>= "v0.11.0" & <= "v0.12.0"}
+  "dune" {build}
+  "sexplib"
   "ppx_deriving"
-  "ppx_tools"
+  "ppxlib"
   "yojson"
-  "ppx_deriving_yojson"
   "ppx_deriving_random"
 ]
 flags: light-uninstall

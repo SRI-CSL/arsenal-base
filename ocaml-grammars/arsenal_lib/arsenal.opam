@@ -8,11 +8,12 @@ authors: "Stephane Graham-Lengrand <stephane.graham-lengrand@csl.sri.com>"
 # homepage: "none yet"
 # bug-reports: "no way"
 depends: [
-  "ocaml" {>= "4.06" & < "4.08"}
+  "ocaml" {>= "4.11" & < "4.12"}
   "dune"
   "ocamlfind"
   "sexplib"
   "yojson"
+  "containers"
   "cohttp-lwt"
   "cohttp-lwt-unix"
   "webmachine"
