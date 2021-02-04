@@ -127,6 +127,7 @@ let build_alternative loc cons args : expression * expression =
       [%e cons],
    `Assoc [
        "type", `String "object";
+       "additionalProperties", `Bool false;
        "required", `List (`String ":constructor"::[%e required]);
        "properties",
        `Assoc 
