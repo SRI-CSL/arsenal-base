@@ -62,7 +62,7 @@ let serialise_type_of_decl ~options ~path:_path type_decl =
     | _ -> typ
   in
   Ppx_deriving.poly_arrow_of_type_decl
-    (fun var -> [%type: [%t var] PPX_Serialise.t * string ])
+    (fun var -> [%type: [%t var] PPX_Serialise.t ])
     type_decl [%type: [%t typ] PPX_Serialise.t ]
 
 (* Generator Function *)
@@ -70,7 +70,7 @@ let atom cnstr typestring_expr =
   let loc = typestring_expr.pexp_loc in
   [%expr PPX_Serialise.sexp_constructor [%e str2exp cnstr ] [%e typestring_expr ] ]
 
-let build_cases loc build_case l =
+let build_cases loc str build_case l =
   let aux (cases1, cases2, cases3) x =
     let x1, x2, x3 = build_case x in
     (x1::cases1), (x2::cases2), (x3::cases3)
@@ -81,7 +81,9 @@ let build_cases loc build_case l =
   [%expr PPX_Serialise.{ 
        to_json = [%e Exp.function_ cases1];
        to_sexp = [%e Exp.function_ cases2];
-       of_sexp = [%e Exp.function_ cases3]; } ]
+       of_sexp = [%e Exp.function_ cases3];
+       type_string = [%e str ];
+  } ]
 
 
   
@@ -92,11 +94,7 @@ let expr_of_typ typestring_expr typ =
 
     (* Referencing another type, possibly polymorphic: typs are the types arguments *)
     | {ptyp_desc = Ptyp_constr ({txt = lid ; _}, typs) ; _} ->
-       let serialise = ident "serialise" lid in
-       let typestr = ident "typestring" lid in
-       let args    = List.map expr_of_typ typs in
-       let typestr_args = List.map (esnd loc) args in
-       [%expr [%e app serialise args], [%e app typestr typestr_args]]
+       app (ident "serialise" lid) (List.map expr_of_typ typs)
 
     (* typ is a product type: we don't deal with those *)
     | {ptyp_desc = Ptyp_tuple _ ; _} ->
@@ -122,7 +120,7 @@ let expr_of_typ typestring_expr typ =
               (Exp.variant label.txt None)
             
          | Rtag (label, false, typs) ->
-            let aux i typ = [%expr fst [%e expr_of_typ typ] [%e evar (argn i)] ] in
+            let aux i typ = [%expr [%e expr_of_typ typ] [%e evar (argn i)] ] in
             let args = typs |> List.mapi aux |> list loc in
             Exp.case
               (variant label (Some [%pat? x]))
@@ -142,18 +140,18 @@ let expr_of_typ typestring_expr typ =
               deriver_name (Ppx_deriving.string_of_core_type typ)
        in
 
-       [%expr [%e build_cases loc treat_field fields] , [%e typestring_expr ] ]
+       build_cases loc typestring_expr treat_field fields
 
     (* typ is one of our type parameters: we have been given the value as an argument *)
     | {ptyp_desc = Ptyp_var name ; _} -> evar ("poly_" ^ name)
     (* typ is an alias: we traverse *)
-    | {ptyp_desc = Ptyp_alias (typ, _) ; _} -> expr_of_typ typ
+    (* | {ptyp_desc = Ptyp_alias (typ, _) ; _} -> expr_of_typ typ *)
     (* Can't deal with any other kinds of types *)
     | {ptyp_loc ; _} ->
        raise_errorf ~loc:ptyp_loc "Cannot derive %s for %s."
          deriver_name (Ppx_deriving.string_of_core_type typ)
   in
-  expr_of_typ typ    
+  expr_of_typ typ
 
 let expr_of_type_decl ~path type_decl =
   let loc = type_decl.ptype_loc in
@@ -166,14 +164,14 @@ let expr_of_type_decl ~path type_decl =
         |> mknoloc
         |> Exp.ident
       in
-      [%expr [%e sofar]^"("^(snd [%e param])^")"]
+      [%expr [%e sofar]^"("^([%e param].PPX_Serialise.type_string)^")"]
     in
     Ppx_deriving.fold_right_type_decl aux type_decl
       (fully_qualified path type_decl.ptype_name.txt |> str2exp)
   in
   match type_decl.ptype_kind, type_decl.ptype_manifest with
   | Ptype_abstract, Some manifest ->
-     expr_of_typ typestring_expr manifest |> efst loc
+     expr_of_typ typestring_expr manifest
 
   | Ptype_variant cs, _ ->
 
@@ -188,13 +186,13 @@ let expr_of_type_decl ~path type_decl =
            in
            [%expr
                [%e str2exp name],
-            (fst [%e expr_of_typ typestring_expr typ]).PPX_Serialise.to_json [%e evar (argn i)]]
+            [%e expr_of_typ typestring_expr typ].PPX_Serialise.to_json [%e evar (argn i)]]
          in
          let aux_to_sexp i (_,typ) =
-           [%expr (fst [%e expr_of_typ typestring_expr typ]).PPX_Serialise.to_sexp [%e evar (argn i)]]
+           [%expr [%e expr_of_typ typestring_expr typ].PPX_Serialise.to_sexp [%e evar (argn i)]]
          in
          let aux_of_sexp i (_,typ) =
-           [%expr (fst [%e expr_of_typ typestring_expr typ]).PPX_Serialise.of_sexp [%e evar (argn i)] ]
+           [%expr [%e expr_of_typ typestring_expr typ].PPX_Serialise.of_sexp [%e evar (argn i)] ]
          in
          let args_to_json = typs |> List.mapi aux_to_json |> json_list loc in
          let args_to_sexp = typs |> List.mapi aux_to_sexp |> list loc in
@@ -248,7 +246,7 @@ let expr_of_type_decl ~path type_decl =
           build_case (pconstr name' (pattn_named l)) build_record typs
 
      in
-     build_cases loc treat_field cs
+     build_cases loc typestring_expr treat_field cs
 
   | Ptype_record _fields, _ ->
      raise_errorf ~loc "Cannot derive %s for record type." deriver_name

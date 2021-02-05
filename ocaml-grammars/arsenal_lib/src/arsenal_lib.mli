@@ -16,6 +16,7 @@ module PPX_Serialise : sig
       to_json : 'a -> JSON.t;
       to_sexp : 'a -> Sexp.t;
       of_sexp : Sexp.t -> 'a;
+      type_string : string;
     }
   val print_null  : bool ref (* Does not print null values in JSON *)
   val json_cons   : (string * JSON.t) -> (string * JSON.t) list -> (string * JSON.t) list
@@ -61,8 +62,8 @@ val json_desc_option: string -> unit -> unit
 
 val serialise_bool   : bool PPX_Serialise.t
 val serialise_int    : int PPX_Serialise.t
-val serialise_list   : (('a PPX_Serialise.t)*string) -> 'a list PPX_Serialise.t
-val serialise_option : (('a PPX_Serialise.t)*string) -> 'a option PPX_Serialise.t
+val serialise_list   : ('a PPX_Serialise.t) -> 'a list PPX_Serialise.t
+val serialise_option : ('a PPX_Serialise.t) -> 'a option PPX_Serialise.t
 
 (******************)
 (* For random AST *)
