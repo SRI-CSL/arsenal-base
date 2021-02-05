@@ -82,7 +82,7 @@ let build_cases loc str build_case l =
        to_json = [%e Exp.function_ cases1];
        to_sexp = [%e Exp.function_ cases2];
        of_sexp = [%e Exp.function_ cases3];
-       type_string = [%e str ];
+       type_string = (fun () -> [%e str ]);
   } ]
 
 
@@ -164,7 +164,7 @@ let expr_of_type_decl ~path type_decl =
         |> mknoloc
         |> Exp.ident
       in
-      [%expr [%e sofar]^"("^([%e param].PPX_Serialise.type_string)^")"]
+      [%expr [%e sofar]^"("^([%e param].PPX_Serialise.type_string())^")"]
     in
     Ppx_deriving.fold_right_type_decl aux type_decl
       (fully_qualified path type_decl.ptype_name.txt |> str2exp)

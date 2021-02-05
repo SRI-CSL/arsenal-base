@@ -16,7 +16,7 @@ module PPX_Serialise = struct
       to_json : 'a -> JSON.t;
       to_sexp : 'a -> Sexp.t;
       of_sexp : Sexp.t -> 'a;
-      type_string : string;
+      type_string : unit -> string;
     }
 
   let print_null = ref false (* Does not print null values in JSON *)
@@ -221,7 +221,7 @@ let serialise_bool =
       to_json = json_of_bool;
       to_sexp = sexp_of_bool;
       of_sexp = bool_of_sexp;
-      type_string = typestring_bool;
+      type_string = fun () -> typestring_bool;
   }
   
 
@@ -240,7 +240,7 @@ let serialise_int =
       to_json = json_of_int;
       to_sexp = sexp_of_int;
       of_sexp = int_of_sexp;
-      type_string = typestring_int;
+      type_string = fun () -> typestring_int;
   }
 
 let liststring c str = PPX_Serialise.sexp_constructor c (typestring_list str)
@@ -248,9 +248,10 @@ let optstring c str = PPX_Serialise.sexp_constructor c (typestring_option str)
 
 let json_of_list arg l = `List(List.map arg l)
 
-let sexp_of_list arg str l =
-  if List.length l = 0 then liststring "Nil" str
-  else Sexp.List((liststring "List" str) :: List.map arg l)
+let sexp_of_list arg l =
+  let open PPX_Serialise in
+  if List.length l = 0 then liststring "Nil" (arg.type_string())
+  else Sexp.List((liststring "List" (arg.type_string())) :: List.map arg.to_sexp l)
 
 let list_of_sexp arg = function
   | Sexp.Atom "Nil" -> []
@@ -260,18 +261,20 @@ let list_of_sexp arg = function
 let serialise_list arg =
   PPX_Serialise.{
       to_json = json_of_list arg.to_json;
-      to_sexp = sexp_of_list arg.to_sexp arg.type_string;
+      to_sexp = sexp_of_list arg;
       of_sexp = list_of_sexp arg.of_sexp;
-      type_string = typestring_list arg.type_string;
+      type_string = fun () -> typestring_list (arg.type_string());
   }
   
 let json_of_option arg = function
   | None   -> `Null
   | Some a -> arg a
 
-let sexp_of_option arg str = function
-  | None   -> optstring "None" str
-  | Some a -> Sexp.List[optstring "Some" str; arg a]
+let sexp_of_option arg l =
+  let open PPX_Serialise in
+  match l with
+  | None   -> optstring "None" (arg.type_string())
+  | Some a -> Sexp.List[optstring "Some" (arg.type_string()); arg.to_sexp a]
 
 let option_of_sexp arg = function
   | Sexp.Atom "None" -> None
@@ -281,9 +284,9 @@ let option_of_sexp arg = function
 let serialise_option arg =
   PPX_Serialise.{
       to_json = json_of_option arg.to_json;
-      to_sexp = sexp_of_option arg.to_sexp arg.type_string;
+      to_sexp = sexp_of_option arg;
       of_sexp = option_of_sexp arg.of_sexp;
-      type_string = typestring_list arg.type_string;
+      type_string = fun () -> typestring_option (arg.type_string());
   }
 
 (******************)
@@ -509,7 +512,7 @@ module Entity = struct
          in
          PPX_Serialise.sexp_constructor
            (cst^"_"^string_of_int e.counter)
-           (typestring arg.type_string)
+           (typestring (arg.type_string()))
       | _ -> PPX_Serialise.sexp_constructor
                ("E_"^string_of_int e.counter)
                "Entity"
@@ -550,7 +553,7 @@ module Entity = struct
         to_json = to_json arg;
         to_sexp = to_sexp arg;
         of_sexp = of_sexp arg;
-        type_string = typestring arg.type_string;
+        type_string = fun () -> if !one_entity_kind then "Entity" else typestring (arg.type_string());
     }
 
   let entity_mk s ?(kind=None) ?(counter=0) ?(substitution=None) () =

@@ -16,7 +16,7 @@ module PPX_Serialise : sig
       to_json : 'a -> JSON.t;
       to_sexp : 'a -> Sexp.t;
       of_sexp : Sexp.t -> 'a;
-      type_string : string;
+      type_string : unit -> string;
     }
   val print_null  : bool ref (* Does not print null values in JSON *)
   val json_cons   : (string * JSON.t) -> (string * JSON.t) list -> (string * JSON.t) list
