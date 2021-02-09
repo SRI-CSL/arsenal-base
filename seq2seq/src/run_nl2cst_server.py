@@ -30,9 +30,9 @@ cst_gen = load_from_setup(MODEL_ROOT, normalize_sal_entities=NORMALIZE_SAL_ENTIT
                           convert_to_json=CONVERT_TO_JSON
                           )
 
-@app.route('/hello')
+@app.route('/')
 def hello():
-    return "Howdy"
+    return "NL2CST service is up and running..."
 
 @app.route('/generateir', methods=['POST'])
 def process():
