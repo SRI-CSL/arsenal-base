@@ -538,11 +538,11 @@ module Entity = struct
   let of_sexp arg = function
     | Sexp.Atom s ->
       let s,counter = exn to_id s in
-      if String.equal s "Entity" then { kind = None; counter; substitution = None }
+      if String.equal s "E" then { kind = None; counter; substitution = None }
       else { kind = Some(arg.PPX_Serialise.of_sexp (Sexp.Atom s)); counter; substitution = None }
     | Sexp.List[Sexp.Atom s;Sexp.Atom nl] ->
       let s,counter = exn to_id s in
-      if String.equal s "Entity" then { kind = None; counter; substitution = Some nl }
+      if String.equal s "E" then { kind = None; counter; substitution = Some nl }
       else { kind = Some(arg.PPX_Serialise.of_sexp (Sexp.Atom s));
              counter;
              substitution = Some nl }
