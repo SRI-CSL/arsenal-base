@@ -73,12 +73,28 @@ module JSONindex = struct
       | [] -> failwith "No entry point given"
       | (toptype,_)::_ -> toptype
     in
+    let top =
+      "Top",
+      `Assoc [
+          "type", `String "object";
+          "additionalProperties", `Bool false;
+          "required", `List [ `String "cst"; `String "sentence_id" ];
+          "properties",
+          `Assoc [
+              "cst", `Assoc [ "$ref", `String("#/definitions/"^ toptype) ];
+              "sentence_id", `Assoc [ "type",   `String "string";
+                                      "format", `String "uri-reference" ];
+              "reformulation", `Assoc [ "type", `String "string" ];
+              "orig-text", `Assoc [ "type", `String "string" ]
+            ]
+        ]
+    in
     `Assoc [
         "$schema", `String "http://json-schema.org/schema#";
         "$id",     `String id;
         "description", `String description;
-        "$ref",     `String("#/definitions/"^ toptype);
-        "definitions", `Assoc (!index |> List.rev )
+        "$ref",     `String("#/definitions/Top");
+        "definitions", `Assoc (top::(!index |> List.rev) )
       ]
 end
 

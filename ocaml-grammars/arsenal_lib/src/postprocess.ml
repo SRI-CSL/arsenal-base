@@ -27,6 +27,12 @@ let reformulate cst_conv cst_process json_string =
     let treat_one json =
       let id = JSON.Util.member "id" json in
       let cst = JSON.Util.member "cst" json in
+      let original =
+        match JSON.Util.member "orig-text" json with
+        | `Null -> None
+        | `String s -> Some s
+        | json -> exc "The following JSON is not a string:" json
+      in
       try
         print_endline("JSON: "^JSON.to_string cst);
         let options = match JSON.Util.member "options" json with
@@ -43,7 +49,7 @@ let reformulate cst_conv cst_process json_string =
           | `Assoc l -> List.iter aux l
           | json -> exc "The substitution should be a JSON dictionary, not:" json
         in
-        json2sexp dictionary cst |> cst_conv.PPX_Serialise.of_sexp |> cst_process ?options ~id
+        json2sexp dictionary cst |> cst_conv.PPX_Serialise.of_sexp |> cst_process ?options ?original ~id
       with
       | Conversion error ->
         error_object ~id ~json ("Problem with conversion while reading: "^error)
