@@ -2,7 +2,8 @@ open Arsenal_lib
    
 val main : port:int
            -> 'a PPX_Serialise.t
-           -> ( ?options: (string*JSON.t) list
+           -> ( ?global_options: (string*JSON.t) list
+                -> ?options: (string*JSON.t) list
                 -> ?original: string
                 -> id:JSON.t -> 'a -> JSON.t)
            -> unit Lwt.t

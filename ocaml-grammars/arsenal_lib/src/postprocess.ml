@@ -24,6 +24,13 @@ let rec json2sexp dictionary = function
 
 let reformulate cst_conv cst_process json_string =
   try
+    let json = json_string |> JSON.from_string in
+    let sentences = json |> JSON.Util.member "sentences" in
+    let global_options   = match json |> JSON.Util.member "options" with
+      | `Null    -> None
+      | `Assoc l -> Some l
+      | json -> exc "The global options should be a JSON dictionary, not:" json
+    in
     let treat_one json =
       let id = JSON.Util.member "id" json in
       let cst = JSON.Util.member "cst" json in
@@ -31,14 +38,14 @@ let reformulate cst_conv cst_process json_string =
         match JSON.Util.member "orig-text" json with
         | `Null -> None
         | `String s -> Some s
-        | json -> exc "The following JSON is not a string:" json
+        | json -> exc "The orig-text should be a string, not:" json
       in
       try
         print_endline("JSON: "^JSON.to_string cst);
         let options = match JSON.Util.member "options" json with
           | `Null    -> None
           | `Assoc l -> Some l
-          | json -> exc "The following JSON is not a list of options:" json
+          | json -> exc "The sentence-specific options should be a JSON dictionary, not:" json
         in
         let dictionary = Dictionary.create 10 in
         let aux (key, value) = match value with
@@ -49,14 +56,12 @@ let reformulate cst_conv cst_process json_string =
           | `Assoc l -> List.iter aux l
           | json -> exc "The substitution should be a JSON dictionary, not:" json
         in
-        json2sexp dictionary cst |> cst_conv.PPX_Serialise.of_sexp |> cst_process ?options ?original ~id
+        json2sexp dictionary cst |> cst_conv.PPX_Serialise.of_sexp |> cst_process ?global_options ?options ?original ~id
       with
       | Conversion error ->
         error_object ~id ~json ("Problem with conversion while reading: "^error)
     in
-    json_string
-    |> JSON.from_string
-    |> JSON.Util.member "sentences"
+    sentences
     |> JSON.Util.to_list
     |> List.map treat_one
     |> good_object
