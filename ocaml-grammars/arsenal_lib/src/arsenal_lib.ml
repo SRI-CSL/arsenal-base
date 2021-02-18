@@ -490,7 +490,7 @@ module Entity = struct
   let pp pp_arg e =
     let pp_kind = function
       | Some e when not !one_entity_kind -> F "%a" // pp_arg // e |> print
-      | _ -> return "Entity"
+      | _ -> return "E"
     in
     match e.substitution with
     | Some nl -> F "%t_%i{%s}" // pp_kind e.kind // e.counter // nl |> print
