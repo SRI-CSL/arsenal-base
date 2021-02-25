@@ -14,9 +14,7 @@
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  *)
 
-open Longident
-open Asttypes
-open Parsetree
+open Ppxlib
 open Ast_helper
 open Ppx_deriving.Ast_convenience
 
@@ -44,9 +42,9 @@ let json_desc_type_of_decl ~options:_ ~path:_path type_decl =
     [%type: unit -> unit]
 
 let rec call loc lid typs =
-  let args    = List.map (fun x -> let y,_,_ = expr_of_typ x in y) typs in
+  let args        = List.map (fun x -> let y,_,_ = expr_of_typ x in y) typs in
   let record_json = ident "json_desc" lid in
-  let typestr = ident "typestring" lid in
+  let typestr     = ident "typestring" lid in
   [%expr [%e app record_json args] (); [%e app typestr args] ]
 
 and expr_of_typ typ : expression*bool*bool =

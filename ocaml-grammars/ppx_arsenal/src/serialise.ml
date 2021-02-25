@@ -14,9 +14,7 @@
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  *)
 
-open Longident
-open Asttypes
-open Parsetree
+open Ppxlib
 open Ast_helper
 open Ppx_deriving.Ast_convenience
 

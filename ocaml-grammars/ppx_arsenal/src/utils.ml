@@ -14,9 +14,7 @@
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  *)
 
-open Longident
-open Asttypes
-open Parsetree
+open Ppxlib
 open Ast_helper
 open Ppx_deriving.Ast_convenience
 
@@ -30,6 +28,7 @@ let raise_errorf = Ppx_deriving.raise_errorf
 
 let ident prefix typestr =
   Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix prefix) typestr))
+
 let efst loc x = [%expr fst [%e x ]]
 let esnd loc x = [%expr snd [%e x ]]
 
