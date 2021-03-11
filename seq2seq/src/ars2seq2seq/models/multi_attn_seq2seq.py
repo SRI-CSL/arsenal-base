@@ -469,6 +469,7 @@ class MultiHeadSeq2Seq():
         criterion = nn.NLLLoss()
         progbar = tqdm(range(start_iter+1, n_iters + 1))
         accum_losses = []  # For computing mean loss
+        orig_type_filtering = self.type_filtering
         with open(os.path.join(self.log_dir, "guessed_trials.txt"), "w") as val_log_f:
             step = 0
             for step in progbar:
@@ -495,18 +496,47 @@ class MultiHeadSeq2Seq():
                     self.save_checkpoint(epoch, step)
 
                 if step % eval_every == 0:
-                    print("---------------------\nTrain check")
+                    print("---------------------\nTrain check w/o type-filtering")
+                    self.type_filtering = False
+                    train_accNTF, train_res_strNTF = self.evaluate(train_pairs, n=10, randomize=False)
+                    tb_logger.scalar_summary("Train Acc NTF", train_accNTF, step)
+                    val_log_f.write("\n==========================================\nStep={}\n".format(step))
+                    val_log_f.write("Training check\n")
+                    val_log_f.write(train_res_strNTF)
+                    val_log_f.write("\n")
+
+                    print("---------------------\nTrain check w type-filtering")
+                    self.type_filtering = True
                     train_acc, train_res_str = self.evaluate(train_pairs, n=10, randomize=False)
                     tb_logger.scalar_summary("Train Acc", train_acc, step)
                     val_log_f.write("\n==========================================\nStep={}\n".format(step))
                     val_log_f.write("Training check\n")
                     val_log_f.write(train_res_str)
                     val_log_f.write("\n")
-                    print("---------------------\nValidate check")
+
+                    print("---------------------\nValidate check w/o type-filtering")
+                    self.type_filtering = False
+                    accNTF, res_strNTF = self.evaluate(val_pairs, randomize=False)
+                    tb_logger.scalar_summary("Val Acc NTF", accNTF, step)
+                    if special_pairs is not None:
+                        print("---------------------\nSpecial check w/o type-filtering")
+                        sp_accNTF, sp_res_strNTF = self.evaluate(special_pairs, n=len(special_pairs), randomize=False)
+                        tb_logger.scalar_summary("Special Acc NTF", sp_accNTF, step)
+                    #val_log_f.write("\n==========================================\nStep={}\n".format(step))
+                    val_log_f.write("\nValidation check\n")
+                    val_log_f.write(res_strNTF)
+                    val_log_f.write("\n")
+                    if special_pairs is not None:
+                        val_log_f.write("\n\t* * * * * * * * * *\nSpecials\n* * * * * * * * * *\n".format(step))
+                        val_log_f.write(sp_res_strNTF)
+                        val_log_f.write("\n")
+
+                    print("---------------------\nValidate check w type-filtering")
+                    self.type_filtering = True
                     acc, res_str = self.evaluate(val_pairs, randomize=False)
                     tb_logger.scalar_summary("Val Acc", acc, step)
                     if special_pairs is not None:
-                        print("---------------------\nSpecial check")
+                        print("---------------------\nSpecial check w type-filtering")
                         sp_acc, sp_res_str = self.evaluate(special_pairs, n=len(special_pairs), randomize=False)
                         tb_logger.scalar_summary("Special Acc", sp_acc, step)
                     #val_log_f.write("\n==========================================\nStep={}\n".format(step))
@@ -517,9 +547,23 @@ class MultiHeadSeq2Seq():
                         val_log_f.write("\n\t* * * * * * * * * *\nSpecials\n* * * * * * * * * *\n".format(step))
                         val_log_f.write(sp_res_str)
                         val_log_f.write("\n")
+                        
+                    self.type_filtering = orig_type_filtering
 
             epoch = (step // epoch_size) + 1
             self.save_checkpoint(epoch, step)
+
+            self.type_filtering = False
+            train_accNTF, train_res_strNTF = self.evaluate(train_pairs, n=10, randomize=False)
+            tb_logger.scalar_summary("Train Acc NTF", train_accNTF, step)
+
+            accNTF, res_strNTF = self.evaluate(val_pairs, randomize=False)
+            tb_logger.scalar_summary("Val Acc NTF", accNTF, step)
+            if special_pairs is not None:
+                sp_accNTF, sp_res_strNTF = self.evaluate(special_pairs, n=len(special_pairs), randomize=False)
+                tb_logger.scalar_summary("Special Acc NTF", sp_accNTF, step)
+
+            self.type_filtering = True
             train_acc, train_res_str = self.evaluate(train_pairs, n=10, randomize=False)
             tb_logger.scalar_summary("Train Acc", train_acc, step)
 
@@ -528,10 +572,21 @@ class MultiHeadSeq2Seq():
             if special_pairs is not None:
                 sp_acc, sp_res_str = self.evaluate(special_pairs, n=len(special_pairs), randomize=False)
                 tb_logger.scalar_summary("Special Acc", sp_acc, step)
+
             val_log_f.write("\n==========================================\nStep={}\n".format(step))
-            val_log_f.write("Training pair check\n")
+            val_log_f.write("Training pair check w/o type-filtering\n")
+            val_log_f.write(train_res_strNTF)
+            val_log_f.write("\nValidation pair check w/o type-filtering\n")
+            val_log_f.write(res_strNTF)
+            val_log_f.write("\n")
+            if special_pairs is not None:
+                val_log_f.write("\n\t* * * * * * * * * *\nSpecials\n* * * * * * * * * *\n".format(step))
+                val_log_f.write(sp_res_strNTF)
+                val_log_f.write("\n")
+
+            val_log_f.write("Training pair check w type-filtering\n")
             val_log_f.write(train_res_str)
-            val_log_f.write("\nValidation pair check\n")
+            val_log_f.write("\nValidation pair check w type-filtering\n")
             val_log_f.write(res_str)
             val_log_f.write("\n")
             if special_pairs is not None:
