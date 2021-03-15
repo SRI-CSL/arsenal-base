@@ -57,7 +57,9 @@ val typestring_int : string
 val typestring_list: string -> string
 val typestring_option: string -> string
 
-val json_desc_list: string -> unit -> unit
+val json_desc_bool  : unit -> unit
+val json_desc_int   : unit -> unit
+val json_desc_list  : string -> unit -> unit
 val json_desc_option: string -> unit -> unit
 
 val serialise_bool   : bool PPX_Serialise.t
@@ -81,9 +83,11 @@ val random_int        : int PPX_Random.t
 val random_bool       : bool PPX_Random.t
 val random_ascii      : char PPX_Random.t
 val random_ascii_pair : (char * char) PPX_Random.t
+(* p is the probability of None *)
 val random_option     : ?p:float -> ('b PPX_Random.t) -> 'b option PPX_Random.t
-val ( +? ) : ('b PPX_Random.t) -> float -> 'b option PPX_Random.t
-val ( *? ) : ('b PPX_Random.t) -> ('c PPX_Random.t) -> ('b * 'c) PPX_Random.t
+(* the float is the probability of None *)
+val none_p : float -> ('b PPX_Random.t) -> 'b option PPX_Random.t
+val ( *! ) : ('b PPX_Random.t) -> ('c PPX_Random.t) -> ('b * 'c) PPX_Random.t
 val random_list :
   ?min:int -> ?max:int -> ?empty:float -> ('b PPX_Random.t) -> 'b list PPX_Random.t
 val string_of_char : char -> string
@@ -145,7 +149,7 @@ val ( +? ) : 'a pp -> print -> 'a option pp
 val ( ?+ ) : 'a pp -> 'a option pp (* noop if not present *)
 
 (* has the option? *)
-val ( ?++ ) : 'a option -> bool
+val ( ?? ) : 'a option -> bool
 
 
 (*************************************************)

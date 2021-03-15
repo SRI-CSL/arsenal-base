@@ -7,8 +7,45 @@ open Arsenal_lib
 type integer  = [`Integer] Entity.t  [@@deriving arsenal]
 
 (**************)
+(* Qualifying *)
+
+type article =
+  | Definite   [@weight 4]
+  | Indefinite [@weight 2]
+  | All [@weight 0]
+  | Som [@weight 0]
+[@@deriving arsenal]
+
+type singplu = Singular | Plural
+                            [@@deriving arsenal]
+
+module Qualif = struct
+
+  type verb = Verb of {
+      vplural : bool;
+      (* person  : [`First | `Second | `Third ]; *)
+      (* tense   : [ `Present | `Infinitive ]; *)
+      neg     : bool;
+      aux     : [`Can | `Shall | `Will | `May | `Might | `Must | `Need ] option
+    }
+
+  type noun = Noun of {
+      article : article;
+      singplu : singplu
+    } [@@deriving arsenal]
+
+end
+              
+type 'a qualif = Qualif of {
+      noun : 'a;
+      qualif : Qualif.noun;
+    }[@@deriving arsenal]
+
+
+(**************)
 (* Quantities *)
 
+              
 type 'q range = Exact of 'q [@weight 5]
       | MoreThan of 'q      [@weight 4]
       | LessThan of 'q      [@weight 4]

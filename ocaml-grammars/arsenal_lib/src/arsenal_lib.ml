@@ -218,7 +218,9 @@ let typestring_bool = "bool"
 let typestring_int = "int"
 let typestring_list str = "list("^str^")"
 let typestring_option str = "option("^str^")"
-let json_desc_list _ () = ()
+let json_desc_bool     () = ()
+let json_desc_int      () = ()
+let json_desc_list   _ () = ()
 let json_desc_option _ () = ()
 
 let json_of_bool b : JSON.t = `Bool b
@@ -337,9 +339,9 @@ let random_option ?(p=0.5) random_arg state =
   let b = Random.float 1. state.PPX_Random.rstate in
   if Float.(b <= p) then None else Some(random_arg state)
 
-let ( +? ) random_arg w = random_option ~p:w random_arg
+let none_p p = random_option ~p
 
-let ( *? ) random_arg1 random_arg2 state = random_arg1 state, random_arg2 state
+let ( *! ) random_arg1 random_arg2 state = random_arg1 state, random_arg2 state
 
 let random_list ?(min=1) ?max ?(empty=0.5) random_arg state =
   let rec aux ?length i accu =
@@ -390,8 +392,8 @@ let pick l =
     | [] -> raise(Conversion("No natural language rendering left to pick from"))
     | (s,i)::tail -> if (n < i) then s else aux (n-i) tail
   in
-  let state = PPX_Random.init() in
-  aux (Random.int sum state.rstate) l
+  let state = Random.State.make_self_init() in
+  aux (Random.int sum state) l
 
 let toString a =
   let buf = Buffer.create 255 in
@@ -433,8 +435,8 @@ let (++) w1 w2 = 1 - (w1 * w2)
 
 (* Easy extension of pp function to option type *)
 let (+?) pp1 pp2  = function Some x -> pp1 x | None -> pp2
-let (?+) pp_arg = pp_arg +? noop
-let (?++) = function Some _ -> true | None -> false
+let (?+) pp_arg = function Some x -> pp_arg x | None -> noop
+let (??) = function Some _ -> true | None -> false
 
 (*************************************************)
 (* Small extension of the standard Result module *)
@@ -498,8 +500,8 @@ module Entity = struct
 
   let random random_arg s =
     incr PPX_Random.counter;
-    { kind = Some(random_arg s);
-      counter = !PPX_Random.counter;
+    { kind         = Some(random_arg s);
+      counter      = !PPX_Random.counter;
       substitution = None }
 
   let to_json arg e =
