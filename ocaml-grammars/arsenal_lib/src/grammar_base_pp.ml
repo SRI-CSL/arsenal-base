@@ -4,89 +4,90 @@ open Grammar_base
 (************************)
 (* Pretty-print helpers *)
 
-type verb = {
-  vplural : bool;
-  (* person  : [`First | `Second | `Third ];
-   * tense   : [ `Present ] *)
-}
+let sverb = Qualif.Verb{ vplural = false; neg = false; aux = None }
+let pverb = Qualif.Verb{ vplural = true; neg = false; aux = None }
 
-type noun = {
-  nplural  : bool;
-  definite : bool;
-  noarticle: bool
-}
+let sd_noun = Qualif.Noun{ article = Definite; singplu = Singular }
+let si_noun = Qualif.Noun{ article = Indefinite; singplu = Singular }
+let pd_noun = Qualif.Noun{ article = Definite; singplu = Plural }
+let pi_noun = Qualif.Noun{ article = Indefinite; singplu = Plural }
 
-let sverb = { vplural = false }
-let pverb = { vplural = true }
-let sd_noun = { nplural = false; definite = true; noarticle=false }
-let si_noun = { nplural = false; definite = false; noarticle=false }
-let pd_noun = { nplural = true; definite = true; noarticle=false }
-let pi_noun = { nplural = true; definite = false; noarticle=false }
 let bchoose = !&[true; false]
-let verb_mk () = { vplural = bchoose () }
-let noun_mk () = { nplural = bchoose (); definite = bchoose(); noarticle=false }
 
-let thirdp state = if state.vplural then "" else "s"
-let does state   = if state.vplural then "do" else "does"
-let is state     = if state.vplural then "are" else "is"
-let has state    = if state.vplural then "have" else "has"
+let verb_mk () = Qualif.Verb{ vplural = bchoose (); neg = false; aux = None }
+let noun_mk () = Qualif.Noun{ article = if bchoose () then Definite else Indefinite;
+                              singplu = if bchoose () then Singular else Plural }
+
+let rec conjugate state stem =
+  let Qualif.(Verb{ vplural; neg; aux }) = state in
+  match aux with
+  | Some `Need ->
+     !![
+         if neg then "need not "^stem
+         else if vplural then "need to "^stem
+         else "needs to "^stem
+       ]
+
+  | Some a ->
+     let a = match a with
+       | `Can   -> "can"
+       | `Shall -> "shall"
+       | `Will  -> "will"
+       | `May   -> "may"
+       | `Might -> "might"
+       | `Must  -> "must"
+       | `Need  -> "need"
+     in
+     !![
+         if neg then a^" not "^stem
+         else a^" "^stem
+       ]
+
+  | None ->
+     match stem with
+     | "be"   -> let a = if vplural then "are" else "is" in
+                 !![ if neg then a^" not" else a ]
+     | "have" -> if neg then
+                   !?[ F "%t %s" // conjugate state "do" // "have" ]
+                 else
+                   !![ if vplural then "have" else "has" ]
+
+     | "do"   -> let a = if vplural then "do" else "does" in
+                 !![ if neg then a else a^" not" ]
+     | _      -> if neg then
+                   !?[ F "%t %s" // conjugate state "do" // stem ]
+                 else
+                   !![ if vplural then stem
+                       else
+                         let l = String.length stem in
+                         match String.sub stem (l - 1) 1 with
+                         | "y" -> String.sub stem 0 (l - 1)^"ies"
+                         | _ -> stem^"s" ]
 
 let modal_pure = !!!["can ",1; "may ",1; "might ",1; "",4]
     
 let modal state verb =
-  let aux s = !!!["can "^verb,1; "may "^verb,1; "might "^verb,1; s,4] in
-  match verb with
-  | "be"   -> aux (is state)
-  | "have" -> aux (has state)
-  | "do"   -> aux (does state)
-  | _      -> aux (verb^(thirdp state))
+  let aux s = !??[ F "can %s"   // verb,1;
+                   F "may %s"   // verb,1;
+                   F "might %s" // verb,1;
+                   F "%t" // s,4] in
+  aux (conjugate state verb)
 
-let nplural state = if state.nplural then "s" else ""
-  
+let agree singplu s =
+  match singplu with
+  | Singular -> s
+  | Plural   -> s^"s"
+
 let bnot b = if b then "" else " not"
 let bno b = if b then "" else " no"
-
-let pos_be state = !?[
-    F "%s" // is state;
-    F "should be";
-    F "must be";
-    F "need%s to be" // thirdp state;
-  ]
-
-let neg_be state = !?[
-    F "%s not" // is state;
-    F "should not be";
-    F "must not be";
-    F "need%s not be" // thirdp state;
-    F "%s not need to be" // does state;
-  ]
-
-let pos_have state = !?[
-    F "%s" // has state;
-    F "suffer%s from" // thirdp state;
-  ]
-
-let neg_have state = !?[
-    F "%s not have" // does state;
-    F "%s no" // has state;
-    F "%s not suffer from" // does state;
-  ]
-
-let the = !!["the ";""]
-
-let article state = !!![
-    "the ", ?~(state.definite) * ~?(state.noarticle);
-    "a ", ~?(state.nplural) * ~?(state.definite) * ~?(state.noarticle);
-    "", ?~(state.nplural)
-  ]
 
 let that        = !!["that "; ""]
 let preposition = !!["in"; "with"; "for"]
 let suchas      = !!!["such as",2; "like",1; "including",2]
 
 let sep_last = !&&[
-    (","," and"),3;
-    (",",", and"),1; (* with Oxford comma *)
+    (" and"),3;
+    (", and"),1; (* with Oxford comma *)
   ]
 
 let incaseof b =
@@ -102,6 +103,32 @@ let needed    = !!["needed"; "necessary"; "mandatory"; "required"]
 (* Terminals *)
 
 let pp_integer = Entity.pp (fun fmt `Integer -> return "Integer" fmt)
+
+(**************)
+(* Qualifiers *)
+
+let every = !!["every"; "each"; "any"]
+
+let pp_qualif pp_arg (Qualif{ noun; qualif }) =
+  let Qualif.(Noun{article; singplu}) = qualif in
+  match article, singplu with
+  | Definite, Singular   ->
+     let art = !!![ "the",3; "this", 1; "that", 1] in
+     !?[ F "%t %t" // art // pp_arg singplu noun ]
+  | Definite, Plural   ->
+     let art = !!![ "the",3; "these", 1; "those", 1] in
+     !?[ F "%t %t" // art // pp_arg singplu noun ]
+  | Indefinite, Singular ->
+     !?[ F "a %t" // pp_arg singplu noun ]
+  | Indefinite, Plural   ->
+     pp_arg singplu noun
+  | All, Singular   ->
+     !?[ F "%t %t" // every // pp_arg singplu noun ]
+  | All, Plural     ->
+     !?[ F "all %t" // pp_arg singplu noun ]
+  | Som, _   ->
+     !?[ F "some %t" // pp_arg singplu noun ]
+    
 
 (**************)
 (* Quantities *)
@@ -135,7 +162,9 @@ let pp_fraction = function
   | Half    -> !!["half"]
   | Third   -> !!["third"]
   | Quarter -> !!["quarter"]
-    
+
+let the = !!!["the", 3; "",1]
+
 let pp_proportion q =
   let s = !!![" of the",1; "",2] in
   match q with
@@ -151,19 +180,19 @@ let pp_proportion q =
     
 
 let pp_proportion_option = function
-  | None    -> F "%t" // article pd_noun  |> print
+  | None    -> F "the" |> print
   | Some pe -> F "%t" // pp_proportion pe |> print
 
 let pp_time_unit state = function
-  | Second -> F "second%s" // nplural state |> print
-  | Minute -> F "minute%s" // nplural state |> print
-  | Hour   -> F "hour%s"   // nplural state |> print
-  | Day    -> F "day%s"    // nplural state |> print
-  | Week   -> F "week%s"   // nplural state |> print
-  | Month  -> F "month%s"  // nplural state |> print
-  | Year   -> F "year%s"   // nplural state |> print
+  | Second -> !![ agree state "second" ]
+  | Minute -> !![ agree state "minute" ]
+  | Hour   -> !![ agree state "hour" ]
+  | Day    -> !![ agree state "day" ]
+  | Week   -> !![ agree state "week" ]
+  | Month  -> !![ agree state "month" ]
+  | Year   -> !![ agree state "year" ]
 
 let pp_range_aux pp_arg =
   pp_range (fun (Time(i,a)) -> F "%t %t" // pp_integer i // pp_arg a |> print)
     
-let pp_q_time (QT range) = pp_range_aux (pp_time_unit pd_noun) range
+let pp_q_time (QT range) = pp_range_aux (pp_time_unit Plural) range
