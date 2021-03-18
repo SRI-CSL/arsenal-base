@@ -30,6 +30,9 @@ end
 
 module JSONindex : sig
   type t
+  val static_mem : string -> bool
+  val static_add : string -> (unit -> unit) -> unit
+  val static_find : string -> (string*JSON.t) list
   val mem : string -> bool
   val find : string -> (string*JSON.t) list
   val mark : string -> t

@@ -57,6 +57,10 @@ end
 module JSONindex = struct
   let index = ref []
   module JSONhashtbl = Hashtbl.Make(String)
+  let global = JSONhashtbl.create 100
+  let static_mem = JSONhashtbl.mem global
+  let static_add = JSONhashtbl.add global
+  let static_find = JSONhashtbl.find global
   let marked = JSONhashtbl.create 100
   type t = (string * JSON.t) list ref
   let mem s  = JSONhashtbl.mem marked s
