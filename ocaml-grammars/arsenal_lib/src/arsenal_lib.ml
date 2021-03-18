@@ -60,7 +60,8 @@ module JSONindex = struct
   let global = JSONhashtbl.create 100
   let static_mem = JSONhashtbl.mem global
   let static_add = JSONhashtbl.add global
-  let static_find = JSONhashtbl.find global
+  let static_all () = global |> JSONhashtbl.to_seq_keys |> Seq.to_list 
+  let populate str = JSONhashtbl.find global str ()
   let marked = JSONhashtbl.create 100
   type t = (string * JSON.t) list ref
   let mem s  = JSONhashtbl.mem marked s
@@ -72,11 +73,7 @@ module JSONindex = struct
   let add (mark : t) l =
     mark := l;
     List.iter (fun json -> index := json::!index) l
-  let out ~id ~description =
-    let toptype = match !index with
-      | [] -> failwith "No entry point given"
-      | (toptype,_)::_ -> toptype
-    in
+  let out ~id ~description ~toptype =
     let top =
       "Top",
       `Assoc [

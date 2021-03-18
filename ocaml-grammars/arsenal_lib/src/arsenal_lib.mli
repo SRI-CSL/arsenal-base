@@ -32,12 +32,13 @@ module JSONindex : sig
   type t
   val static_mem : string -> bool
   val static_add : string -> (unit -> unit) -> unit
-  val static_find : string -> (string*JSON.t) list
+  val static_all : unit -> string list
+  val populate : string -> unit
   val mem : string -> bool
   val find : string -> (string*JSON.t) list
   val mark : string -> t
   val add : t -> (string*JSON.t) list -> unit
-  val out : id:string -> description:string -> JSON.t
+  val out : id:string -> description:string -> toptype:string-> JSON.t
 end
      
 val sexp2json : Sexp.t -> JSON.t

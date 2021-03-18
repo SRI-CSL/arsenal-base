@@ -203,35 +203,46 @@ let expr_of_type_decl ~path typestring_expr type_decl =
   | Ptype_open, _ ->
      raise_errorf ~loc "Cannot derive %s for open type." deriver_name
 
-let expr_of_type_decl in_grammar ~path type_decl =
+let expr_of_type_decl in_grammar ~path ~var type_decl : expression * expression =
   let loc = type_decl.ptype_loc in (* location of the type declaration *)
-  let typestring_expr = (* building the string "foo(poly_a)...(poly_n)"*)
-    let aux param sofar =
-      ("poly_"^param.txt
-       |> Lexing.from_string
-       |> Parse.longident
-       |> mknoloc
-       |> Exp.ident)::sofar
-    in
-    let l = Ppx_deriving.fold_right_type_decl aux type_decl [] in
+  (* We first build the string "foo(poly_a)...(poly_n)"*)
+  let aux param sofar =
+    ("poly_"^param.txt
+     |> Lexing.from_string
+     |> Parse.longident
+     |> mknoloc
+     |> Exp.ident)::sofar
+  in
+  let l = Ppx_deriving.fold_right_type_decl aux type_decl [] in
+  let typestring_expr =
     let name = ident "typestring" (Lident type_decl.ptype_name.txt) in
     app name l
   in
   if in_grammar then
     [%expr
-        fun () ->
-        if not(JSONindex.mem [%e typestring_expr])
-        then
-          begin
-            let mark = JSONindex.mark [%e typestring_expr] in
-            let json_list = [%e expr_of_type_decl ~path typestring_expr type_decl ] in
-            Format.(fprintf err_formatter) "Registering type %s\n" [%e typestring_expr];
-            JSONindex.add mark json_list
-          end
-    ]
+     fun () ->
+       if not(JSONindex.mem [%e typestring_expr])
+       then
+         begin
+           let mark = JSONindex.mark [%e typestring_expr] in
+           let json_list = [%e expr_of_type_decl ~path typestring_expr type_decl ] in
+           Format.(fprintf err_formatter) "Registering type %s\n" [%e typestring_expr];
+           JSONindex.add mark json_list
+         end
+    ],
+    match l with
+    | [] ->
+       [%expr
+           if not(JSONindex.static_mem [%e typestring_expr])
+           then
+             JSONindex.static_add [%e typestring_expr] [%e var];
+       ]
+    | _::_ -> [%expr ()]
   else
     [%expr fun () ->
-        Format.(fprintf err_formatter) "Skipping type %s\n" [%e typestring_expr]]
+        Format.(fprintf err_formatter) "Skipping type %s\n" [%e typestring_expr]],
+    [%expr ()]
+    
 
 (* Signature and Structure Components *)
 
@@ -242,18 +253,24 @@ let sig_of_type ~options ~path type_decl =
         (json_desc_type_of_decl ~options ~path type_decl))]
 
 let str_of_type ~options ~path type_decl =
-  let in_grammar = parse_options options in
-  let sexp_func = expr_of_type_decl in_grammar ~path type_decl in
-  let path = Ppx_deriving.path_of_type_decl ~path type_decl in
-  let sexp_type = json_desc_type_of_decl ~options ~path type_decl in
-  let sexp_var =
-    pvar (Ppx_deriving.mangle_type_decl (`Prefix "json_desc") type_decl) in
-  [Vb.mk (Pat.constraint_ sexp_var sexp_type)
-     (Ppx_deriving.poly_fun_of_type_decl type_decl sexp_func)]
+  let in_grammar   = parse_options options in
+  let name         = Ppx_deriving.mangle_type_decl (`Prefix "json_desc") type_decl in
+  let var          = evar name in
+  let pvar         = pvar name in
+  let path         = Ppx_deriving.path_of_type_decl ~path type_decl in
+  let func, record = expr_of_type_decl in_grammar ~path ~var type_decl in
+  let typ          = json_desc_type_of_decl ~options ~path type_decl in
+  let loc = type_decl.ptype_loc in
+  let typ2 = [%type: unit] in
+  [Vb.mk (Pat.constraint_ pvar typ) (Ppx_deriving.poly_fun_of_type_decl type_decl func)],
+  [Vb.mk (Pat.constraint_ (punit()) typ2) record]
 
 let type_decl_str ~options ~path type_decls =
-  [Str.value Recursive
-     (List.concat (List.map (str_of_type ~options ~path) type_decls)) ]
+  let l = List.map (str_of_type ~options ~path) type_decls in
+  let a = List.map fst l in
+  let b = List.map snd l in
+  [Str.value Recursive (List.concat a);
+   Str.value Nonrecursive (List.concat b)]
 
 let type_decl_sig ~options ~path type_decls =
   List.concat (List.map (sig_of_type ~options ~path) type_decls)
