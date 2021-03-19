@@ -18,6 +18,7 @@ let args : string list ref = ref [] (* Where the command-line argument will be s
 
 let options =
   [
+    ("-n", Int(fun i -> howmany := i), "\thow many instances to generate (default is 1)");
     ("-json", Set print_json, "\tprint json output");
     ("-sexp", Set print_sexp, "\tprint S-expression output");
     ("-polish", Set print_polish, "\tprint polish output");
