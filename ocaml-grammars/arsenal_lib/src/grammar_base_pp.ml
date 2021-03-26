@@ -102,7 +102,7 @@ let needed    = !!["needed"; "necessary"; "mandatory"; "required"]
 (*************)
 (* Terminals *)
 
-let pp_integer = Entity.pp (fun fmt `Integer -> return "Integer" fmt)
+let pp_integer = Entity.pp serialise_integerT
 
 (**************)
 (* Qualifiers *)

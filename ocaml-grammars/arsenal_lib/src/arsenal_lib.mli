@@ -179,7 +179,7 @@ sig
   val strict   : float ref
 
   type 'a t [@@deriving arsenal]
-  val pp    : (Format.formatter -> 'a -> unit) -> 'a t pp
+  val pp    : 'a PPX_Serialise.t -> 'a t pp
   val to_id : string -> (string * int, string) result
   val entity_mk :
     string ->

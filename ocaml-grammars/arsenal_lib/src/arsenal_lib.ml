@@ -490,9 +490,13 @@ module Entity = struct
           ]
       ]
 
-  let pp pp_arg e =
+  let pp arg e =
     let pp_kind = function
-      | Some e when not !one_entity_kind -> F "%a" // pp_arg // e |> print
+      | Some k when not !one_entity_kind ->
+         let
+           cst = PPX_Serialise.sexp_get_cst ~who:"Entity.pp" (arg.PPX_Serialise.to_sexp k)
+         in
+         F "%s" // cst |> print
       | _ -> return "E"
     in
     match e.substitution with
@@ -530,7 +534,7 @@ module Entity = struct
            cst = PPX_Serialise.sexp_get_cst ~who:"Entity.sexp_of" (arg.PPX_Serialise.to_sexp k)
          in
          PPX_Serialise.sexp_constructor
-           (cst^"_"^string_of_int e.counter)
+           (Format.sprintf "%a" (fun fmt x -> pp arg x fmt) e)
            (typestring (arg.type_string()))
       | _ -> PPX_Serialise.sexp_constructor
                ("E_"^string_of_int e.counter)
