@@ -22,17 +22,18 @@ open Utils
    
 let deriver_name = "json_desc"
 
+let in_grammar = ref true
+
 let parse_options l =
-  let result = ref true in
   let aux (name, pexp) = 
     match name with
-    | "in_grammar" -> result := Ppx_deriving.Arg.(get_expr ~deriver:deriver_name bool) pexp
+    | "in_grammar" -> in_grammar := Ppx_deriving.Arg.(get_expr ~deriver:deriver_name bool) pexp
+    | "with_path"  -> with_path  := Ppx_deriving.Arg.(get_expr ~deriver:deriver_name bool) pexp
     | _ ->
        raise_errorf ~loc:pexp.pexp_loc
          "The %s deriver takes no option %s." deriver_name name
   in
-  List.iter aux l;
-  !result
+  List.iter aux l
 
 let json_desc_type_of_decl ~options:_ ~path:_path type_decl =
   let loc = type_decl.ptype_loc in
@@ -54,14 +55,14 @@ and expr_of_typ typ : expression*bool*bool =
   | {ptyp_desc = Ptyp_constr ({txt = Lident "option" ; loc }, [arg]) ; _} ->
      let args,optional,list = expr_of_typ arg in
      if optional
-     then raise_errorf ~loc "Deriver %s doe snot accept option of option." deriver_name;
+     then raise_errorf ~loc "Deriver %s does not accept option of option." deriver_name;
      args, true, list
 
   (* Referencing an option type: typs are the types arguments *)
   | {ptyp_desc = Ptyp_constr ({txt = Lident "list" ; loc }, [arg]) ; _} ->
      let args,optional,list = expr_of_typ arg in
      if optional || list
-     then raise_errorf ~loc "Deriver %s doe snot accept list of option." deriver_name;
+     then raise_errorf ~loc "Deriver %s does not accept list of option." deriver_name;
      args, false, true
 
   (* Referencing another type, possibly polymorphic: typs are the types arguments *)
@@ -253,12 +254,12 @@ let sig_of_type ~options ~path type_decl =
         (json_desc_type_of_decl ~options ~path type_decl))]
 
 let str_of_type ~options ~path type_decl =
-  let in_grammar   = parse_options options in
+  parse_options options;
   let name         = Ppx_deriving.mangle_type_decl (`Prefix "json_desc") type_decl in
   let var          = evar name in
   let pvar         = pvar name in
   let path         = Ppx_deriving.path_of_type_decl ~path type_decl in
-  let func, record = expr_of_type_decl in_grammar ~path ~var type_decl in
+  let func, record = expr_of_type_decl !in_grammar ~path ~var type_decl in
   let typ          = json_desc_type_of_decl ~options ~path type_decl in
   let loc = type_decl.ptype_loc in
   let typ2 = [%type: unit] in

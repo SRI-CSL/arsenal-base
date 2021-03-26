@@ -32,11 +32,14 @@ let pattn_named l =
   let aux i x = mkloc (Lident x.pld_name.txt) x.pld_name.loc, pvar (argn i) in
   List.mapi aux l
 
-let parse_options = List.iter @@ fun (name, pexp) ->
-                                 match name with
-                                 | _ ->
-                                    raise_errorf ~loc:pexp.pexp_loc
-                                      "The %s deriver takes no option %s." deriver_name name
+let parse_options =
+  List.iter @@
+    fun (name, pexp) ->
+    match name with
+    | "with_path" -> with_path := Ppx_deriving.Arg.(get_expr ~deriver:deriver_name bool) pexp
+    | _ ->
+       raise_errorf ~loc:pexp.pexp_loc
+         "The %s deriver takes no option %s." deriver_name name
 
 (* Generator Type *)
 

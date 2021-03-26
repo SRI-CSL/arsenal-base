@@ -490,8 +490,8 @@ module Entity = struct
           ]
       ]
 
-  let pp arg e =
-    let pp_kind = function
+  let pp_kindcounter arg kind counter =
+    let base = match kind with
       | Some k when not !one_entity_kind ->
          let
            cst = PPX_Serialise.sexp_get_cst ~who:"Entity.pp" (arg.PPX_Serialise.to_sexp k)
@@ -499,9 +499,20 @@ module Entity = struct
          F "%s" // cst |> print
       | _ -> return "E"
     in
+    let counter_string = string_of_int counter in
+    let counter_string =
+      if String.length counter_string = 1
+      then "00"^counter_string
+      else if String.length counter_string = 2
+      then "0"^counter_string
+      else counter_string
+    in
+    F "%t_%s" // base // counter_string |> print
+
+  let pp arg e =
     match e.substitution with
-    | Some nl -> F "%t_%i{%s}" // pp_kind e.kind // e.counter // nl |> print
-    | None    -> F "%t_%i" // pp_kind e.kind // e.counter |> print
+    | Some nl -> F "_%t{%s}" // pp_kindcounter arg e.kind e.counter // nl |> print
+    | None    -> F "_%t" // pp_kindcounter arg e.kind e.counter |> print
 
   let random random_arg s =
     incr PPX_Random.counter;
@@ -527,49 +538,52 @@ module Entity = struct
     `Assoc(["counter", `Int e.counter] |> sub |> kind)
 
   let to_sexp arg e =
-    let base =
+    let open PPX_Serialise in
+    let ty = 
       match e.kind with
-      | Some k when not !one_entity_kind ->
-         let
-           cst = PPX_Serialise.sexp_get_cst ~who:"Entity.sexp_of" (arg.PPX_Serialise.to_sexp k)
-         in
-         PPX_Serialise.sexp_constructor
-           (Format.sprintf "%a" (fun fmt x -> pp arg x fmt) e)
-           (typestring (arg.type_string()))
-      | _ -> PPX_Serialise.sexp_constructor
-               ("E_"^string_of_int e.counter)
-               "Entity"
+      | Some _ when not !one_entity_kind -> (typestring (arg.type_string()))
+      | _ -> "entity"
     in
+    let base = sexp_constructor (Format.sprintf "%t" (pp_kindcounter arg e.kind e.counter)) ty in
     match e.substitution with
     | Some entity -> Sexp.List[base;Sexp.Atom entity]
     | None -> base 
 
-  let to_id l =
+  let to_id s =
+    (* Splits string s on '_' character c1_c2_c3... *)
+    (* accu is the prefix read so far:
+       first None, then Some c1, then Some c1_c2, then Some c1_c2_c3, etc
+       l is the rest of the chunks:
+       first [c1;c2;c3;...] then [c2;c3;...] then [c3;...] *)
     let rec aux ?accu l =
-      match l, accu with
-      | [], _ 
-      | [(_)], None   -> Error "not good"
-      | [i], Some s -> 
+      match accu, l with
+      | _, []         (* We should have stopped when l was a singleton *)
+        | None, [(_)] (* But if it's a singleton and there's no prefix, we fail too *)
+        -> Error "not good"
+      | Some s, [i] -> (* The last chunk should be the counter, s is everything before *)
         Result.of_option
           ~error:(i^" should be an integer")
           (int_of_string_opt i) >>| fun i -> (s,i)
-      | accu::tail, None   -> aux ~accu tail
-      | accu::tail, Some s -> aux ~accu:(s^"_"^accu) tail
+      | None,   accu::tail -> aux ~accu tail (* The first chunk gets in the accumulator *)
+      | Some s, accu::tail -> aux ~accu:(s^"_"^accu) tail (* We progress towards the counter *)
     in
-    String.split_on_char '_' l |> aux 
+    String.split_on_char '_' s |> aux 
 
-  let of_sexp arg = function
+  let of_sexp arg =
+    let aux s =
+      let s,counter = exn to_id s in
+      if String.equal s "E" then None, counter
+      else Some(arg.PPX_Serialise.of_sexp (Sexp.Atom s)), counter
+    in
+    function
     | Sexp.Atom s ->
-      let s,counter = exn to_id s in
-      if String.equal s "E" then { kind = None; counter; substitution = None }
-      else { kind = Some(arg.PPX_Serialise.of_sexp (Sexp.Atom s)); counter; substitution = None }
+      let kind, counter = aux s in
+      { kind; counter; substitution = None }
     | Sexp.List[Sexp.Atom s;Sexp.Atom nl] ->
-      let s,counter = exn to_id s in
-      if String.equal s "E" then { kind = None; counter; substitution = Some nl }
-      else { kind = Some(arg.PPX_Serialise.of_sexp (Sexp.Atom s));
-             counter;
-             substitution = Some nl }
-    | Sexp.List _ as sexp -> raise(Conversion("Entity.t_of_sexp: list S-expresion "^Sexp.to_string sexp^" cannot be an entity"))
+      let kind, counter = aux s in
+      { kind; counter; substitution = Some nl }
+    | Sexp.List _ as sexp ->
+       raise(Conversion("Entity.t_of_sexp: list S-expresion "^Sexp.to_string sexp^" cannot be an entity"))
 
   let serialise arg =
     PPX_Serialise.{

@@ -20,9 +20,13 @@ open Ppx_deriving.Ast_convenience
 
 let str2exp x = x |> Const.string |> Exp.constant
 
+let with_path = ref true
 let fully_qualified path str =
-  let aux sofar modul = sofar ^ modul ^ "/" in
-  (List.fold_left aux "" path)^str
+  if !with_path then
+    let aux sofar modul = sofar ^ modul ^ "/" in
+    (List.fold_left aux "" path)^str
+  else
+    str
 
 let raise_errorf = Ppx_deriving.raise_errorf
 

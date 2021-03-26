@@ -4,7 +4,7 @@ open Arsenal_lib
 (*************)
 (* Terminals *)
 
-type integerT = [`Integer]  [@@deriving arsenal]
+type integerT = Integer [@@deriving arsenal {in_grammar = false}]
 type integer  = integerT Entity.t [@@deriving arsenal]
 
 (**************)

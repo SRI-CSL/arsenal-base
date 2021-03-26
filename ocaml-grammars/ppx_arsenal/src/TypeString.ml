@@ -24,11 +24,14 @@ let deriver_name = "typestring"
 
 (* Parse Tree and PPX Helpers *)
 
-let parse_options = List.iter @@ fun (name, pexp) ->
-                                 match name with
-                                 | _ ->
-                                    raise_errorf ~loc:pexp.pexp_loc
-                                      "The %s deriver takes no option %s." deriver_name name
+let parse_options =
+  List.iter @@
+    fun (name, pexp) ->
+    match name with
+    | "with_path" -> with_path  := Ppx_deriving.Arg.(get_expr ~deriver:deriver_name bool) pexp
+    | _ ->
+       raise_errorf ~loc:pexp.pexp_loc
+         "The %s deriver takes no option %s." deriver_name name
 
 (* Generator Type *)
 

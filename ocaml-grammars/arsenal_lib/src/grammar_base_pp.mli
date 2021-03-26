@@ -40,7 +40,7 @@ val every    : print  (* each, every, etc *)
 (* Pretty-printers for the types defined in Base_grammar *)
 
 val pp_qualif     : (singplu -> 'a pp) -> 'a qualif pp
-val pp_integer    : [ `Integer ] Entity.t pp
+val pp_integer    : integerT Entity.t pp
 val pp_range      : ('a pp) -> 'a range pp
 val pp_fraction   : fraction pp
 val pp_proportion : proportion pp
