@@ -58,16 +58,17 @@ def is_numbered_placeholder(tok):
     """ Determines if the given token ends with a '_$DIGIT'.
     If the token is bracketed by double-quotes (for JSON), does this
     check within as well."""
-    dpat = '^(\D+)\d+$'  # Starts with a non-digit, ends with a digit
+    dpat = '^_(.+_)\d+$'  # Starts with "_", then any stuff, then _ and ends with digits
     is_quoted = False
     tok_txt = tok.strip()
     if tok_txt.startswith('"') and tok_txt.endswith('"'):
+        is_quoted = True
         tok_txt = tok_txt[1:-1]
     m = re.search(dpat, tok_txt)
     if m is not None:
         if is_quoted:
             return '"' + m.groups()[0] + "{}" + '"'
-        return m.groups()[0] + '{}'
+        return m.groups()[0] + "{}"
     return None
 
 def get_split(token):
@@ -79,9 +80,10 @@ def get_split(token):
 
 def subsfirst(token, entmap):
     [stem,suffix] = get_split(token)
+    stem_with_underscore = "_" + stem
     result = ""
     if stem in entmap:
-        return entmap[stem] + suffix
+        return entmap[stem_with_underscore] + suffix
     else:
         return stem+suffix
     
@@ -92,12 +94,12 @@ def reorder_numbered_placeholders(input1, input2, by_group=True):
     eid = 0
     toks1 = process_sentence(input1)
     toks2 = process_sentence(input2)
-    oldent2newent = {}
+    oldent2newent  = {} # map from old entities (incl "_" 1st character) to new entities (excl "_")
     group_hist = {}
     # First pass scan for entities.  Add in replacements 
     for tok1 in toks1:
         matched = is_numbered_placeholder(tok1)
-        if matched is not None:
+        if matched is not None: # tok1 of the form _XXX_DDD
             if tok1 not in oldent2newent:
                 if by_group:
                     if matched not in group_hist:
@@ -110,11 +112,12 @@ def reorder_numbered_placeholders(input1, input2, by_group=True):
                 eid += 1
                 oldent2newent[tok1] = new_entity
     # Replace in lang1 and lang2
-    new_toks1 = [oldent2newent[t] if t in oldent2newent else t for t in toks1]
+    new_toks1 = ["_" + oldent2newent[t] if t in oldent2newent else t for t in toks1]
     new_toks2 = [subsfirst(t,oldent2newent) for t in toks2]
     rlookup = {}
+    # Computing the reverse map (for decoding renumbering back CST entities at runtime)
     for oldent, newent in oldent2newent.items():
-        rlookup[newent] = oldent
+        rlookup["_" + newent] = oldent[1:]
     return " ".join(new_toks1), " ".join(new_toks2), rlookup
 
 

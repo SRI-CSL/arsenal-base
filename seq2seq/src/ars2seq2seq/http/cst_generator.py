@@ -144,11 +144,13 @@ class CSTGenerator:
                     rlookup.update(rlookup2)
                 if self.verbose:
                     print("Placeholder checks done")
+                # Where the real work happens:
                 gen_cst_toks, _ = self.seq2seq.generate(sentence)
                 if self.verbose:
                     print("... generated")
                 # Hack to fix empty tokens introduced before '!=' (inequality) functions
                 gen_cst_toks = [t for t in gen_cst_toks if len(t) > 0]
+                # Now we renumber the entities back with the original numbering
                 if self.normalize_sal_entities or self.reorder_numbered_placeholders:
                     print("RLookup={}".format(rlookup))
                     gen_cst_toks = reinsert_from_lookup(gen_cst_toks, rlookup)
