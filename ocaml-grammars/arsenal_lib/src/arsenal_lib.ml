@@ -8,7 +8,64 @@ module JSON = Yojson.Safe
 (************************************************************)
 (* Conversions between json, S-expressions, Polish notation *)
 
+module Order = struct
+  type (_,_) t =
+    | Eq : ('a,'a) t
+    | Lt : ('a,'b) t
+    | Gt : ('a,'b) t
+end
+
+module Key : sig
+  type _ t
+  val create  : hash: 'a Hash.t -> compare : 'a Ord.t -> 'a t
+  val hash    : 'a t Hash.t
+  val compare : 'a t -> 'b t -> ('a, 'b) Order.t
+  val get_hash    : 'a t -> 'a Hash.t
+  val get_compare : 'a t -> 'a Ord.t
+end = struct
+  type _ u = ..
+  let counter = ref 0
+              
+  type 'a t = { u    : 'a u;
+                i    : int;
+                hash : 'a Hash.t;
+                compare : 'a Ord.t
+              }
+  let hash t = t.i
+  let get_hash t    = t.hash
+  let get_compare t = t.compare
+
+  type ord = { cmp : 'a 'b. 'a u -> 'b u -> ('a, 'b) Order.t}
+
+  module ITbl = Hashtbl.Make(Int)
+
+  let compares = ITbl.create 100
+
+  let compare (type a b) (t1 : a t) (t2 : b t) : (a, b) Order.t =
+    if t1.i = t2.i then (ITbl.find compares t1.i).cmp t1.u t2.u
+    else if t1.i < t2.i then Order.Lt
+    else Order.Gt
+
+  let create (type a) ~(hash:a Hash.t) ~compare : a t =
+    let module M = struct
+        type _ u += New : a u
+      end
+    in
+    let r = { u = M.New; i = !counter; hash; compare } in
+    let cmp (type a b) (a : a u) (b : b u) : (a, b) Order.t =
+      match a, b with
+      | M.New, M.New -> Order.Eq
+      | _ -> failwith "Should not happen"
+    in
+    ITbl.replace compares !counter { cmp };
+    incr counter;
+    r
+    
+end 
+
+
 exception Conversion of string
+
 
 module PPX_Serialise = struct
 
@@ -16,6 +73,9 @@ module PPX_Serialise = struct
       to_json : 'a -> JSON.t;
       to_sexp : 'a -> Sexp.t;
       of_sexp : Sexp.t -> 'a;
+      hash    : 'a Hash.t;
+      compare : 'a Ord.t;
+      (* key     : 'a Key.t; *)
       type_string : unit -> string;
     }
 
@@ -54,21 +114,24 @@ module PPX_Serialise = struct
 
 end
 
+(* Hashtables for string keys, used several times *)
+module Stbl = Hashtbl.Make(String)
+
 module JSONindex = struct
   let index = ref []
-  module JSONhashtbl = Hashtbl.Make(String)
-  let global = JSONhashtbl.create 100
-  let static_mem = JSONhashtbl.mem global
-  let static_add = JSONhashtbl.add global
-  let static_all () = global |> JSONhashtbl.to_seq_keys |> Seq.to_list |> List.sort String.compare
-  let populate str = JSONhashtbl.find global str ()
-  let marked = JSONhashtbl.create 100
+  let global = Stbl.create 100
+  let static_mem = Stbl.mem global
+  let static_add = Stbl.add global
+  let static_all () =
+    global |> Stbl.to_seq_keys |> Seq.to_list |> List.sort String.compare
+  let populate str = Stbl.find global str ()
+  let marked = Stbl.create 100
   type t = (string * JSON.t) list ref
-  let mem s  = JSONhashtbl.mem marked s
-  let find s = !(JSONhashtbl.find marked s)
+  let mem s  = Stbl.mem marked s
+  let find s = !(Stbl.find marked s)
   let mark s : t = 
     let result = ref [] in
-    JSONhashtbl.add marked s result;
+    Stbl.add marked s result;
     result
   let add (mark : t) l =
     mark := l;
@@ -236,10 +299,16 @@ let bool_of_sexp = function
   | sexp -> raise(Conversion("bool_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode a boolean"))
 
 let serialise_bool =
-  PPX_Serialise.{
+  let open PPX_Serialise in
+  let hash = Hash.bool in
+  let compare = Ord.bool in
+  {
       to_json = json_of_bool;
       to_sexp = sexp_of_bool;
       of_sexp = bool_of_sexp;
+      hash;
+      compare;
+      (* key     = Key.create ~hash ~compare; *)
       type_string = fun () -> typestring_bool;
   }
   
@@ -255,10 +324,16 @@ let int_of_sexp = function
   | sexp -> raise(Conversion("int_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode an int"))
 
 let serialise_int =
-  PPX_Serialise.{
+  let open PPX_Serialise in
+  let hash = Hash.int in
+  let compare = Ord.int in
+  {
       to_json = json_of_int;
       to_sexp = sexp_of_int;
       of_sexp = int_of_sexp;
+      hash;
+      compare;
+      (* key     = Key.create ~hash ~compare; *)
       type_string = fun () -> typestring_int;
   }
 
@@ -278,10 +353,16 @@ let list_of_sexp arg = function
   | sexp -> raise(Conversion("list_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode a list"))
 
 let serialise_list arg =
-  PPX_Serialise.{
+  let open PPX_Serialise in
+  let hash = Hash.list arg.hash in
+  let compare = Ord.list arg.compare in
+  {
       to_json = json_of_list arg.to_json;
       to_sexp = sexp_of_list arg;
       of_sexp = list_of_sexp arg.of_sexp;
+      hash;
+      compare;
+      (* key     = Key.create ~hash ~compare; *)
       type_string = fun () -> typestring_list (arg.type_string());
   }
   
@@ -301,14 +382,19 @@ let option_of_sexp arg = function
   | sexp -> raise(Conversion("list_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode an option"))
 
 let serialise_option arg =
-  PPX_Serialise.{
+  let open PPX_Serialise in
+  let hash = Hash.opt arg.hash in
+  let compare = Ord.option arg.compare in
+  {
       to_json = json_of_option arg.to_json;
       to_sexp = sexp_of_option arg;
       of_sexp = option_of_sexp arg.of_sexp;
+      hash;
+      compare;
+      (* key     = Key.create ~hash ~compare; *)
       type_string = fun () -> typestring_option (arg.type_string());
   }
 
-(******************)
 (* For random AST *)
     
 module PPX_Random = struct
@@ -317,8 +403,7 @@ module PPX_Random = struct
   let deepen state = { state with depth = state.depth+1 }
   let case max state = Random.State.int state.rstate max
   let case_30b state = Random.State.bits state.rstate
-  let counter = ref 0
-  let init () = counter := 0; {depth = 0; rstate = Random.State.make_self_init()}
+  let init () = {depth = 0; rstate = Random.State.make_self_init()}
 end
 
 let depth state = Float.of_int(state.PPX_Random.depth+1)
@@ -365,7 +450,6 @@ let random_string state =
 
 type 'a distribution = ('a*float) list
 
-(****************)
 (* For printing *)
 
 type print = Format.formatter ->  unit
@@ -413,8 +497,8 @@ let pp_list ?(sep=",") ?last pp_arg l =
   in
   aux l
 
-(* Easy choose *)
-(* For lists of strings *)
+(* Easy choose
+ * For lists of strings *)
 let (!!)  l fmt = (pick(List.map (fun s -> s, 1) l) |> return) fmt
 let (!!!) l fmt = (pick l |> return) fmt
 (* For lists of %t functions *)
@@ -457,21 +541,65 @@ end
 
 let (>>=) = Result.bind
 let (>>|) = Result.map
-
+          
 (***********************)
 (* Module for entities *)
 
+          
 module Entity = struct
+
+  module EKey = struct
+    type t = K : 'a Key.t * 'a -> t
+    let hash    (K(key,a)) = Hash.pair Key.hash (Key.get_hash key) (key,a)
+    let compare (K(key1,a1)) (K(key2,a2)) =
+      match Key.compare key1 key2 with
+      | Order.Eq -> Key.get_compare key1 a1 a2
+      | Order.Lt -> -1
+      | Order.Gt -> 1
+    let equal a b = (compare a b = 0)
+  end
+
+  module Counters = Hashtbl.Make(struct
+                        type t    = EKey.t option
+                        let hash  = Hash.opt EKey.hash
+                        let equal = Option.equal EKey.equal
+                      end)
+
+  (* type kind = K : 'a -> kind *)
+  let counters = Counters.create 100 (* counters for entities *)
+  let init () = Counters.clear counters
 
   let one_entity_kind = ref false (* Is there just one entity kind? *)
   let warnings : [`NoSubst of string] list ref = ref [] (* While parsing a json, are we seeing any warning? *)
   let strict = ref 1.5
-  
+
+  let get_counter key kind =
+    let key =
+      if !one_entity_kind then None
+      else
+      match kind with
+      | None -> failwith "KKK"
+      | Some a -> Some(EKey.K(key,a))
+    in
+    (* print_endline("Size of tbl is "^string_of_int(Counters.length counters)); *)
+    match Counters.find_opt counters key with
+    | Some counter -> Counters.replace counters key (counter+1); counter
+    | None -> Counters.add counters key 1; 0
+
   type 'a t = {
-    kind         : 'a option;
-    counter      : int;
-    substitution : string option
-  }
+      kind         : 'a option;
+      counter      : int ref;
+      substitution : string option
+    }
+
+  let hash arg a =
+    Hash.triple (Hash.opt arg) Hash.int (Hash.opt Hash.string)
+      (a.kind, !(a.counter), a.substitution)
+
+  let compare arg a b =
+    Ord.triple (Ord.option arg) Ord.int (Ord.option Ord.string)
+      (a.kind, !(a.counter), a.substitution)
+      (b.kind, !(b.counter), b.substitution)
 
   let typestring arg = "entity("^arg^")"
   let json_desc arg () =
@@ -500,7 +628,7 @@ module Entity = struct
       | _ -> return "E"
     in
     let counter_string = string_of_int counter in
-    let counter_string =
+    let counter_string = (* prints the integer on 3 or more digits *)
       if String.length counter_string = 1
       then "00"^counter_string
       else if String.length counter_string = 2
@@ -509,15 +637,19 @@ module Entity = struct
     in
     F "%t_%s" // base // counter_string |> print
 
-  let pp arg e =
+  let pp arg key e fmt =
+    let counter = get_counter arg e.kind in
+    (* print_endline("pp counter "^string_of_int counter); *)
+    e.counter := counter;
     match e.substitution with
-    | Some nl -> F "_%t{%s}" // pp_kindcounter arg e.kind e.counter // nl |> print
-    | None    -> F "_%t" // pp_kindcounter arg e.kind e.counter |> print
+    | Some nl -> (F "_%t{%s}" // pp_kindcounter key e.kind counter // nl |> print) fmt
+    | None    -> (F "_%t" // pp_kindcounter key e.kind counter |> print) fmt
 
   let random random_arg s =
-    incr PPX_Random.counter;
-    { kind         = Some(random_arg s);
-      counter      = !PPX_Random.counter;
+    let kind = Some(random_arg s) in
+    let counter = 0 in
+    { kind;
+      counter      = ref counter;
       substitution = None }
 
   let to_json arg e =
@@ -535,7 +667,7 @@ module Entity = struct
       | Some entity -> ("substitution", `String entity)::l
       | None -> l
     in
-    `Assoc(["counter", `Int e.counter] |> sub |> kind)
+    `Assoc(["counter", `Int !(e.counter)] |> sub |> kind)
 
   let to_sexp arg e =
     let open PPX_Serialise in
@@ -544,7 +676,9 @@ module Entity = struct
       | Some _ when not !one_entity_kind -> (typestring (arg.type_string()))
       | _ -> "entity"
     in
-    let base = sexp_constructor (Format.sprintf "%t" (pp_kindcounter arg e.kind e.counter)) ty in
+    let base =
+      sexp_constructor (Format.sprintf "%t" (pp_kindcounter arg e.kind !(e.counter))) ty
+    in
     match e.substitution with
     | Some entity -> Sexp.List[base;Sexp.Atom entity]
     | None -> base 
@@ -578,24 +712,32 @@ module Entity = struct
     function
     | Sexp.Atom s ->
       let kind, counter = aux s in
-      { kind; counter; substitution = None }
+      { kind; counter = ref counter; substitution = None }
     | Sexp.List[Sexp.Atom s;Sexp.Atom nl] ->
       let kind, counter = aux s in
-      { kind; counter; substitution = Some nl }
+      { kind; counter = ref counter; substitution = Some nl }
     | Sexp.List _ as sexp ->
        raise(Conversion("Entity.t_of_sexp: list S-expresion "^Sexp.to_string sexp^" cannot be an entity"))
 
   let serialise arg =
-    PPX_Serialise.{
+    let open PPX_Serialise in
+    let hash = hash arg.hash in
+    let compare = compare arg.compare in
+    {
         to_json = to_json arg;
         to_sexp = to_sexp arg;
         of_sexp = of_sexp arg;
+        hash;
+        compare;
+        (* key = Key.create ~hash ~compare; *)
         type_string = fun () -> if !one_entity_kind then "Entity" else typestring (arg.type_string());
     }
 
+  let key () = failwith "Can't have key for polymorphic type"
+
   let entity_mk s ?(kind=None) ?(counter=0) ?(substitution=None) () =
     (match substitution with None -> warnings := (`NoSubst s)::!warnings | Some _ -> ());
-    Result.Ok { kind; counter; substitution }
+    Result.Ok { kind; counter = ref counter; substitution }
 
 
   let pick l _ = pick(List.map (fun (x,i) -> x, Stdlib.Float.(to_int(pow i !strict))) l)

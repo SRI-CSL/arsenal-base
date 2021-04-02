@@ -46,16 +46,17 @@ let ( #+ ) (deriver1, options1) (deriver2, options2) =
     (),
   List.union ~eq:String.equal options1 options2
 
-let ( #++ ) deriver1 deriver2 = 
+let ( #++ ) deriver1 deriver2 =
   match Ppx_deriving.lookup deriver2 with
   | None -> failwith("Deriver "^ deriver2 ^ " was not loaded; check the libraries in your build")
   | Some deriver2 -> deriver1 #+ (deriver2, [])
 
-
+                   
 let arsenal,_ = (TypeString.deriver, [])
-                  #+ (Serialise.deriver, [])
-                       #++ "random"
-                             #+ (JSONdesc.deriver, [])
+                  #++ "ord"
+                        #+ (Serialise.deriver, [])
+                             #++ "random"
+                                   #+ (JSONdesc.deriver, [])
 
 let () = Ppx_deriving.register Serialise.deriver;;
 let () = Ppx_deriving.register TypeString.deriver;;

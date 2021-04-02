@@ -6,6 +6,22 @@ open Sexplib
 (* Useful abbreviation *)
 module JSON = Yojson.Safe
 
+module Order : sig
+  type (_,_) t =
+    | Eq : ('a,'a) t
+    | Lt : ('a,'b) t
+    | Gt : ('a,'b) t
+end
+
+module Key : sig
+  type _ t
+  val create  : hash: 'a Hash.t -> compare : 'a Ord.t -> 'a t
+  val hash    : 'a t Hash.t
+  val compare : 'a t -> 'b t -> ('a, 'b) Order.t
+  val get_hash    : 'a t -> 'a Hash.t
+  val get_compare : 'a t -> 'a Ord.t
+end
+
 (************************************************************)
 (* Conversions between json, S-expressions, Polish notation *)
 
@@ -16,6 +32,9 @@ module PPX_Serialise : sig
       to_json : 'a -> JSON.t;
       to_sexp : 'a -> Sexp.t;
       of_sexp : Sexp.t -> 'a;
+      hash    : 'a Hash.t;
+      compare : 'a Ord.t;
+      (* key     : 'a Key.t; *)
       type_string : unit -> string;
     }
   val print_null  : bool ref (* Does not print null values in JSON *)
@@ -177,9 +196,10 @@ sig
   val one_entity_kind : bool ref
   val warnings : [ `NoSubst of string ] list ref
   val strict   : float ref
+  val init : unit -> unit
 
   type 'a t [@@deriving arsenal]
-  val pp    : 'a PPX_Serialise.t -> 'a t pp
+  val pp    : 'a Key.t -> 'a PPX_Serialise.t -> 'a t pp
   val to_id : string -> (string * int, string) result
   val entity_mk :
     string ->

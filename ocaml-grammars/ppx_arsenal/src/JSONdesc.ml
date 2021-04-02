@@ -42,6 +42,29 @@ let json_desc_type_of_decl ~options:_ ~path:_path type_decl =
     type_decl
     [%type: unit -> unit]
 
+let key_type_of_decl ~options ~path:_path type_decl =
+  let loc = type_decl.ptype_loc in
+  parse_options options;
+  let typ = Ppx_deriving.core_type_of_type_decl type_decl in
+  let typ =
+    match type_decl.ptype_manifest with
+    | Some {ptyp_desc = Ptyp_variant (_, Closed, _) ; _ } ->
+       let row_field = {
+           prf_desc = Rinherit typ;
+           prf_loc = typ.ptyp_loc;
+           prf_attributes = [];
+         }
+       in
+       {ptyp_desc = Ptyp_variant ([row_field], Open, None);
+        ptyp_loc  = Location.none;
+        ptyp_loc_stack  = [];
+        ptyp_attributes = []}
+    | _ -> typ
+  in
+  Ppx_deriving.poly_arrow_of_type_decl
+    (fun _var -> [%type: unit ])
+    type_decl [%type: [%t typ] Key.t ]
+
 let rec call loc lid typs =
   let args        = List.map (fun x -> let y,_,_ = expr_of_typ x in y) typs in
   let record_json = ident "json_desc" lid in
@@ -204,7 +227,7 @@ let expr_of_type_decl ~path typestring_expr type_decl =
   | Ptype_open, _ ->
      raise_errorf ~loc "Cannot derive %s for open type." deriver_name
 
-let expr_of_type_decl in_grammar ~path ~var type_decl : expression * expression =
+let expr_of_type_decl in_grammar ~path ~var type_decl : expression * expression * expression=
   let loc = type_decl.ptype_loc in (* location of the type declaration *)
   (* We first build the string "foo(poly_a)...(poly_n)"*)
   let aux param sofar =
@@ -219,6 +242,15 @@ let expr_of_type_decl in_grammar ~path ~var type_decl : expression * expression 
     let name = ident "typestring" (Lident type_decl.ptype_name.txt) in
     app name l
   in
+  let key =
+    match l with
+    | [] ->
+       let name = ident "serialise" (Lident type_decl.ptype_name.txt) in
+       let hash    = [%expr [%e name].PPX_Serialise.hash] in
+       let compare = [%expr [%e name].PPX_Serialise.compare] in
+       [%expr Key.create ~hash:[%e hash] ~compare:[%e compare]]
+    | _::_ -> [%expr failwith "Can't get key for polymorphic type"]
+  in
   if in_grammar then
     [%expr
      fun () ->
@@ -231,18 +263,22 @@ let expr_of_type_decl in_grammar ~path ~var type_decl : expression * expression 
            JSONindex.add mark json_list
          end
     ],
-    match l with
-    | [] ->
-       [%expr
-           if not(JSONindex.static_mem [%e typestring_expr])
-           then
-             JSONindex.static_add [%e typestring_expr] [%e var];
-       ]
-    | _::_ -> [%expr ()]
+    begin
+      match l with
+      | [] ->
+         [%expr
+             if not(JSONindex.static_mem [%e typestring_expr])
+             then
+               JSONindex.static_add [%e typestring_expr] [%e var];
+         ]
+      | _::_ -> [%expr ()]
+    end,
+    key
   else
     [%expr fun () ->
         Format.(fprintf err_formatter) "Skipping type %s\n" [%e typestring_expr]],
-    [%expr ()]
+    [%expr ()],
+    key
     
 
 (* Signature and Structure Components *)
@@ -251,27 +287,38 @@ let sig_of_type ~options ~path type_decl =
   [Sig.value
      (Val.mk
         (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "json_desc") type_decl))
-        (json_desc_type_of_decl ~options ~path type_decl))]
+        (json_desc_type_of_decl ~options ~path type_decl));
+   Sig.value
+     (Val.mk
+        (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "key") type_decl))
+        (key_type_of_decl ~options ~path type_decl))
+  ]
 
 let str_of_type ~options ~path type_decl =
   parse_options options;
   let name         = Ppx_deriving.mangle_type_decl (`Prefix "json_desc") type_decl in
+  let name3        = Ppx_deriving.mangle_type_decl (`Prefix "key") type_decl in
   let var          = evar name in
-  let pvar         = pvar name in
+  let pvarname     = pvar name in
+  let pvarname3    = pvar name3 in
   let path         = Ppx_deriving.path_of_type_decl ~path type_decl in
-  let func, record = expr_of_type_decl !in_grammar ~path ~var type_decl in
+  let func, record, key = expr_of_type_decl !in_grammar ~path ~var type_decl in
   let typ          = json_desc_type_of_decl ~options ~path type_decl in
-  let loc = type_decl.ptype_loc in
-  let typ2 = [%type: unit] in
-  [Vb.mk (Pat.constraint_ pvar typ) (Ppx_deriving.poly_fun_of_type_decl type_decl func)],
-  [Vb.mk (Pat.constraint_ (punit()) typ2) record]
+  let loc          = type_decl.ptype_loc in
+  let typ2         = [%type: unit] in
+  let typ3         = key_type_of_decl ~options ~path type_decl in
+  [Vb.mk (Pat.constraint_ pvarname typ) (Ppx_deriving.poly_fun_of_type_decl type_decl func)],
+  [Vb.mk (Pat.constraint_ (punit()) typ2) record],
+  [Vb.mk (Pat.constraint_ pvarname3 typ3) (Ppx_deriving.poly_fun_of_type_decl type_decl key)]
 
 let type_decl_str ~options ~path type_decls =
   let l = List.map (str_of_type ~options ~path) type_decls in
-  let a = List.map fst l in
-  let b = List.map snd l in
+  let a = List.map (fun (x,_,_) -> x) l in
+  let b = List.map (fun (_,y,_) -> y) l in
+  let c = List.map (fun (_,_,z) -> z) l in
   [Str.value Recursive (List.concat a);
-   Str.value Nonrecursive (List.concat b)]
+   Str.value Nonrecursive (List.concat b);
+   Str.value Nonrecursive (List.concat c)]
 
 let type_decl_sig ~options ~path type_decls =
   List.concat (List.map (sig_of_type ~options ~path) type_decls)

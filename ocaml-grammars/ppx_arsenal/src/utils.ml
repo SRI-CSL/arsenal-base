@@ -19,6 +19,7 @@ open Ast_helper
 open Ppx_deriving.Ast_convenience
 
 let str2exp x = x |> Const.string |> Exp.constant
+let int2exp x = x |> Const.int |> Exp.constant
 
 let with_path = ref true
 let fully_qualified path str =
@@ -33,8 +34,17 @@ let raise_errorf = Ppx_deriving.raise_errorf
 let ident prefix typestr =
   Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix prefix) typestr))
 
+let ident_decl prefix type_decl =
+  Exp.ident (mknoloc (Lident (Ppx_deriving.mangle_type_decl (`Prefix prefix) type_decl)))
+
 let efst loc x = [%expr fst [%e x ]]
 let esnd loc x = [%expr snd [%e x ]]
+
+let hash_list loc ~init elts =
+  let aux (f_sofar, e_sofar) (f,e) =
+    [%expr CCHash.pair [%e f_sofar] [%e f]], [%expr [%e e_sofar], [%e e]]
+  in
+  elts |> List.rev |> List.fold_left aux init
 
 let json_list loc ?(init=[%expr []]) elts =
   let aux sofar arg =  [%expr PPX_Serialise.json_cons [%e arg] [%e sofar]] in

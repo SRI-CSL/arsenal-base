@@ -44,6 +44,7 @@ module Generate_runtime = struct
     let print_tab s = print_string ("\t"^s) in
     for _ = 1 to n do
       let t = PPX_Random.init() |> grammar.random in
+      Entity.init();
       (* if !check_opt  then check sentence_to_yojson sentence_of_yojson sexp_of_sentence sentence_of_sexp t; *)
       if !print_nl   then t |> grammar.pp |> toString |> print_string;
       if !print_json then t |> grammar.to_json |> JSON.to_string |> print_tab;
