@@ -29,20 +29,26 @@ end = struct
   type 'a t = { u    : 'a u;
                 i    : int;
                 hash : 'a Hash.t;
-                compare : 'a Ord.t
+                compare : 'a Ord.t;
+                cmp  : 'b. 'b u -> ('a, 'b) Order.t
               }
   let hash t = t.i
   let get_hash t    = t.hash
   let get_compare t = t.compare
 
-  type ord = { cmp : 'a 'b. 'a u -> 'b u -> ('a, 'b) Order.t}
+  (* type ord = { cmp : 'a 'b. 'a u -> 'b u -> ('a, 'b) Order.t} *)
 
-  module ITbl = Hashtbl.Make(Int)
+  (* module ITbl = Hashtbl.Make(Int) *)
 
-  let compares = ITbl.create 100
+  (* let compares = ITbl.create 100 *)
+
+  (* let compare (type a b) (t1 : a t) (t2 : b t) : (a, b) Order.t =
+   *   if t1.i = t2.i then (ITbl.find compares t1.i).cmp t1.u t2.u
+   *   else if t1.i < t2.i then Order.Lt
+   *   else Order.Gt *)
 
   let compare (type a b) (t1 : a t) (t2 : b t) : (a, b) Order.t =
-    if t1.i = t2.i then (ITbl.find compares t1.i).cmp t1.u t2.u
+    if t1.i = t2.i then t1.cmp t2.u
     else if t1.i < t2.i then Order.Lt
     else Order.Gt
 
@@ -51,13 +57,13 @@ end = struct
         type _ u += New : a u
       end
     in
-    let r = { u = M.New; i = !counter; hash; compare } in
-    let cmp (type a b) (a : a u) (b : b u) : (a, b) Order.t =
-      match a, b with
-      | M.New, M.New -> Order.Eq
+    let cmp (type b) (b : b u) : (a, b) Order.t =
+      match b with
+      | M.New -> Order.Eq
       | _ -> failwith "Should not happen"
     in
-    ITbl.replace compares !counter { cmp };
+    let r = { u = M.New; i = !counter; hash; compare; cmp } in
+    (* ITbl.replace compares !counter { cmp }; *)
     incr counter;
     r
     
@@ -308,7 +314,6 @@ let serialise_bool =
       of_sexp = bool_of_sexp;
       hash;
       compare;
-      (* key     = Key.create ~hash ~compare; *)
       type_string = fun () -> typestring_bool;
   }
   
@@ -333,7 +338,6 @@ let serialise_int =
       of_sexp = int_of_sexp;
       hash;
       compare;
-      (* key     = Key.create ~hash ~compare; *)
       type_string = fun () -> typestring_int;
   }
 
@@ -362,7 +366,6 @@ let serialise_list arg =
       of_sexp = list_of_sexp arg.of_sexp;
       hash;
       compare;
-      (* key     = Key.create ~hash ~compare; *)
       type_string = fun () -> typestring_list (arg.type_string());
   }
   
@@ -391,7 +394,6 @@ let serialise_option arg =
       of_sexp = option_of_sexp arg.of_sexp;
       hash;
       compare;
-      (* key     = Key.create ~hash ~compare; *)
       type_string = fun () -> typestring_option (arg.type_string());
   }
 
@@ -433,9 +435,8 @@ let random_list ?(min=1) ?max ?(empty=0.5) random_arg state =
   let rec aux ?length i accu =
     if i < min ||
         match length with
-        | Some l when i < l -> true
-        | None when Float.(Random.float 1. state.PPX_Random.rstate > empty) -> true
-        | _ -> false
+        | Some l when i >= l -> false
+        | _ -> Float.(Random.float 1. state.PPX_Random.rstate > empty)
     then aux ?length (i+1) ((random_arg state)::accu)
     else accu
   in
@@ -729,7 +730,6 @@ module Entity = struct
         of_sexp = of_sexp arg;
         hash;
         compare;
-        (* key = Key.create ~hash ~compare; *)
         type_string = fun () -> if !one_entity_kind then "Entity" else typestring (arg.type_string());
     }
 
