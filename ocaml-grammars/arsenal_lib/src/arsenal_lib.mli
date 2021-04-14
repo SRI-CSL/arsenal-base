@@ -90,6 +90,10 @@ val serialise_int    : int PPX_Serialise.t
 val serialise_list   : ('a PPX_Serialise.t) -> 'a list PPX_Serialise.t
 val serialise_option : ('a PPX_Serialise.t) -> 'a option PPX_Serialise.t
 
+(* Useful for normalizing *)
+val flatten      : ('a -> 'a list option) -> 'a -> 'a list
+val flatten_list : ('a -> 'a list option) -> 'a list -> 'a list
+
 (******************)
 (* For random AST *)
     

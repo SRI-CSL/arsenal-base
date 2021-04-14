@@ -397,6 +397,21 @@ let serialise_option arg =
       type_string = fun () -> typestring_option (arg.type_string());
   }
 
+let rec flatten f t tail = match f t with
+  | Some l -> flatten_list f l tail
+  | None   -> t::(flatten_list f [] tail)
+
+and flatten_list f l tail = match l with
+  | u::v -> flatten f u (v::tail)
+  | [] ->
+     match tail with
+     | v::tail -> flatten_list f v tail
+     | [] -> []
+
+let flatten f t = flatten f t []
+let flatten_list f l = flatten_list f l []
+
+
 (* For random AST *)
     
 module PPX_Random = struct
