@@ -326,6 +326,8 @@ end
 (* The registration system for types *)
 (*************************************)
 
+exception NotRegistered of string
+
 (* We keep a global mapping from strings (identifying types)
    to a record values containing information about the type *)
 
@@ -371,7 +373,7 @@ module JSONindex = struct
   let populate str =
     match Register.find_opt str with
     | Some (About{ json_desc ; _}) -> json_desc ()
-    | None -> raise Not_found
+    | None -> raise (NotRegistered str)
 
   let out ~id ~description ~toptype =
     let top =
