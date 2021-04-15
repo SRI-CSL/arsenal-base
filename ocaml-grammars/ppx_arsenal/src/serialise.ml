@@ -158,7 +158,7 @@ let build_cases compare loc str build_case l =
        of_sexp = [%e Exp.function_ cases3];
        hash    = [%e Exp.function_ cases0];
        compare = [%e compare];
-       type_string = (fun () -> [%e str ]);
+       typestring = (fun () -> [%e str ]);
   } ]
 
 let expr_of_type_decl ~path type_decl =
@@ -172,7 +172,7 @@ let expr_of_type_decl ~path type_decl =
         |> mknoloc
         |> Exp.ident
       in
-      [%expr [%e typestring_expr]^"("^([%e param].PPX_Serialise.type_string())^")"],
+      [%expr [%e typestring_expr]^"("^([%e param].PPX_Serialise.typestring())^")"],
       [%expr [%e compare]             ([%e param].PPX_Serialise.compare)]
     in
     Ppx_deriving.fold_right_type_decl aux type_decl

@@ -35,7 +35,7 @@ let ident prefix typestr =
   Exp.ident (mknoloc (Ppx_deriving.mangle_lid (`Prefix prefix) typestr))
 
 let ident_decl prefix type_decl =
-  Exp.ident (mknoloc (Lident (Ppx_deriving.mangle_type_decl (`Prefix prefix) type_decl)))
+  evar (Ppx_deriving.mangle_type_decl (`Prefix prefix) type_decl)
 
 let efst loc x = [%expr fst [%e x ]]
 let esnd loc x = [%expr snd [%e x ]]

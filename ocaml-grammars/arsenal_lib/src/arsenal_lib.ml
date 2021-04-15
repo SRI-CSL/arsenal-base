@@ -3,75 +3,31 @@ open Format
 
 open Sexplib
 
-module JSON = Yojson.Safe
+(* Hashtables for strings, used several times *)
+module Stbl = CCHashtbl.Make(String)
+
+(*******************************************************************)
+(* Mandatory environment for ppx_random, which produces random AST *)
+(*******************************************************************)
+   
+module PPX_Random = struct
+  type state = { depth : int; rstate : Random.State.t }
+  type 'a t = state -> 'a
+  let deepen state = { state with depth = state.depth+1 }
+  let case max state = Random.State.int state.rstate max
+  let case_30b state = Random.State.bits state.rstate
+  let init () = {depth = 0; rstate = Random.State.make_self_init()}
+end
+
+let depth state = Float.of_int(state.PPX_Random.depth+1)
 
 (************************************************************)
 (* Conversions between json, S-expressions, Polish notation *)
+(************************************************************)
 
-module Order = struct
-  type (_,_) t =
-    | Eq : ('a,'a) t
-    | Lt : ('a,'b) t
-    | Gt : ('a,'b) t
-end
-
-module Key : sig
-  type _ t
-  val create  : hash: 'a Hash.t -> compare : 'a Ord.t -> 'a t
-  val hash    : 'a t Hash.t
-  val compare : 'a t -> 'b t -> ('a, 'b) Order.t
-  val get_hash    : 'a t -> 'a Hash.t
-  val get_compare : 'a t -> 'a Ord.t
-end = struct
-  type _ u = ..
-  let counter = ref 0
-              
-  type 'a t = { u    : 'a u;
-                i    : int;
-                hash : 'a Hash.t;
-                compare : 'a Ord.t;
-                cmp  : 'b. 'b u -> ('a, 'b) Order.t
-              }
-  let hash t = t.i
-  let get_hash t    = t.hash
-  let get_compare t = t.compare
-
-  (* type ord = { cmp : 'a 'b. 'a u -> 'b u -> ('a, 'b) Order.t} *)
-
-  (* module ITbl = Hashtbl.Make(Int) *)
-
-  (* let compares = ITbl.create 100 *)
-
-  (* let compare (type a b) (t1 : a t) (t2 : b t) : (a, b) Order.t =
-   *   if t1.i = t2.i then (ITbl.find compares t1.i).cmp t1.u t2.u
-   *   else if t1.i < t2.i then Order.Lt
-   *   else Order.Gt *)
-
-  let compare (type a b) (t1 : a t) (t2 : b t) : (a, b) Order.t =
-    if t1.i = t2.i then t1.cmp t2.u
-    else if t1.i < t2.i then Order.Lt
-    else Order.Gt
-
-  let create (type a) ~(hash:a Hash.t) ~compare : a t =
-    let module M = struct
-        type _ u += New : a u
-      end
-    in
-    let cmp (type b) (b : b u) : (a, b) Order.t =
-      match b with
-      | M.New -> Order.Eq
-      | _ -> failwith "Should not happen"
-    in
-    let r = { u = M.New; i = !counter; hash; compare; cmp } in
-    (* ITbl.replace compares !counter { cmp }; *)
-    incr counter;
-    r
-    
-end 
-
+module JSON = Yojson.Safe
 
 exception Conversion of string
-
 
 module PPX_Serialise = struct
 
@@ -81,8 +37,7 @@ module PPX_Serialise = struct
       of_sexp : Sexp.t -> 'a;
       hash    : 'a Hash.t;
       compare : 'a Ord.t;
-      (* key     : 'a Key.t; *)
-      type_string : unit -> string;
+      typestring : unit -> string;
     }
 
   let print_null = ref false (* Does not print null values in JSON *)
@@ -120,54 +75,6 @@ module PPX_Serialise = struct
 
 end
 
-(* Hashtables for string keys, used several times *)
-module Stbl = Hashtbl.Make(String)
-
-module JSONindex = struct
-  let index = ref []
-  let global = Stbl.create 100
-  let static_mem = Stbl.mem global
-  let static_add = Stbl.add global
-  let static_all () =
-    global |> Stbl.to_seq_keys |> Seq.to_list |> List.sort String.compare
-  let populate str = Stbl.find global str ()
-  let marked = Stbl.create 100
-  type t = (string * JSON.t) list ref
-  let mem s  = Stbl.mem marked s
-  let find s = !(Stbl.find marked s)
-  let mark s : t = 
-    let result = ref [] in
-    Stbl.add marked s result;
-    result
-  let add (mark : t) l =
-    mark := l;
-    List.iter (fun json -> index := json::!index) l
-  let out ~id ~description ~toptype =
-    let top =
-      "Top",
-      `Assoc [
-          "type", `String "object";
-          "additionalProperties", `Bool false;
-          "required", `List [ `String "cst"; `String "sentence_id" ];
-          "properties",
-          `Assoc [
-              "cst", `Assoc [ "$ref", `String("#/definitions/"^ toptype) ];
-              "sentence_id", `Assoc [ "type",   `String "string";
-                                      "format", `String "uri-reference" ];
-              "reformulation", `Assoc [ "type", `String "string" ];
-              "orig-text", `Assoc [ "type", `String "string" ]
-            ]
-        ]
-    in
-    `Assoc [
-        "$schema", `String "http://json-schema.org/schema#";
-        "$id",     `String id;
-        "description", `String description;
-        "$ref",     `String("#/definitions/Top");
-        "definitions", `Assoc (top::(!index |> List.rev) )
-      ]
-end
-
 let rec sexp2json = function
   | Sexp.Atom s -> `String s
   | Sexp.List l -> `List (List.map sexp2json l)
@@ -195,23 +102,23 @@ module Polish = struct
       | [] -> accu
 
       | s::totreat when PPX_Serialise.sexp_is_atom s ->
-        aux ((mk_token s)::accu) totreat
+         aux ((mk_token s)::accu) totreat
 
       | (Sexp.List(s::l))::totreat when PPX_Serialise.sexp_is_atom s ->
-        let token = mk_token s in
-        let token =
-          if not !PPX_Serialise.print_types
-          then 
-            let length = List.length l in
-            token^(!arity)^string_of_int length
-          else
-            let aux' sofar s =
-              sofar^(!arity)^(PPX_Serialise.sexp_get_type ~who:"Polish.of_sexp/aux'" s)
-            in
-            List.fold_left aux' token l
-        in 
-        aux (token::accu) (l @ totreat)
-  
+         let token = mk_token s in
+         let token =
+           if not !PPX_Serialise.print_types
+           then 
+             let length = List.length l in
+             token^(!arity)^string_of_int length
+           else
+             let aux' sofar s =
+               sofar^(!arity)^(PPX_Serialise.sexp_get_type ~who:"Polish.of_sexp/aux'" s)
+             in
+             List.fold_left aux' token l
+         in 
+         aux (token::accu) (l @ totreat)
+         
       | sexp -> PPX_Serialise.sexp_throw ~who:"Polish.of_sexp/general" (Sexp.List sexp)
     in
     aux [] [sexp]
@@ -220,20 +127,20 @@ module Polish = struct
     let rec pop n stack out =
       if n=0 then stack,out
       else match stack with
-        | [] -> raise(Conversion("Polish.to_sexp: popping out from the stack more elements than the stack contains (polish notation too short)"))
-        | head::tail -> pop (n-1) tail (head::out)
+           | [] -> raise(Conversion("Polish.to_sexp: popping out from the stack more elements than the stack contains (polish notation too short)"))
+           | head::tail -> pop (n-1) tail (head::out)
     in
     let rec aux stack = function
       | (s,0)::tail -> aux (Sexp.Atom s::stack) tail
       | (s,i)::tail ->
-        let stack,out = pop i stack [] in
-        aux (Sexp.List(Sexp.Atom s::List.rev out)::stack) tail
+         let stack,out = pop i stack [] in
+         aux (Sexp.List(Sexp.Atom s::List.rev out)::stack) tail
       | [] -> match stack with
-        | [sexp] -> sexp
-        | [] -> raise(Conversion("Polish.to_sexp: stack is empty, it should contain 1 element, namely the result of the conversion"))
-        | _::_::_ -> raise(Conversion("Polish.to_sexp: stack has more than 1 element, while it should only contain the result of the conversion (polish notation too long)"))
+              | [sexp] -> sexp
+              | [] -> raise(Conversion("Polish.to_sexp: stack is empty, it should contain 1 element, namely the result of the conversion"))
+              | _::_::_ -> raise(Conversion("Polish.to_sexp: stack has more than 1 element, while it should only contain the result of the conversion (polish notation too long)"))
     in aux []
-    
+     
   let to_string =
     let aux sofar s =
       let ending = if (String.length sofar = 0) then sofar else " "^sofar in
@@ -246,229 +153,31 @@ module Polish = struct
       | []  -> out
       | [s] when Char.equal ' ' arity -> (s,0)::out
       | s::(i::tail as tail') when Char.equal ' ' arity ->
-        begin
-          match int_of_string_opt i with
-          | Some i -> aux ((s,i)::out) tail
-          | None   -> aux ((s,0)::out) tail'
-        end
+         begin
+           match int_of_string_opt i with
+           | Some i -> aux ((s,i)::out) tail
+           | None   -> aux ((s,0)::out) tail'
+         end
       | s::tail ->
-        match String.split_on_char arity s with
-        | [a;i] ->
-          begin match int_of_string_opt i with
+         match String.split_on_char arity s with
+         | [a;i] ->
+            begin match int_of_string_opt i with
             | Some i -> aux ((a,i)::out) tail
             | None -> raise(Conversion("Polish.of_string: in string token "^s^", "^i^" is supposed to be an integer"))
-          end
-        | [a]   -> aux ((a,0)::out) tail
-        | _ -> raise(Conversion("Polish.of_string: too many arity symbols in string "^s))
+            end
+         | [a]   -> aux ((a,0)::out) tail
+         | _ -> raise(Conversion("Polish.of_string: too many arity symbols in string "^s))
     in
     aux [] (String.split_on_char ' ' s)
     
 end
 
-(* let check ty_to_yojson ty_of_yojson sexp_of_ty ty_of_sexp t = 
- *   let json, sexp = ty_to_yojson t, sexp_of_ty t in
- *   (\* print_endline(Sexp.to_string sexp);
- *    * print_endline(JSON.to_string json);
- *    * print_endline(JSON.to_string(json_of_sexp sexp)); *\)
- *   let polish = Polish.of_sexp sexp in
- *   let polish_string = Polish.to_string ~arity:" " polish in
- *   assert(polish = Polish.of_string ~arity:' ' polish_string);
- *   (\* print_endline(Sexp.to_string(Polish.to_sexp polish));
- *    * print_endline(polish_string); *\)
- *   assert(sexp = Polish.to_sexp polish);
- *   assert(json = json_of_sexp sexp);
- *   (\* assert(sexp_of_json json = sexp); *\)
- *   let rjson, rsexp = exn ty_of_yojson json, ty_of_sexp sexp in
- *   assert(rjson = t && rsexp = t) *)
 
-(*********************)
-(* lists and options *)
+(****************************)
+(* Printing functionalities *)
+(****************************)
 
-let typestring_bool = "bool"
-let typestring_int = "int"
-let typestring_list str = "list("^str^")"
-let typestring_option str = "option("^str^")"
-let json_desc_bool     () = ()
-let json_desc_int      () = ()
-let json_desc_list   _ () = ()
-let json_desc_option _ () = ()
-
-let json_of_bool b : JSON.t = `Bool b
-
-let sexp_of_bool b =
-  let c = if b then "true" else "false" in
-  PPX_Serialise.sexp_constructor c typestring_bool
-
-let bool_of_sexp = function
-  | Sexp.Atom "true" -> true
-  | Sexp.Atom "false" -> false
-  | sexp -> raise(Conversion("bool_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode a boolean"))
-
-let serialise_bool =
-  let open PPX_Serialise in
-  let hash = Hash.bool in
-  let compare = Ord.bool in
-  {
-      to_json = json_of_bool;
-      to_sexp = sexp_of_bool;
-      of_sexp = bool_of_sexp;
-      hash;
-      compare;
-      type_string = fun () -> typestring_bool;
-  }
-  
-
-let json_of_int i : JSON.t = `Int i
-
-let sexp_of_int i =
-  let c = string_of_int i in
-  PPX_Serialise.sexp_constructor c typestring_int
-
-let int_of_sexp = function
-  | Sexp.Atom s -> int_of_string s
-  | sexp -> raise(Conversion("int_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode an int"))
-
-let serialise_int =
-  let open PPX_Serialise in
-  let hash = Hash.int in
-  let compare = Ord.int in
-  {
-      to_json = json_of_int;
-      to_sexp = sexp_of_int;
-      of_sexp = int_of_sexp;
-      hash;
-      compare;
-      type_string = fun () -> typestring_int;
-  }
-
-let liststring c str = PPX_Serialise.sexp_constructor c (typestring_list str)
-let optstring c str = PPX_Serialise.sexp_constructor c (typestring_option str)
-
-let json_of_list arg l = `List(List.map arg l)
-
-let sexp_of_list arg l =
-  let open PPX_Serialise in
-  if List.length l = 0 then liststring "Nil" (arg.type_string())
-  else Sexp.List((liststring "List" (arg.type_string())) :: List.map arg.to_sexp l)
-
-let list_of_sexp arg = function
-  | Sexp.Atom "Nil" -> []
-  | Sexp.List(Sexp.Atom "List"::(_::_ as l)) -> List.map arg l
-  | sexp -> raise(Conversion("list_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode a list"))
-
-let serialise_list arg =
-  let open PPX_Serialise in
-  let hash = Hash.list arg.hash in
-  let compare = Ord.list arg.compare in
-  {
-      to_json = json_of_list arg.to_json;
-      to_sexp = sexp_of_list arg;
-      of_sexp = list_of_sexp arg.of_sexp;
-      hash;
-      compare;
-      type_string = fun () -> typestring_list (arg.type_string());
-  }
-  
-let json_of_option arg = function
-  | None   -> `Null
-  | Some a -> arg a
-
-let sexp_of_option arg l =
-  let open PPX_Serialise in
-  match l with
-  | None   -> optstring "None" (arg.type_string())
-  | Some a -> Sexp.List[optstring "Some" (arg.type_string()); arg.to_sexp a]
-
-let option_of_sexp arg = function
-  | Sexp.Atom "None" -> None
-  | Sexp.List[Sexp.Atom "Some";a] -> Some(arg a)
-  | sexp -> raise(Conversion("list_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode an option"))
-
-let serialise_option arg =
-  let open PPX_Serialise in
-  let hash = Hash.opt arg.hash in
-  let compare = Ord.option arg.compare in
-  {
-      to_json = json_of_option arg.to_json;
-      to_sexp = sexp_of_option arg;
-      of_sexp = option_of_sexp arg.of_sexp;
-      hash;
-      compare;
-      type_string = fun () -> typestring_option (arg.type_string());
-  }
-
-let rec flatten f t tail = match f t with
-  | Some l -> flatten_list f l tail
-  | None   -> t::(flatten_list f [] tail)
-
-and flatten_list f l tail = match l with
-  | u::v -> flatten f u (v::tail)
-  | [] ->
-     match tail with
-     | v::tail -> flatten_list f v tail
-     | [] -> []
-
-let flatten f t = flatten f t []
-let flatten_list f l = flatten_list f l []
-
-
-(* For random AST *)
-    
-module PPX_Random = struct
-  type state = { depth : int; rstate : Random.State.t }
-  type 'a t = state -> 'a
-  let deepen state = { state with depth = state.depth+1 }
-  let case max state = Random.State.int state.rstate max
-  let case_30b state = Random.State.bits state.rstate
-  let init () = {depth = 0; rstate = Random.State.make_self_init()}
-end
-
-let depth state = Float.of_int(state.PPX_Random.depth+1)
-
-let random_int state = Random.int 10 state.PPX_Random.rstate
-let random_bool _ = Random.bool ()
-
-let random_ascii state =
-  let max = 127-32 in
-  Char.chr((Random.int max state.PPX_Random.rstate) + 32)
-
-let random_ascii_pair state =
-  let max = 127-32 in
-  let a,b = Random.int max state.PPX_Random.rstate, Random.int max state.PPX_Random.rstate in
-  if a < b then Char.chr(a+32), Char.chr(b+32)
-  else Char.chr(b+32), Char.chr(a+32)
-
-let random_option ?(p=0.5) random_arg state =
-  let b = Random.float 1. state.PPX_Random.rstate in
-  if Float.(b <= p) then None else Some(random_arg state)
-
-let none_p p = random_option ~p
-
-let ( *! ) random_arg1 random_arg2 state = random_arg1 state, random_arg2 state
-
-let random_list ?(min=1) ?max ?(empty=0.5) random_arg state =
-  let rec aux ?length i accu =
-    if i < min ||
-        match length with
-        | Some l when i >= l -> false
-        | _ -> Float.(Random.float 1. state.PPX_Random.rstate > empty)
-    then aux ?length (i+1) ((random_arg state)::accu)
-    else accu
-  in
-  match max with
-  | None   -> aux 0 []
-  | Some m -> aux ~length:((Random.int (m + 1 - min) state.PPX_Random.rstate + min)) 0 []
-
-let string_of_char = String.make 1
-let random_string state =
-  let list = random_list ~min:0 ~max:20 random_ascii state in
-  String.escaped(List.fold_right (fun a s -> (string_of_char a)^s) list "")
-
-type 'a distribution = ('a*float) list
-
-(* For printing *)
-
-type print = Format.formatter ->  unit
+type print = Format.formatter -> unit
 type 'a pp = 'a -> print
 
 let return s fmt = Format.fprintf fmt "%s" s
@@ -537,10 +246,364 @@ let (++) w1 w2 = 1 - (w1 * w2)
 (* Easy extension of pp function to option type *)
 let (+?) pp1 pp2  = function Some x -> pp1 x | None -> pp2
 let (?+) pp_arg = function Some x -> pp_arg x | None -> noop
-let (??) = function Some _ -> true | None -> false
+(* let (??) = function Some _ -> true | None -> false *)
+
+
+(**********************************************************************)
+(* Type Unique ID                                                     *)
+(* Registering type t produces a TUID for t, a value of type t TUID.t *)
+(**********************************************************************)
+
+(* Comparison result type for polymorphic types *)
+module Order = struct
+  type (_,_) t =
+    | Eq : ('a,'a) t
+    | Lt : ('a,'b) t
+    | Gt : ('a,'b) t
+end
+
+module TUID : sig
+  type _ t
+  val create (* Creating TUID for type 'a requires providing hash and compare functions for 'a *)
+      : hash: 'a Hash.t -> compare : 'a Ord.t -> random : 'a PPX_Random.t -> name:string -> 'a t
+  val hash        : 'a t Hash.t                      (* Hashing a TUID *)
+  val compare     : 'a t -> 'b t -> ('a, 'b) Order.t (* Comparing TUIDs *)
+  val get_hash    : 'a t -> 'a Hash.t (* Given a TUID for 'a, get a hash function for 'a *)
+  val get_compare : 'a t -> 'a Ord.t  (* Given a TUID for 'a, get a compare function for 'a *)
+  val get_pp      : 'a t -> 'a pp ref (* Given a TUID for 'a, get a pretty-printer for 'a *)
+  val get_random  : 'a t -> 'a PPX_Random.t ref (* Given a TUID for 'a, get a random generator for 'a *)
+end = struct
+  type _ u = ..
+  let counter = ref 0
+              
+  type 'a t = { u    : 'a u;
+                i    : int;
+                name : string;
+                hash : 'a Hash.t;
+                compare : 'a Ord.t;
+                cmp  : 'b. 'b u -> ('a, 'b) Order.t;
+                random : 'a PPX_Random.t ref;
+                pp     : 'a pp ref;
+              }
+  let hash t = t.i
+  let get_hash t    = t.hash
+  let get_compare t = t.compare
+  let get_pp      t = t.pp
+  let get_random  t = t.random
+
+  let compare (type a b) (t1 : a t) (t2 : b t) : (a, b) Order.t =
+    if t1.i = t2.i then t1.cmp t2.u
+    else if t1.i < t2.i then Order.Lt
+    else Order.Gt
+
+  let create (type a) ~hash ~compare ~random ~name : a t =
+    let module M = struct
+        type _ u += New : a u
+      end
+    in
+    let cmp (type b) (b : b u) : (a, b) Order.t =
+      match b with
+      | M.New -> Order.Eq
+      | _ -> failwith "Should not happen"
+    in
+    let r = { u = M.New;
+              i = !counter;
+              name;
+              hash;
+              compare;
+              random = ref random;
+              cmp;
+              pp = ref (fun _ fmt ->
+                       Format.fprintf fmt "Pretty-printer not defined for type %s" name)
+            }
+    in
+    incr counter;
+    r
+    
+end 
+
+(*************************************)
+(* The registration system for types *)
+(*************************************)
+
+(* We keep a global mapping from strings (identifying types)
+   to a record values containing information about the type *)
+
+module About = struct
+  type t = About : { key       : 'a TUID.t;
+                     json_desc : unit -> unit;
+                     serialise : 'a PPX_Serialise.t;
+                   } -> t
+end
+
+(* The register of types is indexed by (fully qualified) type names (strings) *)
+module Register : sig
+  val mem        : string -> bool
+  val add        : string -> About.t -> unit
+  val find_opt   : string -> About.t option
+  val all        : unit -> string list (* List all registered types *)
+end = struct
+  let global   = Stbl.create 100
+  let mem      = Stbl.mem global
+  let add      = Stbl.add global
+  let find_opt = Stbl.find_opt global
+  let all ()   = global |> Stbl.to_seq_keys |> Seq.to_list |> List.sort String.compare
+end
+
+(* Module to produce a description of types in JSON format *)
+module JSONindex = struct
+            
+  (* Low-level primitives, for the Arsenal PPX; do not use yourself *)
+  let index = ref []
+  let marked = Stbl.create 100
+  type t = (string * JSON.t) list ref
+  let mem s  = Stbl.mem marked s
+  let find s = !(Stbl.find marked s)
+  let mark s : t = 
+    let result = ref [] in
+    Stbl.add marked s result;
+    result
+  let add (mark : t) l =
+    mark := l;
+    List.iter (fun json -> index := json::!index) l
+
+  (* Functions to be used by user *)
+  let populate str =
+    match Register.find_opt str with
+    | Some (About{ json_desc ; _}) -> json_desc ()
+    | None -> raise Not_found
+
+  let out ~id ~description ~toptype =
+    let top =
+      "Top",
+      `Assoc [
+          "type", `String "object";
+          "additionalProperties", `Bool false;
+          "required", `List [ `String "cst"; `String "sentence_id" ];
+          "properties",
+          `Assoc [
+              "cst", `Assoc [ "$ref", `String("#/definitions/"^ toptype) ];
+              "sentence_id", `Assoc [ "type",   `String "string";
+                                      "format", `String "uri-reference" ];
+              "reformulation", `Assoc [ "type", `String "string" ];
+              "orig-text", `Assoc [ "type", `String "string" ]
+            ]
+        ]
+    in
+    `Assoc [
+        "$schema", `String "http://json-schema.org/schema#";
+        "$id",     `String id;
+        "description", `String description;
+        "$ref",     `String("#/definitions/Top");
+        "definitions", `Assoc (top::(!index |> List.rev) )
+      ]
+end
+
+(* let check ty_to_yojson ty_of_yojson sexp_of_ty ty_of_sexp t = 
+ *   let json, sexp = ty_to_yojson t, sexp_of_ty t in
+ *   (\* print_endline(Sexp.to_string sexp);
+ *    * print_endline(JSON.to_string json);
+ *    * print_endline(JSON.to_string(json_of_sexp sexp)); *\)
+ *   let polish = Polish.of_sexp sexp in
+ *   let polish_string = Polish.to_string ~arity:" " polish in
+ *   assert(polish = Polish.of_string ~arity:' ' polish_string);
+ *   (\* print_endline(Sexp.to_string(Polish.to_sexp polish));
+ *    * print_endline(polish_string); *\)
+ *   assert(sexp = Polish.to_sexp polish);
+ *   assert(json = json_of_sexp sexp);
+ *   (\* assert(sexp_of_json json = sexp); *\)
+ *   let rjson, rsexp = exn ty_of_yojson json, ty_of_sexp sexp in
+ *   assert(rjson = t && rsexp = t) *)
+
+
+(**********************************************)
+(* Built-in types (bool, int, list and option *)
+(**********************************************)
+
+let typestring_bool = "bool"
+let typestring_int = "int"
+let typestring_list str = "list("^str^")"
+let typestring_option str = "option("^str^")"
+
+let json_desc_bool     () = ()
+let json_desc_int      () = ()
+let json_desc_list   _ () = ()
+let json_desc_option _ () = ()
+
+(* Serialise for bool *)
+
+let json_of_bool b : JSON.t = `Bool b
+
+let sexp_of_bool b =
+  let c = if b then "true" else "false" in
+  PPX_Serialise.sexp_constructor c typestring_bool
+
+let bool_of_sexp = function
+  | Sexp.Atom "true" -> true
+  | Sexp.Atom "false" -> false
+  | sexp -> raise(Conversion("bool_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode a boolean"))
+
+let serialise_bool =
+  let open PPX_Serialise in
+  let hash = Hash.bool in
+  let compare = Ord.bool in
+  {
+      to_json = json_of_bool;
+      to_sexp = sexp_of_bool;
+      of_sexp = bool_of_sexp;
+      hash;
+      compare;
+      typestring = fun () -> typestring_bool;
+  }
+  
+(* Serialise for int *)
+
+let json_of_int i : JSON.t = `Int i
+
+let sexp_of_int i =
+  let c = string_of_int i in
+  PPX_Serialise.sexp_constructor c typestring_int
+
+let int_of_sexp = function
+  | Sexp.Atom s -> int_of_string s
+  | sexp -> raise(Conversion("int_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode an int"))
+
+let serialise_int =
+  let open PPX_Serialise in
+  let hash = Hash.int in
+  let compare = Ord.int in
+  {
+      to_json = json_of_int;
+      to_sexp = sexp_of_int;
+      of_sexp = int_of_sexp;
+      hash;
+      compare;
+      typestring = fun () -> typestring_int;
+  }
+
+(* Serialise for list *)
+
+let liststring c str = PPX_Serialise.sexp_constructor c (typestring_list str)
+
+let json_of_list arg l = `List(List.map arg l)
+
+let sexp_of_list arg l =
+  let open PPX_Serialise in
+  if List.length l = 0 then liststring "Nil" (arg.typestring())
+  else Sexp.List((liststring "List" (arg.typestring())) :: List.map arg.to_sexp l)
+
+let list_of_sexp arg = function
+  | Sexp.Atom "Nil" -> []
+  | Sexp.List(Sexp.Atom "List"::(_::_ as l)) -> List.map arg l
+  | sexp -> raise(Conversion("list_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode a list"))
+
+let serialise_list arg =
+  let open PPX_Serialise in
+  let hash = Hash.list arg.hash in
+  let compare = Ord.list arg.compare in
+  {
+      to_json = json_of_list arg.to_json;
+      to_sexp = sexp_of_list arg;
+      of_sexp = list_of_sexp arg.of_sexp;
+      hash;
+      compare;
+      typestring = fun () -> typestring_list (arg.typestring());
+  }
+  
+(* Serialise for option *)
+
+let optstring c str = PPX_Serialise.sexp_constructor c (typestring_option str)
+
+let json_of_option arg = function
+  | None   -> `Null
+  | Some a -> arg a
+
+let sexp_of_option arg l =
+  let open PPX_Serialise in
+  match l with
+  | None   -> optstring "None" (arg.typestring())
+  | Some a -> Sexp.List[optstring "Some" (arg.typestring()); arg.to_sexp a]
+
+let option_of_sexp arg = function
+  | Sexp.Atom "None" -> None
+  | Sexp.List[Sexp.Atom "Some";a] -> Some(arg a)
+  | sexp -> raise(Conversion("list_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode an option"))
+
+let serialise_option arg =
+  let open PPX_Serialise in
+  let hash = Hash.opt arg.hash in
+  let compare = Ord.option arg.compare in
+  {
+      to_json = json_of_option arg.to_json;
+      to_sexp = sexp_of_option arg;
+      of_sexp = option_of_sexp arg.of_sexp;
+      hash;
+      compare;
+      typestring = fun () -> typestring_option (arg.typestring());
+  }
+
+let rec flatten f t tail = match f t with
+  | Some l -> flatten_list f l tail
+  | None   -> t::(flatten_list f [] tail)
+
+and flatten_list f l tail = match l with
+  | u::v -> flatten f u (v::tail)
+  | [] ->
+     match tail with
+     | v::tail -> flatten_list f v tail
+     | [] -> []
+
+let random_bool _ = Random.bool ()
+let random_int state = Random.int 10 state.PPX_Random.rstate
+
+let random_list ?(min=1) ?max ?(empty=0.5) random_arg state =
+  let rec aux ?length i accu =
+    if i < min ||
+        match length with
+        | Some l when i >= l -> false
+        | _ -> Float.(Random.float 1. state.PPX_Random.rstate > empty)
+    then aux ?length (i+1) ((random_arg state)::accu)
+    else accu
+  in
+  match max with
+  | None   -> aux 0 []
+  | Some m -> aux ~length:((Random.int (m + 1 - min) state.PPX_Random.rstate + min)) 0 []
+
+let random_option ?(p=0.5) random_arg state =
+  let b = Random.float 1. state.PPX_Random.rstate in
+  if Float.(b <= p) then None else Some(random_arg state)
+
+let none_p p = random_option ~p
+
+(* Other useful primitives for random generation *)
+
+let random_ascii state =
+  let max = 127-32 in
+  Char.chr((Random.int max state.PPX_Random.rstate) + 32)
+
+let random_ascii_pair state =
+  let max = 127-32 in
+  let a,b = Random.int max state.PPX_Random.rstate, Random.int max state.PPX_Random.rstate in
+  if a < b then Char.chr(a+32), Char.chr(b+32)
+  else Char.chr(b+32), Char.chr(a+32)
+
+let ( *! ) random_arg1 random_arg2 state = random_arg1 state, random_arg2 state
+
+let string_of_char = String.make 1
+let random_string ?min ?max ?eos state =
+  let list = random_list ?min ?max ?empty:eos random_ascii state in
+  String.escaped(List.fold_right (fun a s -> (string_of_char a)^s) list "")
+
+type 'a distribution = ('a*float) list
+
+(* Useful for normalizing *)
+let flatten f t = flatten f t []
+let flatten_list f l = flatten_list f l []
+
 
 (*************************************************)
 (* Small extension of the standard Result module *)
+(*************************************************)
 
 module Result = struct
   include Result
@@ -557,19 +620,19 @@ end
 
 let (>>=) = Result.bind
 let (>>|) = Result.map
-          
+
 (***********************)
 (* Module for entities *)
+(***********************)
 
-          
 module Entity = struct
 
   module EKey = struct
-    type t = K : 'a Key.t * 'a -> t
-    let hash    (K(key,a)) = Hash.pair Key.hash (Key.get_hash key) (key,a)
+    type t = K : 'a TUID.t * 'a -> t
+    let hash    (K(key,a)) = Hash.pair TUID.hash (TUID.get_hash key) (key,a)
     let compare (K(key1,a1)) (K(key2,a2)) =
-      match Key.compare key1 key2 with
-      | Order.Eq -> Key.get_compare key1 a1 a2
+      match TUID.compare key1 key2 with
+      | Order.Eq -> TUID.get_compare key1 a1 a2
       | Order.Lt -> -1
       | Order.Gt -> 1
     let equal a b = (compare a b = 0)
@@ -581,7 +644,6 @@ module Entity = struct
                         let equal = Option.equal EKey.equal
                       end)
 
-  (* type kind = K : 'a -> kind *)
   let counters = Counters.create 100 (* counters for entities *)
   let init () = Counters.clear counters
 
@@ -689,7 +751,7 @@ module Entity = struct
     let open PPX_Serialise in
     let ty = 
       match e.kind with
-      | Some _ when not !one_entity_kind -> (typestring (arg.type_string()))
+      | Some _ when not !one_entity_kind -> (typestring (arg.typestring()))
       | _ -> "entity"
     in
     let base =
@@ -745,7 +807,7 @@ module Entity = struct
         of_sexp = of_sexp arg;
         hash;
         compare;
-        type_string = fun () -> if !one_entity_kind then "Entity" else typestring (arg.type_string());
+        typestring = fun () -> if !one_entity_kind then "Entity" else typestring (arg.typestring());
     }
 
   let key () = failwith "Can't have key for polymorphic type"

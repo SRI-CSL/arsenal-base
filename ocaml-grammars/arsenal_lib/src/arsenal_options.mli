@@ -1,4 +1,3 @@
-open Sexplib
 open Arsenal_lib
 
 (************************)
@@ -14,15 +13,4 @@ val raw_json : bool ref     (* Whether json should just be like Sexp *)
 val args : string list ref  (* Where the command-line argument will be stacked *)
 val options : (string * Arg.spec * string) list
 
-module Generate_runtime : sig
-
-  type 'a t = {
-    random    : PPX_Random.state -> 'a;
-    pp        : 'a pp;
-    to_json   : 'a -> JSON.t;
-    to_sexp   : 'a -> Sexp.t;
-  }
-
-  val generate : 'a t -> int -> unit
-    
-end
+val generate : About.t -> int -> unit

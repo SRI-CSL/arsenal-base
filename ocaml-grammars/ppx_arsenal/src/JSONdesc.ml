@@ -63,7 +63,7 @@ let key_type_of_decl ~options ~path:_path type_decl =
   in
   Ppx_deriving.poly_arrow_of_type_decl
     (fun _var -> [%type: unit ])
-    type_decl [%type: [%t typ] Key.t ]
+    type_decl [%type: [%t typ] TUID.t ]
 
 let rec call loc lid typs =
   let args        = List.map (fun x -> let y,_,_ = expr_of_typ x in y) typs in
@@ -227,7 +227,7 @@ let expr_of_type_decl ~path typestring_expr type_decl =
   | Ptype_open, _ ->
      raise_errorf ~loc "Cannot derive %s for open type." deriver_name
 
-let expr_of_type_decl in_grammar ~path ~var type_decl : expression * expression * expression=
+let expr_of_type_decl in_grammar ~path ~about type_decl : expression * expression * expression=
   let loc = type_decl.ptype_loc in (* location of the type declaration *)
   (* We first build the string "foo(poly_a)...(poly_n)"*)
   let aux param sofar =
@@ -245,10 +245,16 @@ let expr_of_type_decl in_grammar ~path ~var type_decl : expression * expression 
   let key =
     match l with
     | [] ->
-       let name = ident "serialise" (Lident type_decl.ptype_name.txt) in
+       let random = ident "random" (Lident type_decl.ptype_name.txt) in
+       let name   = ident "serialise" (Lident type_decl.ptype_name.txt) in
        let hash    = [%expr [%e name].PPX_Serialise.hash] in
        let compare = [%expr [%e name].PPX_Serialise.compare] in
-       [%expr Key.create ~hash:[%e hash] ~compare:[%e compare]]
+       let name    = [%expr [%e name].PPX_Serialise.typestring()] in
+       [%expr TUID.create
+           ~hash:[%e hash]
+           ~compare:[%e compare]
+           ~random:[%e random]
+           ~name:[%e name] ]
     | _::_ -> [%expr failwith "Can't get key for polymorphic type"]
   in
   if in_grammar then
@@ -267,9 +273,9 @@ let expr_of_type_decl in_grammar ~path ~var type_decl : expression * expression 
       match l with
       | [] ->
          [%expr
-             if not(JSONindex.static_mem [%e typestring_expr])
+             if not(Register.mem [%e typestring_expr])
              then
-               JSONindex.static_add [%e typestring_expr] [%e var];
+               Register.add [%e typestring_expr] [%e about];
          ]
       | _::_ -> [%expr ()]
     end,
@@ -296,20 +302,30 @@ let sig_of_type ~options ~path type_decl =
 
 let str_of_type ~options ~path type_decl =
   parse_options options;
-  let name         = Ppx_deriving.mangle_type_decl (`Prefix "json_desc") type_decl in
-  let name3        = Ppx_deriving.mangle_type_decl (`Prefix "key") type_decl in
-  let var          = evar name in
-  let pvarname     = pvar name in
-  let pvarname3    = pvar name3 in
+  let loc          = type_decl.ptype_loc in (* location of the type declaration *)
+  let key          = Ppx_deriving.mangle_type_decl (`Prefix "key") type_decl in
+  let json_desc    = Ppx_deriving.mangle_type_decl (`Prefix "json_desc") type_decl in
+  let serialise    = ident_decl "serialise" type_decl in
+  let about =
+    [%expr
+        About.About{
+          key       = [%e evar key ];
+          json_desc = [%e evar json_desc ];
+          serialise = [%e serialise ];
+        }
+    ]
+  in
+  let pvarname     = pvar json_desc in
+  let pvarname3    = pvar key in
   let path         = Ppx_deriving.path_of_type_decl ~path type_decl in
-  let func, record, key = expr_of_type_decl !in_grammar ~path ~var type_decl in
+  let func, record, key = expr_of_type_decl !in_grammar ~path ~about type_decl in
   let typ          = json_desc_type_of_decl ~options ~path type_decl in
   let loc          = type_decl.ptype_loc in
   let typ2         = [%type: unit] in
   let typ3         = key_type_of_decl ~options ~path type_decl in
   [Vb.mk (Pat.constraint_ pvarname typ) (Ppx_deriving.poly_fun_of_type_decl type_decl func)],
-  [Vb.mk (Pat.constraint_ (punit()) typ2) record],
-  [Vb.mk (Pat.constraint_ pvarname3 typ3) (Ppx_deriving.poly_fun_of_type_decl type_decl key)]
+  [Vb.mk (Pat.constraint_ pvarname3 typ3) (Ppx_deriving.poly_fun_of_type_decl type_decl key)],
+  [Vb.mk (Pat.constraint_ (punit()) typ2) record]
 
 let type_decl_str ~options ~path type_decls =
   let l = List.map (str_of_type ~options ~path) type_decls in

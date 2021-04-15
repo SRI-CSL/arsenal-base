@@ -36,68 +36,54 @@ let options =
     ("-strict-entities", Float(fun f -> Entity.strict := f), "\thow strict entity kinds should be considered (0. : they are ignored; +infty: very strictly enforced)");
   ]
 
-module STbl = CCHashtbl.Make(String)
+exception NonInjective of { nl      : string;
+                            ast_old : Sexp.t ;
+                            ast_new : Sexp.t }
 
-
-module Generate_runtime = struct
-
-  type 'a t = {
-    random    : PPX_Random.state -> 'a;
-    pp        : 'a pp;
-    to_json   : 'a -> JSON.t;
-    to_sexp   : 'a -> Sexp.t;
-  }
-
-  exception NonInjective of { nl      : string;
-                              ast_old : Sexp.t ;
-                              ast_new : Sexp.t }
-
-  let generate grammar n =
-    let memo =
-      if !injectivity || !no_duplicates
-      then STbl.create (2*n)
-      else STbl.create 1
+let generate (About.About{ key ; serialise = { to_json ; to_sexp; _} ; _ }) n =
+  let memo =
+    if !injectivity || !no_duplicates
+    then Stbl.create (2*n)
+    else Stbl.create 1
+  in
+  let print_tab s = print_string ("\t"^s) in
+  let sofar = ref 0 in
+  while (!sofar < n) do
+    let t = PPX_Random.init() |> !(TUID.get_random key) in
+    Entity.init();
+    (* if !check_opt  then check sentence_to_yojson sentence_of_yojson sexp_of_sentence sentence_of_sexp t; *)
+    let nl =
+      if !print_nl then t |> !(TUID.get_pp key) |> toString
+      else "No NL constructed"
     in
-    let print_tab s = print_string ("\t"^s) in
-    let sofar = ref 0 in
-    while (!sofar < n) do
-      let t = PPX_Random.init() |> grammar.random in
-      Entity.init();
-      (* if !check_opt  then check sentence_to_yojson sentence_of_yojson sexp_of_sentence sentence_of_sexp t; *)
-      let nl =
-        if !print_nl then t |> grammar.pp |> toString
-        else "No NL constructed"
-      in
-      let sexp () =
-        if !print_sexp || !raw_json || !print_polish then t |> grammar.to_sexp
-        else Atom "No sexp constructed"
-      in
-      let go_ahead sexp =
-        if !print_nl     then print_string nl;
-        if !print_json   then t |> grammar.to_json |> JSON.to_string     |> print_tab;
-        if !print_polish then sexp |> Polish.of_sexp |> Polish.to_string |> print_tab;
-        if !raw_json     then sexp |> sexp2json |> JSON.to_string        |> print_tab;
-        if !print_sexp   then sexp |> Sexp.to_string                     |> print_tab;
-        print_endline "";
-        incr sofar;
-      in
-      if !injectivity || !no_duplicates
-      then
-        match STbl.find_opt memo nl with
-        | Some sexp' ->
-           if not !injectivity then () (* not checking injectivity means we reject duplicates *) 
-           else (* checking injectivity *)
-             let sexp = sexp () in
-             if not (Sexp.equal sexp sexp')
-             then
-               begin
-                 Format.(fprintf stderr "@[<v>Natural language@,  @[%s@]@,maps to@,  @[<v>%a@]@,and to@,  @[<v>%a@]@,@]" nl Sexplib.Sexp.pp sexp' Sexplib.Sexp.pp sexp);
-                 raise (NonInjective { nl ; ast_old = sexp' ; ast_new = sexp })
-               end;
-             if not !no_duplicates then go_ahead sexp
-        | None -> let sexp = sexp () in STbl.add memo nl sexp; go_ahead sexp
-      else 
-        go_ahead (sexp())
-    done
-
-end
+    let sexp () =
+      if !print_sexp || !raw_json || !print_polish then t |> to_sexp
+      else Atom "No sexp constructed"
+    in
+    let go_ahead sexp =
+      if !print_nl     then print_string nl;
+      if !print_json   then t |> to_json |> JSON.to_string     |> print_tab;
+      if !print_polish then sexp |> Polish.of_sexp |> Polish.to_string |> print_tab;
+      if !raw_json     then sexp |> sexp2json |> JSON.to_string        |> print_tab;
+      if !print_sexp   then sexp |> Sexp.to_string                     |> print_tab;
+      print_endline "";
+      incr sofar;
+    in
+    if !injectivity || !no_duplicates
+    then
+      match Stbl.find_opt memo nl with
+      | Some sexp' ->
+         if not !injectivity then () (* not checking injectivity means we reject duplicates *) 
+         else (* checking injectivity *)
+           let sexp = sexp () in
+           if not (Sexp.equal sexp sexp')
+           then
+             begin
+               Format.(fprintf stderr "@[<v>Natural language@,  @[%s@]@,maps to@,  @[<v>%a@]@,and to@,  @[<v>%a@]@,@]" nl Sexplib.Sexp.pp sexp' Sexplib.Sexp.pp sexp);
+               raise (NonInjective { nl ; ast_old = sexp' ; ast_new = sexp })
+             end;
+           if not !no_duplicates then go_ahead sexp
+      | None -> let sexp = sexp () in Stbl.add memo nl sexp; go_ahead sexp
+           else 
+             go_ahead (sexp())
+  done
