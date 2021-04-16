@@ -148,6 +148,14 @@ module Polish = struct
     in
     List.fold_left aux ""
 
+  let of_list =
+    let aux token =
+      match String.split ~by:!arity token with
+      | [] | [_] -> raise(Conversion("Polish.of_list: empty list or singletong list"))
+      | a::l -> a, List.length l - 1
+    in
+    List.map aux
+    
   let of_string ~arity s =
     let rec aux out = function
       | []  -> out

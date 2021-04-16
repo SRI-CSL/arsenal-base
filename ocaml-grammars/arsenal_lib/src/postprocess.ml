@@ -15,13 +15,19 @@ let exc s json = raise(Conversion(s^" "^JSON.to_string json))
                   
 module Dictionary = Hashtbl.Make(String)
 
-let rec json2sexp dictionary = function
-  | `String key when Dictionary.mem dictionary key
-    -> Sexp.List[Sexp.Atom key; Sexp.Atom(Dictionary.find dictionary key)]
-  | `String s -> Sexp.Atom s
-  | `List l   -> Sexp.List(List.map (json2sexp dictionary) l)
-  | json      -> exc "The following JSON is not a Sexp:" json
+(* let rec json2sexp dictionary = function
+ *   | `String key when Dictionary.mem dictionary key
+ *     -> Sexp.List[Sexp.Atom key; Sexp.Atom(Dictionary.find dictionary key)]
+ *   | `String s -> Sexp.Atom s
+ *   | `List l   -> Sexp.List(List.map (json2sexp dictionary) l)
+ *   | json      -> exc "The following JSON is not a Sexp:" json *)
 
+let rec restore_entities dictionary = function
+  | Sexp.Atom key when Dictionary.mem dictionary key
+    -> Sexp.List[Sexp.Atom key; Sexp.Atom(Dictionary.find dictionary key)]
+  | Sexp.Atom s -> Sexp.Atom s
+  | Sexp.List l -> Sexp.List(List.map (restore_entities dictionary) l)
+  
 let reformulate cst_conv cst_process json_string =
   try
     let json = json_string |> JSON.from_string in
@@ -56,7 +62,21 @@ let reformulate cst_conv cst_process json_string =
           | `Assoc l -> List.iter aux l
           | json -> exc "The substitution should be a JSON dictionary, not:" json
         in
-        json2sexp dictionary cst |> cst_conv.PPX_Serialise.of_sexp |> cst_process ?global_options ?options ?original ~id
+        let polish_token = function
+          | `String s -> s
+          | json -> exc "The Polish token should be a JSON string, not:" json
+        in
+        let polish = match cst with
+          | `List polish -> polish
+          | _ -> exc "The polish notation should be a json list, not:" json
+        in
+        polish
+        |> List.map polish_token
+        |> Polish.of_list
+        |> Polish.to_sexp
+        |> restore_entities dictionary
+        |> cst_conv.PPX_Serialise.of_sexp
+        |> cst_process ?global_options ?options ?original ~id
       with
       | Conversion error ->
         error_object ~id ~json ("Problem with conversion while reading: "^error)

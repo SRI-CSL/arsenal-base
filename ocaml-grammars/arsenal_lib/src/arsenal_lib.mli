@@ -58,6 +58,7 @@ module Polish : sig
   val of_sexp : Sexplib.Sexp.t -> string list
   val to_sexp : (string * int) list -> Sexplib.Sexp.t
   val to_string : string list -> string
+  val of_list   : string list -> (string * int) list
   val of_string : arity:Char.t -> string -> (string * int) list
 end
 
