@@ -58,4 +58,5 @@ let list_pat loc ?(init=[%pat? []]) elts =
   let aux sofar arg =  [%pat? [%p arg] :: [%p sofar]] in
   elts |> List.rev |> List.fold_left aux init
 
-let default_case loc = Exp.case [%pat? sexp ] [%expr PPX_Serialise.sexp_throw sexp ]
+let default_case loc =
+  Exp.case [%pat? sexp ] [%expr PPX_Serialise.sexp_throw ~who:"of_sexp/default_case" sexp ]

@@ -3,6 +3,16 @@ open Format
 
 open Sexplib
 
+(*********************************)
+(* Managing debug and exceptions *)
+(*********************************)
+
+type 'a printf = ('a, Format.formatter, unit) format -> 'a
+let verb = ref 0 (* Verbosity level *)
+let debug i a = if !verb >= i then Format.(fprintf stdout) a else Format.(ifprintf stdout) a
+let exc ?(stdout=true) f =
+  Format.ksprintf ~f:(fun s -> if stdout then Format.(fprintf stdout) "%s" s; raise (f s)) 
+
 (* Hashtables for strings, used several times *)
 module Stbl = CCHashtbl.Make(String)
 
@@ -28,6 +38,8 @@ let depth state = Float.of_int(state.PPX_Random.depth+1)
 module JSON = Yojson.Safe
 
 exception Conversion of string
+
+let raise_conv a = exc (fun s -> Conversion s) a
 
 module PPX_Serialise = struct
 
@@ -58,20 +70,21 @@ module PPX_Serialise = struct
     | Sexp.Atom _ when not !print_types -> true
     | _ -> false
          
-  let sexp_throw ?(who="PPX_Sexp") sexp =
-    raise(Conversion(who^": "^Sexp.to_string sexp^" is not a good S-expression"))
+  let sexp_throw ~who sexp =
+    raise_conv "%s: %a is not a good S-expression@," who Sexp.pp sexp
 
-  let sexp_get_cst ?who = function
+  let sexp_get_cst ~who = function
     | Sexp.List [Sexp.Atom ":"; Sexp.Atom c; Sexp.Atom _] when !print_types -> c
     | Sexp.Atom c when not !print_types -> c
-    | sexp -> sexp_throw ?who sexp
+    | sexp -> sexp_throw ~who:(who^" sexp_get_cst") sexp
 
-  let rec sexp_get_type ?who sexp =
-    if not !print_types then sexp_throw ?who sexp;
+  let rec sexp_get_type ~who sexp =
+    if not !print_types
+    then sexp_throw ~who:(who^" sexp_get_type (print_types == false)") sexp;
     match sexp with
     | Sexp.List [Sexp.Atom ":"; Sexp.Atom _; Sexp.Atom ty] -> ty
-    | Sexp.List (s::_)  when sexp_is_atom s -> sexp_get_type ?who s
-    | sexp -> sexp_throw ?who sexp
+    | Sexp.List (s::_)  when sexp_is_atom s -> sexp_get_type ~who s
+    | sexp -> sexp_throw ~who:(who^" sexp_get_type (secp problem)") sexp
 
 end
 
@@ -81,7 +94,7 @@ let rec sexp2json = function
 
 let exn f a = match f a with
   | Ok a -> a
-  | Error s -> raise (Conversion s)
+  | Error s -> raise_conv "%s" s
 
 module Polish = struct
 
@@ -127,18 +140,21 @@ module Polish = struct
     let rec pop n stack out =
       if n=0 then stack,out
       else match stack with
-           | [] -> raise(Conversion("Polish.to_sexp: popping out from the stack more elements than the stack contains (polish notation too short)"))
+           | [] -> raise_conv "Polish.to_sexp: popping out from the stack more elements than the stack contains (polish notation too short)"
            | head::tail -> pop (n-1) tail (head::out)
     in
     let rec aux stack = function
-      | (s,0)::tail -> aux (Sexp.Atom s::stack) tail
+      | (s,0)::tail ->
+         debug 2 "Treating %s of arity %i@," s 0;
+         aux (Sexp.Atom s::stack) tail
       | (s,i)::tail ->
+         debug 2 "Treating %s of arity %i@," s i;
          let stack,out = pop i stack [] in
          aux (Sexp.List(Sexp.Atom s::List.rev out)::stack) tail
       | [] -> match stack with
               | [sexp] -> sexp
-              | [] -> raise(Conversion("Polish.to_sexp: stack is empty, it should contain 1 element, namely the result of the conversion"))
-              | _::_::_ -> raise(Conversion("Polish.to_sexp: stack has more than 1 element, while it should only contain the result of the conversion (polish notation too long)"))
+              | [] -> raise_conv "Polish.to_sexp: stack is empty, it should contain 1 element, namely the result of the conversion"
+              | _::_::_ -> raise_conv "Polish.to_sexp: stack has more than 1 element, while it should only contain the result of the conversion (polish notation too long)"
     in aux []
      
   let to_string =
@@ -148,13 +164,13 @@ module Polish = struct
     in
     List.fold_left aux ""
 
-  let of_list =
+  let of_list l =
     let aux token =
       match String.split ~by:!arity token with
-      | [] | [_] -> raise(Conversion("Polish.of_list: empty list or singletong list"))
+      | [] | [_] -> raise_conv "Polish.of_list: empty list or singletong list"
       | a::l -> a, List.length l - 1
     in
-    List.map aux
+    List.map aux l |> List.rev
     
   let of_string ~arity s =
     let rec aux out = function
@@ -171,10 +187,10 @@ module Polish = struct
          | [a;i] ->
             begin match int_of_string_opt i with
             | Some i -> aux ((a,i)::out) tail
-            | None -> raise(Conversion("Polish.of_string: in string token "^s^", "^i^" is supposed to be an integer"))
+            | None -> raise_conv "Polish.of_string: in string token %s, %s is supposed to be an integer" s i
             end
          | [a]   -> aux ((a,0)::out) tail
-         | _ -> raise(Conversion("Polish.of_string: too many arity symbols in string "^s))
+         | _ -> raise_conv "Polish.of_string: too many arity symbols in string %s" s
     in
     aux [] (String.split_on_char ' ' s)
     
@@ -207,7 +223,7 @@ let (//) a b = FormatApply(a,b)
 let pick l =
   let sum = List.fold_right (fun (_,a) sofar -> a+sofar) l 0 in
   let rec aux n = function
-    | [] -> raise(Conversion("No natural language rendering left to pick from"))
+    | [] -> raise_conv "No natural language rendering left to pick from"
     | (s,i)::tail -> if (n < i) then s else aux (n-i) tail
   in
   let state = Random.State.make_self_init() in
@@ -276,6 +292,7 @@ module TUID : sig
       : hash: 'a Hash.t -> compare : 'a Ord.t -> random : 'a PPX_Random.t -> name:string -> 'a t
   val hash        : 'a t Hash.t                      (* Hashing a TUID *)
   val compare     : 'a t -> 'b t -> ('a, 'b) Order.t (* Comparing TUIDs *)
+  val name        : 'a t -> string    (* name of 'a *)
   val get_hash    : 'a t -> 'a Hash.t (* Given a TUID for 'a, get a hash function for 'a *)
   val get_compare : 'a t -> 'a Ord.t  (* Given a TUID for 'a, get a compare function for 'a *)
   val get_pp      : 'a t -> 'a pp ref (* Given a TUID for 'a, get a pretty-printer for 'a *)
@@ -294,6 +311,7 @@ end = struct
                 pp     : 'a pp ref;
               }
   let hash t = t.i
+  let name t = t.name
   let get_hash t    = t.hash
   let get_compare t = t.compare
   let get_pp      t = t.pp
@@ -381,7 +399,7 @@ module JSONindex = struct
   let populate str =
     match Register.find_opt str with
     | Some (About{ json_desc ; _}) -> json_desc ()
-    | None -> raise (NotRegistered str)
+    | None -> exc (fun s -> NotRegistered s) "%s" str
 
   let out ~id ~description ~toptype =
     let top =
@@ -451,7 +469,7 @@ let sexp_of_bool b =
 let bool_of_sexp = function
   | Sexp.Atom "true" -> true
   | Sexp.Atom "false" -> false
-  | sexp -> raise(Conversion("bool_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode a boolean"))
+  | sexp -> raise_conv "bool_of_sexp: S-expression %a does not encode a boolean" Sexp.pp sexp
 
 let serialise_bool =
   let open PPX_Serialise in
@@ -476,7 +494,7 @@ let sexp_of_int i =
 
 let int_of_sexp = function
   | Sexp.Atom s -> int_of_string s
-  | sexp -> raise(Conversion("int_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode an int"))
+  | sexp -> raise_conv "int_of_sexp: S-expression %a does not encode an int" Sexp.pp sexp
 
 let serialise_int =
   let open PPX_Serialise in
@@ -505,7 +523,7 @@ let sexp_of_list arg l =
 let list_of_sexp arg = function
   | Sexp.Atom "Nil" -> []
   | Sexp.List(Sexp.Atom "List"::(_::_ as l)) -> List.map arg l
-  | sexp -> raise(Conversion("list_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode a list"))
+  | sexp -> raise_conv "list_of_sexp: S-expression %a does not encode a list" Sexp.pp sexp
 
 let serialise_list arg =
   let open PPX_Serialise in
@@ -537,7 +555,7 @@ let sexp_of_option arg l =
 let option_of_sexp arg = function
   | Sexp.Atom "None" -> None
   | Sexp.List[Sexp.Atom "Some";a] -> Some(arg a)
-  | sexp -> raise(Conversion("list_of_sexp: S-expression "^Sexp.to_string sexp^" does not encode an option"))
+  | sexp -> raise_conv "list_of_sexp: S-expression %a does not encode an option" Sexp.pp sexp
 
 let serialise_option arg =
   let open PPX_Serialise in
@@ -747,7 +765,8 @@ module Entity = struct
          (match arg.PPX_Serialise.to_json k with
           | `Assoc [":constructor", v] -> ("kind", v)::l
           | `String _ as v -> ("kind", v)::l
-          | json -> raise(Conversion("JSON is not good for entity kind: "^JSON.to_string json)))
+          | json -> raise_conv "JSON is not good for entity kind: %a"
+                      (fun a -> JSON.pretty_print a) json)
       | _ -> l
     in
     let sub l =
@@ -805,7 +824,7 @@ module Entity = struct
       let kind, counter = aux s in
       { kind; counter = ref counter; substitution = Some nl }
     | Sexp.List _ as sexp ->
-       raise(Conversion("Entity.t_of_sexp: list S-expresion "^Sexp.to_string sexp^" cannot be an entity"))
+       raise_conv "Entity.t_of_sexp: list S-expresion %a cannot be an entity" Sexp.pp sexp
 
   let serialise arg =
     let open PPX_Serialise in

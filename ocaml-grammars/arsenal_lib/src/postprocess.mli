@@ -1,4 +1,15 @@
 open Arsenal_lib
+
+val postprocess :
+  'a PPX_Serialise.t
+  -> (?global_options:(string * JSON.t) list ->
+      ?options:       (string * JSON.t) list ->
+      ?original:      string ->
+      id:             JSON.t ->
+      'a ->
+      JSON.t) ->
+  JSON.t
+  -> JSON.t
    
 val main : port:int
            -> 'a PPX_Serialise.t

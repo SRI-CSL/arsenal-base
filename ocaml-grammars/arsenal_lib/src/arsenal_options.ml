@@ -17,7 +17,6 @@ let howmany = ref 1        (* Default number of example to generate is 1 *)
 let raw_json = ref false   (* Whether json should just be like Sexp *)
 let injectivity = ref false (* Whether to check that the pretty-printing function is injective -- requires saving in memory all instances produced *)
 let no_duplicates = ref false (* Whether to ensure there are no duplicates -- requires saving in memory all instances produced *)
-let verb = ref 0 (* Verbosity level *)
 let args : string list ref = ref [] (* Where the command-line argument will be stacked *)
 
 let options =

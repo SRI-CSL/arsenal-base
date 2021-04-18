@@ -3,6 +3,18 @@ open Format
 
 open Sexplib
 
+(*********************************)
+(* Managing debug and exceptions *)
+(*********************************)
+
+type 'a printf = ('a, Format.formatter, unit) format -> 'a
+val verb  : int ref      (* Verbosity level *)
+val debug : int -> 'a printf
+val exc   : ?stdout:bool
+            -> (string -> exn)
+            -> ?margin:int
+            -> ('a, Format.formatter, unit, 'b) format4 -> 'a
+
 (* Hashtables for strings, used several times *)
 module Stbl : CCHashtbl.S with type key = string
 
@@ -29,6 +41,7 @@ val depth : PPX_Random.state -> float
 module JSON = Yojson.Safe
 
 exception Conversion of string
+val raise_conv : ('a, Format.formatter, unit, 'b) format4 -> 'a
 
 module PPX_Serialise : sig
   type 'a t = {
@@ -43,10 +56,10 @@ module PPX_Serialise : sig
   val json_cons   : (string * JSON.t) -> (string * JSON.t) list -> (string * JSON.t) list
   val print_types : bool ref (* Print types in S-expressions? *)
   val sexp_constructor : string -> string -> Sexp.t
-  val sexp_throw    : ?who:tag -> Sexp.t -> _
+  val sexp_throw    : who:tag -> Sexp.t -> _
   val sexp_is_atom  : Sexp.t -> bool
-  val sexp_get_cst  : ?who:tag -> Sexp.t -> tag
-  val sexp_get_type : ?who:tag -> Sexp.t -> tag
+  val sexp_get_cst  : who:tag -> Sexp.t -> tag
+  val sexp_get_type : who:tag -> Sexp.t -> tag
 end
 
 val sexp2json : Sexp.t -> JSON.t
@@ -66,7 +79,7 @@ end
 (* Printing functionalities *)
 (****************************)
 
-type print = Format.formatter ->  unit
+type print = Format.formatter -> unit
 type 'a pp = 'a -> print
 
 val (^^)   : print -> print -> print
@@ -140,6 +153,7 @@ module TUID : sig
       : hash: 'a Hash.t -> compare : 'a Ord.t -> random : 'a PPX_Random.t -> name:string -> 'a t
   val hash        : 'a t Hash.t                      (* Hashing a TUID *)
   val compare     : 'a t -> 'b t -> ('a, 'b) Order.t (* Comparing TUIDs *)
+  val name        : 'a t -> string    (* name of 'a *)
   val get_hash    : 'a t -> 'a Hash.t (* Given a TUID for 'a, get a hash function for 'a *)
   val get_compare : 'a t -> 'a Ord.t  (* Given a TUID for 'a, get a compare function for 'a *)
   val get_pp      : 'a t -> 'a pp ref (* Given a TUID for 'a, get a pretty-printer for 'a *)

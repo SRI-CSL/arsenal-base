@@ -102,7 +102,8 @@ let expr_of_typ build_cases typestring_expr typ =
               [%pat? p ]
               ~guard:
               [%expr PPX_Serialise.(sexp_is_atom p
-                                    && String.equal (sexp_get_cst p) [%e str2exp label.txt ]) ]
+                                    && String.equal (sexp_get_cst ~who:"of_sexp" p)
+                                         [%e str2exp label.txt ]) ]
               (Exp.variant label.txt None)
             
          | Rtag (label, false, typs) ->
@@ -225,7 +226,8 @@ let expr_of_type_decl ~path type_decl =
            [%pat? Sexp.List ( p :: [%p pattn typs |> list_pat loc ]) ]
            ~guard:
            [%expr PPX_Serialise.(sexp_is_atom p
-                                 && String.equal (sexp_get_cst p) [%e str2exp qualifname' ]) ]
+                                 && String.equal (sexp_get_cst ~who:"of_sexp" p)
+                                      [%e str2exp qualifname' ]) ]
            (Exp.construct (mknoloc (Lident name')) (exp_of_sexp args_of_sexp))
 
        in
@@ -242,7 +244,8 @@ let expr_of_type_decl ~path type_decl =
           Exp.case
             [%pat? p ]
             ~guard:
-            [%expr PPX_Serialise.(sexp_is_atom p && String.equal (sexp_get_cst p) [%e str2exp qualifname' ]) ]
+            [%expr PPX_Serialise.(sexp_is_atom p && String.equal (sexp_get_cst ~who:"of_sexp" p)
+                                                      [%e str2exp qualifname' ]) ]
             (Exp.construct (mknoloc (Lident name')) None)
 
        | Parsetree.Pcstr_tuple typs ->

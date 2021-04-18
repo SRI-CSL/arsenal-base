@@ -11,8 +11,8 @@ let good_object reformulations = `Assoc ["result", `List reformulations]
 let error_object ?(id=`Null) ?(json=`Null) message =
   `Assoc ["id",id; "error",`String message; "json",json ]
 
-let exc s json = raise(Conversion(s^" "^JSON.to_string json))
-                  
+let exc s json = raise_conv "%s %a" s (fun fmt -> JSON.pretty_print fmt) json
+
 module Dictionary = Hashtbl.Make(String)
 
 (* let rec json2sexp dictionary = function
@@ -28,9 +28,8 @@ let rec restore_entities dictionary = function
   | Sexp.Atom s -> Sexp.Atom s
   | Sexp.List l -> Sexp.List(List.map (restore_entities dictionary) l)
   
-let reformulate cst_conv cst_process json_string =
+let postprocess cst_conv cst_process json =
   try
-    let json = json_string |> JSON.from_string in
     let sentences = json |> JSON.Util.member "sentences" in
     let global_options   = match json |> JSON.Util.member "options" with
       | `Null    -> None
@@ -38,6 +37,7 @@ let reformulate cst_conv cst_process json_string =
       | json -> exc "The global options should be a JSON dictionary, not:" json
     in
     let treat_one json =
+      debug 1 "JSON: @[<v>%a@]@," (fun fmt -> JSON.pretty_print fmt) json;
       let id = JSON.Util.member "id" json in
       let cst = JSON.Util.member "cst" json in
       let original =
@@ -47,7 +47,6 @@ let reformulate cst_conv cst_process json_string =
         | json -> exc "The orig-text should be a string, not:" json
       in
       try
-        print_endline("JSON: "^JSON.to_string cst);
         let options = match JSON.Util.member "options" json with
           | `Null    -> None
           | `Assoc l -> Some l
@@ -162,7 +161,8 @@ class hello cst_conv cst_process = object(self)
   method process_post rd =
     Body.to_string rd.req_body >>= fun json_string ->
     let resp_body = json_string
-                    |> reformulate cst_conv cst_process
+                    |> JSON.from_string
+                    |> postprocess cst_conv cst_process
                     |> JSON.to_string
                     |> Body.of_string
     in
