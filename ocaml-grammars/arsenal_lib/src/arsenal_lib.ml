@@ -270,7 +270,7 @@ let (++) w1 w2 = 1 - (w1 * w2)
 (* Easy extension of pp function to option type *)
 let (+?) pp1 pp2  = function Some x -> pp1 x | None -> pp2
 let (?+) pp_arg = function Some x -> pp_arg x | None -> noop
-(* let (??) = function Some _ -> true | None -> false *)
+let (??) = function Some _ -> true | None -> false
 
 
 (**********************************************************************)
@@ -679,7 +679,7 @@ module Entity = struct
   let warnings : [`NoSubst of string] list ref = ref [] (* While parsing a json, are we seeing any warning? *)
   let strict = ref 1.5
 
-  let get_counter key kind =
+  let get_kind_counter key kind =
     let key =
       if !one_entity_kind then None
       else
@@ -692,20 +692,36 @@ module Entity = struct
     | Some counter -> Counters.replace counters key (counter+1); counter
     | None -> Counters.add counters key 1; 0
 
+  type counter =
+    | Ref of int ref
+    | Fixed of int
+
+  let hash_counter = function
+    | Ref i   -> Hash.pair Hash.int Hash.int (0,!i)
+    | Fixed i -> Hash.pair Hash.int Hash.int (1,i)
+  let compare_counter a b = match a,b with
+    | Ref i, Ref j     -> Ord.int !i !j
+    | Fixed i, Fixed j -> Ord.int i j
+    | Ref _, Fixed _ -> -1
+    | Fixed _, Ref _ -> 1
+  let get_counter = function
+    | Ref i   -> !i
+    | Fixed i -> i
+
   type 'a t = {
       kind         : 'a option;
-      counter      : int ref;
+      counter      : counter;
       substitution : string option
     }
 
   let hash arg a =
-    Hash.triple (Hash.opt arg) Hash.int (Hash.opt Hash.string)
-      (a.kind, !(a.counter), a.substitution)
+    Hash.triple (Hash.opt arg) hash_counter (Hash.opt Hash.string)
+      (a.kind, a.counter, a.substitution)
 
   let compare arg a b =
-    Ord.triple (Ord.option arg) Ord.int (Ord.option Ord.string)
-      (a.kind, !(a.counter), a.substitution)
-      (b.kind, !(b.counter), b.substitution)
+    Ord.triple (Ord.option arg) compare_counter (Ord.option Ord.string)
+      (a.kind, a.counter, a.substitution)
+      (b.kind, b.counter, b.substitution)
 
   let typestring arg = "entity("^arg^")"
   let json_desc arg () =
@@ -744,9 +760,13 @@ module Entity = struct
     F "%t_%s" // base // counter_string |> print
 
   let pp arg key e fmt =
-    let counter = get_counter arg e.kind in
-    (* print_endline("pp counter "^string_of_int counter); *)
-    e.counter := counter;
+    let counter = match e.counter with
+      | Ref i -> 
+         let counter = get_kind_counter arg e.kind in
+         i := counter;
+         counter
+      | Fixed i -> i
+    in
     match e.substitution with
     | Some nl -> (F "_%t{%s}" // pp_kindcounter key e.kind counter // nl |> print) fmt
     | None    -> (F "_%t" // pp_kindcounter key e.kind counter |> print) fmt
@@ -755,7 +775,7 @@ module Entity = struct
     let kind = Some(random_arg s) in
     let counter = 0 in
     { kind;
-      counter      = ref counter;
+      counter      = Ref(ref counter);
       substitution = None }
 
   let to_json arg e =
@@ -774,7 +794,7 @@ module Entity = struct
       | Some entity -> ("substitution", `String entity)::l
       | None -> l
     in
-    `Assoc(["counter", `Int !(e.counter)] |> sub |> kind)
+    `Assoc(["counter", `Int (get_counter e.counter)] |> sub |> kind)
 
   let to_sexp arg e =
     let open PPX_Serialise in
@@ -784,7 +804,8 @@ module Entity = struct
       | _ -> "entity"
     in
     let base =
-      sexp_constructor (Format.sprintf "%t" (pp_kindcounter arg e.kind !(e.counter))) ty
+      sexp_constructor
+        (Format.sprintf "%t" (pp_kindcounter arg e.kind (get_counter e.counter))) ty
     in
     match e.substitution with
     | Some entity -> Sexp.List[base;Sexp.Atom entity]
@@ -819,10 +840,10 @@ module Entity = struct
     function
     | Sexp.Atom s ->
       let kind, counter = aux s in
-      { kind; counter = ref counter; substitution = None }
+      { kind; counter = Fixed counter; substitution = None }
     | Sexp.List[Sexp.Atom s;Sexp.Atom nl] ->
       let kind, counter = aux s in
-      { kind; counter = ref counter; substitution = Some nl }
+      { kind; counter = Fixed counter; substitution = Some nl }
     | Sexp.List _ as sexp ->
        raise_conv "Entity.t_of_sexp: list S-expresion %a cannot be an entity" Sexp.pp sexp
 
@@ -843,8 +864,7 @@ module Entity = struct
 
   let entity_mk s ?(kind=None) ?(counter=0) ?(substitution=None) () =
     (match substitution with None -> warnings := (`NoSubst s)::!warnings | Some _ -> ());
-    Result.Ok { kind; counter = ref counter; substitution }
-
+    Result.Ok { kind; counter = Fixed counter; substitution }
 
   let pick l _ = pick(List.map (fun (x,i) -> x, Stdlib.Float.(to_int(pow i !strict))) l)
 

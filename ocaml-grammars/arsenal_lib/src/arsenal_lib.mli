@@ -131,7 +131,7 @@ val ( +? ) : 'a pp -> print -> 'a option pp
 val ( ?+ ) : 'a pp -> 'a option pp (* noop if not present *)
 
 (* has the option? *)
-(* val ( ?? ) : 'a option -> bool *)
+val ( ?? ) : 'a option -> bool
 
 
 (**********************************************************************)
