@@ -275,7 +275,8 @@ class MultiHeadSeq2Seq():
                     op = op_arity[0]
                     args = op_arity[2:]
                     arity = len(args)
-                    decoded_words.append("{}#{}#{}".format(op, arity, op_arity[1]))
+                    # decoded_words.append("{}#{}#{}".format(op, arity, op_arity[1]))
+                    decoded_words.append("{}".format(word))
                     hole_types = args + hole_types[1:]
                     if len(hole_types) == 0:
                         break  # Nothing left to match!

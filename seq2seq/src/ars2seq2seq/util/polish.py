@@ -108,6 +108,19 @@ def convert_pn2json(pn_str):
         print("Warning: Mis-matched S-expression!")
     return sexp
 
+def convert_pn2pn(pn_str):
+    """Convert polish notation output to sexp as JSON"""
+    print("Converting PN to PN as JSON: {}".format(pn_str))
+    toks = pn_str.split()
+    json = "["
+    isfirst = True
+    for tok in toks:
+        if not isfirst:
+            json += ", "
+        isfirst = False
+        json += '"' + tok + '"'
+    json += " ] "
+    return json
 
 def convert_pn2sexp(pn_str):
     """Convert polish notation output to sexp"""

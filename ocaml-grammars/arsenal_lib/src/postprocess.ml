@@ -23,8 +23,11 @@ module Dictionary = Hashtbl.Make(String)
  *   | json      -> exc "The following JSON is not a Sexp:" json *)
 
 let rec restore_entities dictionary = function
-  | Sexp.Atom key when Dictionary.mem dictionary key
-    -> Sexp.List[Sexp.Atom key; Sexp.Atom(Dictionary.find dictionary key)]
+  | Sexp.Atom key when Dictionary.mem dictionary ("_"^key)
+    ->
+     let v = Dictionary.find dictionary ("_"^key) in
+     debug 2 "Found substitution entry %s -> %s@," key v;
+     Sexp.List[Sexp.Atom key; Sexp.Atom v]
   | Sexp.Atom s -> Sexp.Atom s
   | Sexp.List l -> Sexp.List(List.map (restore_entities dictionary) l)
   
@@ -54,7 +57,9 @@ let postprocess cst_conv cst_process json =
         in
         let dictionary = Dictionary.create 10 in
         let aux (key, value) = match value with
-          | `String s -> Dictionary.add dictionary key s
+          | `String s ->
+             debug 2 "Adding substitution entry %s -> %s@," key s;
+             Dictionary.add dictionary key s
           | json -> exc "The substitution for an entity should be a string, not:" json
         in
         let () = match JSON.Util.member "substitutions" json with
