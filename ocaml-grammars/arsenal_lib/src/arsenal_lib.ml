@@ -204,6 +204,8 @@ end
 type print = Format.formatter -> unit
 type 'a pp = 'a -> print
 
+let deterministic = ref false
+           
 let return s fmt = Format.fprintf fmt "%s" s
 let noop     _fmt = ()
 let (^^) pp1 pp2 fmt = pp1 fmt; pp2 fmt
@@ -221,13 +223,18 @@ let rec print : type a. a formatted -> formatter -> a = function
 let (//) a b = FormatApply(a,b)
 
 let pick l =
-  let sum = List.fold_right (fun (_,a) sofar -> a+sofar) l 0 in
-  let rec aux n = function
-    | [] -> raise_conv "No natural language rendering left to pick from"
-    | (s,i)::tail -> if (n < i) then s else aux (n-i) tail
-  in
-  let state = Random.State.make_self_init() in
-  aux (Random.int sum state) l
+  if !deterministic
+  then match l with
+       | (s, _)::_ -> s
+       | [] -> raise_conv "No natural language rendering left to pick from"
+  else
+    let sum = List.fold_right (fun (_,a) sofar -> a+sofar) l 0 in
+    let rec aux n = function
+      | [] -> raise_conv "No natural language rendering left to pick from"
+      | (s,i)::tail -> if (n < i) then s else aux (n-i) tail
+    in
+    let state = Random.State.make_self_init() in
+    aux (Random.int sum state) l
 
 let toString a =
   let buf = Buffer.create 255 in

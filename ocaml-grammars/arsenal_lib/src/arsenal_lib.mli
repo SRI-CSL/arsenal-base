@@ -82,6 +82,8 @@ end
 type print = Format.formatter -> unit
 type 'a pp = 'a -> print
 
+val deterministic : bool ref
+
 val (^^)   : print -> print -> print
 val return : string pp
 val noop   : print

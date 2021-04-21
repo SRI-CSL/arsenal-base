@@ -32,6 +32,7 @@ let options =
     ("-no-nl", Clear print_nl, "\tprint disable natural language output");
     ("-no-duplicates", Set no_duplicates, "\tensure there are no duplicates (default is false) -- saves generated instances in memory");
     ("-check-injectivity", Set injectivity, "\tcheck there are no two ASTs for the same NL (default is false) -- saves generated instances in memory");
+    ("-deterministic", Set deterministic, "\tDeterministic NL generation (default is false)");
     (* ("-check", Set check_opt, "\tcheck output"); *)
     ("-strict-entities", Float(fun f -> Entity.strict := f), "\thow strict entity kinds should be considered (0. : they are ignored; +infty: very strictly enforced)");
     ("-verb", Int(fun i -> verb := i), "\tverbosity level (default is 0)");
