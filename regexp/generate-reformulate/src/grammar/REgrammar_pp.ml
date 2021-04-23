@@ -2,15 +2,16 @@ open Format
 open Sexplib
 open Std
 
+open Arsenal
 open Arsenal_lib
-open Base_grammar_pp
+open Grammar_base_pp
 open REgrammar
 
 (***************)
 (* NL Printing *)
 
-let pp_tchar = Entity.pp pp_kchar
-let pp_tstring = Entity.pp pp_kstring
+let pp_tchar   = Entity.pp key_kchar serialise_kchar
+let pp_tstring = Entity.pp key_kstring serialise_kstring
 
 let pp_terminal = function
   | Specific s -> !?[
@@ -84,3 +85,7 @@ let rec pp_re = function
       F "%t or %t" // pp_re r1 // pp_re r2;
     ]
   | Concat l      -> pp_list pp_re l
+
+let () = TUID.get_pp key_re := pp_re
+
+let load = ()

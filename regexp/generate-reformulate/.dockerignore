@@ -1,0 +1,6 @@
+**/_build
+**/.dockerignore
+**/Dockerfile
+**/examples
+**/grammars
+**/training_sets

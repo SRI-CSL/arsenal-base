@@ -1,0 +1,33 @@
+(executable
+ (name generate)
+ (public_name arsenal_RE_generate)
+ (libraries containers str yojson sexplib arsenal grammar)
+ (preprocess (pps ppx_deriving.std ppx_deriving_arsenal))
+ (modules Generate)
+)
+
+(executable
+ (name reformulate)
+ (public_name arsenal_RE_reformulate)
+ (libraries containers str yojson sexplib lwt cohttp cohttp-lwt cohttp-lwt-unix webmachine arsenal grammar)
+ (preprocess (pps ppx_deriving.std ppx_deriving_arsenal))
+ (modules Reformulate)
+)
+
+(executable
+ (name reformulateCI)
+ (public_name arsenal_RE_reformulateCI)
+ (libraries containers str yojson sexplib lwt cohttp cohttp-lwt cohttp-lwt-unix webmachine arsenal grammar)
+ (preprocess (pps ppx_deriving.std ppx_deriving_arsenal))
+ (modules ReformulateCI)
+)
+
+(executable
+ (name grammar2json)
+ (public_name arsenal_RE_grammar2json)
+ (libraries containers str yojson sexplib arsenal grammar)
+ (preprocess (pps ppx_deriving.std ppx_deriving_arsenal))
+ (modules Grammar2json)
+)
+
+(env (dev (flags (:standard -warn-error -A -w -27-39))))

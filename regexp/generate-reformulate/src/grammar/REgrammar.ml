@@ -1,20 +1,22 @@
-open Format
 open Sexplib
-open Std
 
+open Arsenal
 open Arsenal_lib
 
 let concat_max = ref 4   (* Maximal length of concatenations *)
 let string_max = ref 10  (* Maximal length of random strings *)
 
-(***********)
-(* Grammar *)
+(****************)
+(* Entity kinds *)
 
-type kchar = Char [@@deriving arsenal, show { with_path = false }]
-type kstring = String [@@deriving arsenal, show { with_path = false }]
+type kchar = Char [@@deriving arsenal {in_grammar = false}]
+type kstring = String [@@deriving arsenal {in_grammar = false}]
 
 type tchar = kchar Entity.t     [@@deriving arsenal]
 type tstring = kstring Entity.t [@@deriving arsenal]
+
+(***********)
+(* Grammar *)
 
 type terminal =
   | Specific of tstring [@weight 10]
@@ -32,3 +34,5 @@ type re = Terminal of terminal [@weight fun state -> 2. *. depth state ]
         | Or of re*re
         | Concat of (re list[@random random_list ~min:2 random_re])
 [@@deriving arsenal]
+
+let load = ()
