@@ -878,3 +878,106 @@ module Entity = struct
 end
 
 
+(******************)
+(* Postprocessing *)
+(******************)
+
+type cst_process =
+  ?global_options:(string * JSON.t) list ->
+  ?options:(string * JSON.t) list ->
+  ?original:string ->
+  id:JSON.t ->
+  to_sexp:(JSON.t -> Sexp.t) -> (* Turns 1 polish notation into a Sexp with substituted placeholders *)
+  JSON.t -> (* Contents of ths "cst" field sent to the reformulator *)
+  JSON.t
+
+let good_object reformulations = `Assoc ["result", `List reformulations]
+
+let error_object ?(id=`Null) ?(json=`Null) message =
+  `Assoc ["id",id; "error",`String message; "json",json ]
+
+let excj s json = raise_conv "%s %a" s (fun fmt -> JSON.pretty_print fmt) json
+
+module Dictionary = Hashtbl.Make(String)
+
+(* let rec json2sexp dictionary = function
+ *   | `String key when Dictionary.mem dictionary key
+ *     -> Sexp.List[Sexp.Atom key; Sexp.Atom(Dictionary.find dictionary key)]
+ *   | `String s -> Sexp.Atom s
+ *   | `List l   -> Sexp.List(List.map (json2sexp dictionary) l)
+ *   | json      -> excj "The following JSON is not a Sexp:" json *)
+
+let rec restore_entities dictionary = function
+  | Sexp.Atom key when Dictionary.mem dictionary ("_"^key)
+    ->
+     let v = Dictionary.find dictionary ("_"^key) in
+     debug 2 "Found substitution entry %s -> %s@," key v;
+     Sexp.List[Sexp.Atom key; Sexp.Atom v]
+  | Sexp.Atom s -> Sexp.Atom s
+  | Sexp.List l -> Sexp.List(List.map (restore_entities dictionary) l)
+
+let treat_one_cst dictionary cst =
+  let polish_token = function
+    | `String s -> s
+    | json -> excj "The Polish token should be a JSON string, not:" json
+  in
+  let polish = match cst with
+    | `List polish -> polish
+    | json -> excj "The polish notation should be a json list, not:" json
+  in
+  polish
+  |> List.map polish_token
+  |> Polish.of_list
+  |> Polish.to_sexp
+  |> restore_entities dictionary
+  
+let postprocess (cst_process:cst_process) json : JSON.t =
+  try
+    let sentences = json |> JSON.Util.member "sentences" in
+    let global_options   = match json |> JSON.Util.member "options" with
+      | `Null    -> None
+      | `Assoc l -> Some l
+      | json -> excj "The global options should be a JSON dictionary, not:" json
+    in
+    let treat_one json =
+      debug 1 "JSON: @[<v>%a@]@," (fun fmt -> JSON.pretty_print fmt) json;
+      let id  = JSON.Util.member "id" json in
+      let original =
+        match JSON.Util.member "orig-text" json with
+        | `Null -> None
+        | `String s -> Some s
+        | json -> excj "The orig-text should be a string, not:" json
+      in
+      try
+        let options = match JSON.Util.member "options" json with
+          | `Null    -> None
+          | `Assoc l -> Some l
+          | json -> excj "The sentence-specific options should be a JSON dictionary, not:" json
+        in
+        let dictionary = Dictionary.create 10 in
+        let aux (key, value) = match value with
+          | `String s ->
+             debug 2 "Adding substitution entry %s -> %s@," key s;
+             Dictionary.add dictionary key s
+          | json -> excj "The substitution for an entity should be a string, not:" json
+        in
+        let () = match JSON.Util.member "substitutions" json with
+          | `Assoc l -> List.iter aux l
+          | json -> excj "The substitution should be a JSON dictionary, not:" json
+        in
+        JSON.Util.member "cst" json
+        |> cst_process ?global_options ?options ?original ~id ~to_sexp:(treat_one_cst dictionary)
+      with
+      | Conversion error ->
+        error_object ~id ~json ("Problem with conversion while reading: "^error)
+    in
+    sentences
+    |> JSON.Util.to_list
+    |> List.map treat_one
+    |> good_object
+  with
+  | Yojson.Json_error error ->
+    error_object ("Problem with string->JSON conversion: "^error)
+  | JSON.Util.Type_error(error,json)
+  | JSON.Util.Undefined(error,json) ->
+    error_object ~json ("Problem extracting info from JSON: "^error)

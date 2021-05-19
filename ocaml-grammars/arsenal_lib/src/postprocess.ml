@@ -1,101 +1,9 @@
 open Containers
-open Arsenal_lib
 open Sexplib
    
 open Lwt.Infix
 open Cohttp_lwt
 open Cohttp_lwt_unix
-
-let good_object reformulations = `Assoc ["result", `List reformulations]
-
-let error_object ?(id=`Null) ?(json=`Null) message =
-  `Assoc ["id",id; "error",`String message; "json",json ]
-
-let exc s json = raise_conv "%s %a" s (fun fmt -> JSON.pretty_print fmt) json
-
-module Dictionary = Hashtbl.Make(String)
-
-(* let rec json2sexp dictionary = function
- *   | `String key when Dictionary.mem dictionary key
- *     -> Sexp.List[Sexp.Atom key; Sexp.Atom(Dictionary.find dictionary key)]
- *   | `String s -> Sexp.Atom s
- *   | `List l   -> Sexp.List(List.map (json2sexp dictionary) l)
- *   | json      -> exc "The following JSON is not a Sexp:" json *)
-
-let rec restore_entities dictionary = function
-  | Sexp.Atom key when Dictionary.mem dictionary ("_"^key)
-    ->
-     let v = Dictionary.find dictionary ("_"^key) in
-     debug 2 "Found substitution entry %s -> %s@," key v;
-     Sexp.List[Sexp.Atom key; Sexp.Atom v]
-  | Sexp.Atom s -> Sexp.Atom s
-  | Sexp.List l -> Sexp.List(List.map (restore_entities dictionary) l)
-  
-let postprocess cst_conv cst_process json =
-  try
-    let sentences = json |> JSON.Util.member "sentences" in
-    let global_options   = match json |> JSON.Util.member "options" with
-      | `Null    -> None
-      | `Assoc l -> Some l
-      | json -> exc "The global options should be a JSON dictionary, not:" json
-    in
-    let treat_one json =
-      debug 1 "JSON: @[<v>%a@]@," (fun fmt -> JSON.pretty_print fmt) json;
-      let id = JSON.Util.member "id" json in
-      let cst = JSON.Util.member "cst" json in
-      let original =
-        match JSON.Util.member "orig-text" json with
-        | `Null -> None
-        | `String s -> Some s
-        | json -> exc "The orig-text should be a string, not:" json
-      in
-      try
-        let options = match JSON.Util.member "options" json with
-          | `Null    -> None
-          | `Assoc l -> Some l
-          | json -> exc "The sentence-specific options should be a JSON dictionary, not:" json
-        in
-        let dictionary = Dictionary.create 10 in
-        let aux (key, value) = match value with
-          | `String s ->
-             debug 2 "Adding substitution entry %s -> %s@," key s;
-             Dictionary.add dictionary key s
-          | json -> exc "The substitution for an entity should be a string, not:" json
-        in
-        let () = match JSON.Util.member "substitutions" json with
-          | `Assoc l -> List.iter aux l
-          | json -> exc "The substitution should be a JSON dictionary, not:" json
-        in
-        let polish_token = function
-          | `String s -> s
-          | json -> exc "The Polish token should be a JSON string, not:" json
-        in
-        let polish = match cst with
-          | `List polish -> polish
-          | _ -> exc "The polish notation should be a json list, not:" json
-        in
-        polish
-        |> List.map polish_token
-        |> Polish.of_list
-        |> Polish.to_sexp
-        |> restore_entities dictionary
-        |> cst_conv.PPX_Serialise.of_sexp
-        |> cst_process ?global_options ?options ?original ~id
-      with
-      | Conversion error ->
-        error_object ~id ~json ("Problem with conversion while reading: "^error)
-    in
-    sentences
-    |> JSON.Util.to_list
-    |> List.map treat_one
-    |> good_object
-  with
-  | Yojson.Json_error error ->
-    error_object ("Problem with string->JSON conversion: "^error)
-  | JSON.Util.Type_error(error,json)
-  | JSON.Util.Undefined(error,json) ->
-    error_object ~json ("Problem extracting info from JSON: "^error)
-
 
 (* Apply the [Webmachine.Make] functor to the Async-based IO module exported by
  * cohttp. For added convenience, include the [Rd] module as well so you don't
@@ -112,7 +20,7 @@ end
 (* Create a new class that inherits from [Wm.resource] and provides
  * implementations for its two virtual methods, and overrides some of its default methods.
  *)
-class hello cst_conv cst_process = object(self)
+class hello cst_process = object(self)
   inherit [Body.t] Wm.resource
 
   (* Only allow POST requests to this resource *)
@@ -165,17 +73,18 @@ class hello cst_conv cst_process = object(self)
   (* Process POST request *)
   method process_post rd =
     Body.to_string rd.req_body >>= fun json_string ->
-    let resp_body = json_string
-                    |> JSON.from_string
-                    |> postprocess cst_conv cst_process
-                    |> JSON.to_string
-                    |> Body.of_string
+    let resp_body =
+      Arsenal_lib.(json_string
+                   |> JSON.from_string
+                   |> postprocess cst_process
+                   |> JSON.to_string
+                   |> Body.of_string)
     in
     Wm.continue true { rd with resp_body }
 
 end
 
-let main ~port cst_conv cst_process =
+let main ~port cst_process =
   (* The route table. Both routes use the [hello] resource defined above.
    * However, the second one containes the [:what] wildcard in the path. The
    * value of that wildcard can be accessed in the resource by calling
@@ -183,7 +92,7 @@ let main ~port cst_conv cst_process =
    *   [Wm.Rd.lookup_path_info "what" rd]
   *)
   let routes = [
-    ("/"           , fun () -> new hello cst_conv cst_process);
+    ("/"           , fun () -> new hello cst_process);
   ] in
   let callback (_ch,_conn) request body =
     let open Cohttp in

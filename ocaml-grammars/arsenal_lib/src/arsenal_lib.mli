@@ -279,3 +279,17 @@ sig
   val pick : ('a * float) list -> _ -> 'a
 end
 
+(******************)
+(* Postprocessing *)
+(******************)
+
+type cst_process =
+  ?global_options:(string * JSON.t) list ->
+  ?options:(string * JSON.t) list ->
+  ?original:string ->
+  id:JSON.t ->
+  to_sexp:(JSON.t -> Sexp.t) -> (* Turns 1 polish notation into a Sexp with substituted placeholders *)
+  JSON.t -> (* Contents of ths "cst" field sent to the reformulator *)
+  JSON.t
+
+val postprocess : cst_process -> JSON.t -> JSON.t
