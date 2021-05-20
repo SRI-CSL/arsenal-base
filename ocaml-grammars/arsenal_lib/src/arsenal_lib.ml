@@ -721,6 +721,8 @@ module Entity = struct
       substitution : string option
     }
 
+  let get_subst t = Option.get_exn t.substitution
+
   let hash arg a =
     Hash.triple (Hash.opt arg) hash_counter (Hash.opt Hash.string)
       (a.kind, a.counter, a.substitution)

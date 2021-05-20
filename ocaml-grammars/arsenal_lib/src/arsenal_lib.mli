@@ -269,6 +269,7 @@ sig
   val init : unit -> unit
 
   type 'a t [@@deriving arsenal]
+  val get_subst : 'a t -> string
   val pp    : 'a TUID.t -> 'a PPX_Serialise.t -> 'a t pp
   val to_id : string -> (string * int, string) result
   val entity_mk :
