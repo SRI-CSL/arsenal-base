@@ -11,7 +11,7 @@ type 'a printf = ('a, Format.formatter, unit) format -> 'a
 let verb = ref 0 (* Verbosity level *)
 let debug i a = if !verb >= i then Format.(fprintf stdout) a else Format.(ifprintf stdout) a
 let exc ?(stdout=true) f =
-  Format.ksprintf ~f:(fun s -> if stdout then Format.(fprintf stdout) "%s" s; raise (f s)) 
+  Format.ksprintf ~f:(fun s -> if stdout && !verb > 0 then Format.(fprintf stdout) "%s" s; raise (f s)) 
 
 (* Hashtables for strings, used several times *)
 module Stbl = CCHashtbl.Make(String)
