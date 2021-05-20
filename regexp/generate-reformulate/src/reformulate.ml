@@ -7,7 +7,8 @@ let () = Grammar.REgrammar_pp.load
 
 let () = deterministic := true
 
-let cst_process serialise pp ?global_options ?options ?original ~id cst =
+let cst_process serialise pp ?global_options ?options ?original ~id ~to_sexp cst =
+  let cst = cst |> to_sexp |> serialise.PPX_Serialise.of_sexp in
   let reformulation =
     [
       "reformulation", `String (CCFormat.sprintf "%a" (fun fmt t -> pp t fmt) cst) 
@@ -39,7 +40,7 @@ let options =
 
 let () = Arg.parse options (fun arg -> port := int_of_string arg) (description "RE grammar")
 
-let run serialise pp = Lwt_main.run (main ~port:!port serialise (cst_process serialise pp))
+let run serialise pp = Lwt_main.run (main ~port:!port (cst_process serialise pp))
 
 let run a = match Register.find_opt a with
   | Some (About{ key; serialise; _ }) -> run serialise !(TUID.get_pp key)

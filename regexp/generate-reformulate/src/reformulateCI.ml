@@ -6,7 +6,8 @@ open Grammar.REgrammar_pp
 let () = Grammar.REgrammar.load
 let () = Grammar.REgrammar_pp.load
 
-let cst_process serialise pp ?global_options ?options ?original ~id cst =
+let cst_process serialise pp ?global_options ?options ?original ~id ~to_sexp cst =
+  let cst = cst |> to_sexp |> serialise.PPX_Serialise.of_sexp in
   let reformulation =
     [
       "reformulation", `String (CCFormat.sprintf "%a" (fun fmt t -> pp t fmt) cst) 
@@ -40,7 +41,7 @@ let args = ref []
 let () = Arg.parse options (fun arg -> args := arg :: !args) (description "Command-line reformulator")
 
 let run serialise pp filename =
-  postprocess serialise (cst_process serialise pp) (JSON.from_file filename)
+  postprocess (cst_process serialise pp) (JSON.from_file filename)
     
 let run filename = match Register.find_opt !top with
   | Some (About{ key; serialise; _ }) ->
