@@ -266,6 +266,8 @@ sig
   val one_entity_kind : bool ref
   val warnings : [ `NoSubst of string ] list ref
   val strict   : float ref
+  val short    : bool ref
+  val ppkind   : bool ref
   val init : unit -> unit
 
   type 'a t [@@deriving arsenal]

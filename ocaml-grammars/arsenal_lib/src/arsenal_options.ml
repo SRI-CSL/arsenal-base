@@ -28,6 +28,8 @@ let options =
     ("-raw-json", Set raw_json, "\tmaximal Produce raw JSONs (i.e. JSON versions of S-expressions) (default is false)");
     ("-arity_sep", String(fun s -> Polish.arity := s), "\tin Polish notation, specify separator between token and its arity (default is '#')");
     ("-one-entity", Set Entity.one_entity_kind, "\tin natural language, only use 1 kind of entities");
+    ("-short-kinds", Set Entity.short, "\tentities kinds have short strings");
+    ("-hide-entities", Clear Entity.ppkind, "\tif a substitution string is present in entity, just show the string");
     ("-types", Set PPX_Serialise.print_types, "\tdisplay types in generated data");
     ("-no-nl", Clear print_nl, "\tprint disable natural language output");
     ("-no-duplicates", Set no_duplicates, "\tensure there are no duplicates (default is false) -- saves generated instances in memory");
