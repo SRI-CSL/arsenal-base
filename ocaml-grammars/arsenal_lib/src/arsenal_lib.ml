@@ -11,7 +11,7 @@ type 'a printf = ('a, Format.formatter, unit) format -> 'a
 let verb = ref 0 (* Verbosity level *)
 let debug i a = if !verb >= i then Format.(fprintf stdout) a else Format.(ifprintf stdout) a
 let exc ?(stdout=true) f =
-  Format.ksprintf ~f:(fun s -> if stdout && !verb > 0 then Format.(fprintf stdout) "%s" s; raise (f s)) 
+  Format.ksprintf ~f:(fun s -> if stdout && !verb > 0 then failwith "HH"(* Format.(fprintf stdout) "%s" s *); raise (f s)) 
 
 (* Hashtables for strings, used several times *)
 module Stbl = CCHashtbl.Make(String)
@@ -408,7 +408,7 @@ module JSONindex = struct
     | Some (About{ json_desc ; _}) -> json_desc ()
     | None -> exc (fun s -> NotRegistered s) "%s" str
 
-  let out ~id ~description ~toptype =
+  let out ~id ~description ~sentence_info ~toptype =
     let top =
       "Top",
       `Assoc [
@@ -416,13 +416,9 @@ module JSONindex = struct
           "additionalProperties", `Bool false;
           "required", `List [ `String "cst"; `String "sentence_id" ];
           "properties",
-          `Assoc [
-              "cst", `Assoc [ "$ref", `String("#/definitions/"^ toptype) ];
-              "sentence_id", `Assoc [ "type",   `String "string";
-                                      "format", `String "uri-reference" ];
-              "reformulation", `Assoc [ "type", `String "string" ];
-              "orig-text", `Assoc [ "type", `String "string" ]
-            ]
+          `Assoc 
+            (("cst", `Assoc [ "$ref", `String("#/definitions/"^ toptype) ])
+             :: sentence_info)
         ]
     in
     `Assoc [

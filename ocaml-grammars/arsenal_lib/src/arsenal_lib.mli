@@ -197,8 +197,15 @@ module JSONindex : sig
 
   (* Functions to be used by user *)
   val populate : string -> unit (* Produces the JSON description from a given entry point *)
-  (* Gives back the produced JSON description, "id" and "description" appearing in JSON header *)
-  val out      : id:string -> description:string -> toptype:string-> JSON.t
+  (* Gives back the produced JSON description,
+     "id" and "description" appearing in JSON header,
+     "sentence_info" being the description of what is produced for each sentence, besides 1 cst. *)
+  val out :
+    id:string ->
+    description:string ->
+    sentence_info: (string*JSON.t) list ->
+    toptype:string ->
+    JSON.t
 end
      
 
