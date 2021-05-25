@@ -15,6 +15,7 @@ val exc   : ?stdout:bool
             -> ?margin:int
             -> ('a, Format.formatter, unit, 'b) format4 -> 'a
 
+val short   : bool ref
 (* Hashtables for strings, used several times *)
 module Stbl : CCHashtbl.S with type key = string
 
@@ -273,7 +274,6 @@ sig
   val one_entity_kind : bool ref
   val warnings : [ `NoSubst of string ] list ref
   val strict   : float ref
-  val short    : bool ref
   val ppkind   : bool ref
   val init : unit -> unit
 

@@ -40,7 +40,12 @@ module JSON = Yojson.Safe
 exception Conversion of string
 
 let raise_conv a = exc (fun s -> Conversion s) a
-
+let short = ref false
+let get_short a = 
+  match String.split_on_char '/' a |> List.rev with
+  | hd::_ -> hd
+  | [] -> a
+                 
 module PPX_Serialise = struct
 
   type 'a t = {
@@ -681,7 +686,6 @@ module Entity = struct
   let one_entity_kind = ref false (* Is there just one entity kind? *)
   let warnings : [`NoSubst of string] list ref = ref [] (* While parsing a json, are we seeing any warning? *)
   let strict = ref 1.5
-  let short = ref false
   let ppkind = ref true
 
   let get_kind_counter key kind =
@@ -753,12 +757,7 @@ module Entity = struct
          let
            cst = PPX_Serialise.sexp_get_cst ~who:"Entity.pp" (arg.PPX_Serialise.to_sexp k)
          in
-         let cst = if !short then
-                     match String.split_on_char '/' cst |> List.rev with
-                     | hd::_ -> hd
-                     | [] -> cst
-                   else cst
-         in
+         let cst = if !short then get_short cst else cst in
          F "%s" // cst |> print
       | _ -> return "E"
     in
