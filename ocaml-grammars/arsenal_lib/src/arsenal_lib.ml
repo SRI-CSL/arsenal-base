@@ -67,6 +67,7 @@ module PPX_Serialise = struct
   let print_types = ref false (* Does not print types in S-expressions *)
 
   let sexp_constructor cst ty =
+    let cst = if !short then get_short cst else cst in
     if !print_types then Sexp.List [Sexp.Atom ":"; Sexp.Atom cst; Sexp.Atom ty]
     else Sexp.Atom cst
 
@@ -757,7 +758,7 @@ module Entity = struct
          let
            cst = PPX_Serialise.sexp_get_cst ~who:"Entity.pp" (arg.PPX_Serialise.to_sexp k)
          in
-         let cst = if !short then get_short cst else cst in
+         (* let cst = if !short then get_short cst else cst in *)
          F "%s" // cst |> print
       | _ -> return "E"
     in
