@@ -593,7 +593,7 @@ and flatten_list f l tail = match l with
 let random_bool _ = Random.bool ()
 let random_int state = Random.int 10 state.PPX_Random.rstate
 
-let random_list ?(min=1) ?max ?(empty=0.5) random_arg state =
+let random_list ?(min=0) ?max ?(empty=0.5) random_arg state =
   let rec aux ?length i accu =
     if i < min ||
         match length with
