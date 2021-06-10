@@ -53,7 +53,7 @@ let rec conjugate state stem =
                    !![ if vplural then "have" else "has" ]
 
      | "do"   -> let a = if vplural then "do" else "does" in
-                 !![ if neg then a else a^" not" ]
+                 !![ if neg then a^" not" else a ]
      | _      -> if neg then
                    !?[ F "%t %s" // conjugate state "do" // stem ]
                  else
