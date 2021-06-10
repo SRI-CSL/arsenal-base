@@ -230,6 +230,7 @@ val serialise_list   : ('a PPX_Serialise.t) -> 'a list PPX_Serialise.t
 val serialise_option : ('a PPX_Serialise.t) -> 'a option PPX_Serialise.t
 
 val random_bool   : bool PPX_Random.t
+val true_p        : float -> bool PPX_Random.t
 val random_int    : int  PPX_Random.t
 (* min by default is 0; empty is the probability of terminatig the list generation at every step, if unspecified empty=0.5 *)
 val random_list   :

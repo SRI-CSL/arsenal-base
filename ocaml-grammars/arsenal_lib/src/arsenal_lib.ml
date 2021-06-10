@@ -591,6 +591,9 @@ and flatten_list f l tail = match l with
      | [] -> []
 
 let random_bool _ = Random.bool ()
+let true_p p state =
+  let b = Random.float 1. state.PPX_Random.rstate in
+  if Float.(b <= p) then true else false
 let random_int state = Random.int 10 state.PPX_Random.rstate
 
 let random_list ?(min=0) ?max ?(empty=0.5) random_arg state =
