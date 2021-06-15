@@ -27,19 +27,19 @@ RUN mkdir -p /home/opam/reformulate/arsenal_lib
 RUN mkdir -p /home/opam/reformulate/reformulate
 
 #Copying opam dependency list
-COPY --chown=opam:nogroup arsenal-base/ocaml-grammars/arsenal_dependencies.opam /home/opam/reformulate/
+COPY --chown=opam:nogroup ocaml-grammars/arsenal_dependencies.opam /home/opam/reformulate/
 RUN cd /home/opam/reformulate && opam install ./arsenal_dependencies.opam --deps-only
 
 #Copying material
-COPY --chown=opam:nogroup arsenal-base/ocaml-grammars/ppx_arsenal/ /home/opam/reformulate/ppx_arsenal/
-COPY --chown=opam:nogroup arsenal-base/ocaml-grammars/arsenal_lib/ /home/opam/reformulate/arsenal_lib/
+COPY --chown=opam:nogroup ocaml-grammars/ppx_arsenal/ /home/opam/reformulate/ppx_arsenal/
+COPY --chown=opam:nogroup ocaml-grammars/arsenal_lib/ /home/opam/reformulate/arsenal_lib/
 #Now the 5G specific material
-COPY --chown=opam:nogroup generate-reformulate/ /home/opam/reformulate/reformulate/
+COPY --chown=opam:nogroup regexp/generate-reformulate/ /home/opam/reformulate/reformulate/
 
 #cd only for the duration of the RUN line 
 RUN cd /home/opam/reformulate/ppx_arsenal && opam pin add -y ppx_deriving_arsenal .
 RUN cd /home/opam/reformulate/arsenal_lib && opam pin add -y arsenal .
-RUN cd /home/opam/reformulate/reformulate && opam install ./arsenal_5G.opam --deps-only
+RUN cd /home/opam/reformulate/reformulate && opam install ./arsenal_re.opam --deps-only
 RUN cd /home/opam/reformulate/reformulate && \
     eval $(opam env) && \
     dune build
