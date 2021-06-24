@@ -3,9 +3,6 @@ open Sexplib
 open Arsenal
 open Arsenal_lib
 
-let concat_max = ref 4   (* Maximal length of concatenations *)
-let string_max = ref 10  (* Maximal length of random strings *)
-
 (****************)
 (* Entity kinds *)
 
