@@ -10,8 +10,10 @@ let () = deterministic := true
 let cst_process serialise pp ?global_options ?options ?original ~id ~to_sexp cst =
   let cst = cst |> to_sexp |> serialise.PPX_Serialise.of_sexp in
   let reformulation =
+    let s = CCFormat.sprintf "%a" (fun fmt t -> pp t fmt) cst in
+    print_endline s;
     [
-      "reformulation", `String (CCFormat.sprintf "%a" (fun fmt t -> pp t fmt) cst) 
+      "reformulation", `String s
     ]
   in
   let tail = match original with

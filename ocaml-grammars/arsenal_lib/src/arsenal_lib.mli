@@ -97,7 +97,7 @@ type 'a formatted =
 val print : 'a formatted -> formatter -> 'a
 val (//)  : ('a -> 'b) formatted -> 'a  -> 'b formatted
 
-val pick  : ('a * int) list -> 'a
+(* val pick  : ('a * int) list -> 'a *)
 
 val toString : print -> string
 
@@ -288,7 +288,7 @@ sig
     ?kind:'a option ->
     ?counter:int ->
     ?substitution:string option -> unit -> ('a t, 'b) Result.result
-  val pick : ('a * float) list -> _ -> 'a
+  val pick : ('a * float) list -> PPX_Random.state -> 'a
 end
 
 (******************)

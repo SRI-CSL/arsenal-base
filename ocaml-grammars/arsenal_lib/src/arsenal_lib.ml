@@ -228,7 +228,7 @@ let rec print : type a. a formatted -> formatter -> a = function
 
 let (//) a b = FormatApply(a,b)
 
-let pick l =
+let pick ?state l =
   if !deterministic
   then match l with
        | (s, _)::_ -> s
@@ -239,7 +239,10 @@ let pick l =
       | [] -> raise_conv "No natural language rendering left to pick from"
       | (s,i)::tail -> if (n < i) then s else aux (n-i) tail
     in
-    let state = Random.State.make_self_init() in
+    let state = match state with
+      | None -> Random.State.make_self_init()
+      | Some state -> PPX_Random.(state.rstate)
+    in
     aux (Random.int sum state) l
 
 let toString a =
