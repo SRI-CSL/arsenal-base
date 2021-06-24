@@ -1,0 +1,255 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "$id": "arsenal4RE.json",
+  "description": "Schema representing Arsenal grammar for RE.",
+  "$ref": "#/definitions/Top",
+  "definitions": {
+    "Top": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "cst", "sentence_id" ],
+      "properties": {
+        "cst": { "$ref": "#/definitions/REgrammar/re" },
+        "sentence_id": { "type": "string", "format": "uri-reference" },
+        "s-exp": { "type": "string" },
+        "reformulation": { "type": "string" },
+        "orig-text": { "type": "string" },
+        "skipped_csts": { "type": "integer" }
+      }
+    },
+    "REgrammar/Char": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor" ],
+      "properties": {
+        ":constructor": { "type": "string", "pattern": "REgrammar/Char" }
+      }
+    },
+    "REgrammar/kchar": {
+      "anyOf": [ { "$ref": "#/definitions/REgrammar/Char" } ]
+    },
+    "entity(REgrammar/kchar)": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "counter" ],
+      "properties": {
+        "entity": { "type": "boolean" },
+        "kind": { "type": "string" },
+        "counter": { "type": "integer" },
+        "substitution": { "type": "string" }
+      }
+    },
+    "REgrammar/tchar": {
+      "anyOf": [ { "$ref": "#/definitions/entity(REgrammar/kchar)" } ]
+    },
+    "REgrammar/String": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor" ],
+      "properties": {
+        ":constructor": { "type": "string", "pattern": "REgrammar/String" }
+      }
+    },
+    "REgrammar/kstring": {
+      "anyOf": [ { "$ref": "#/definitions/REgrammar/String" } ]
+    },
+    "entity(REgrammar/kstring)": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "counter" ],
+      "properties": {
+        "entity": { "type": "boolean" },
+        "kind": { "type": "string" },
+        "counter": { "type": "integer" },
+        "substitution": { "type": "string" }
+      }
+    },
+    "REgrammar/tstring": {
+      "anyOf": [ { "$ref": "#/definitions/entity(REgrammar/kstring)" } ]
+    },
+    "REgrammar/Specific": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor", "arg0" ],
+      "properties": {
+        ":constructor": { "type": "string", "pattern": "REgrammar/Specific" },
+        "arg0": { "$ref": "#/definitions/REgrammar/tstring" }
+      }
+    },
+    "REgrammar/Empty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor" ],
+      "properties": {
+        ":constructor": { "type": "string", "pattern": "REgrammar/Empty" }
+      }
+    },
+    "REgrammar/CharacterRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor", "arg0", "arg1" ],
+      "properties": {
+        ":constructor": {
+          "type": "string",
+          "pattern": "REgrammar/CharacterRange"
+        },
+        "arg0": { "$ref": "#/definitions/REgrammar/tchar" },
+        "arg1": { "$ref": "#/definitions/REgrammar/tchar" }
+      }
+    },
+    "REgrammar/Word": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor" ],
+      "properties": {
+        ":constructor": { "type": "string", "pattern": "REgrammar/Word" }
+      }
+    },
+    "REgrammar/Any": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor" ],
+      "properties": {
+        ":constructor": { "type": "string", "pattern": "REgrammar/Any" }
+      }
+    },
+    "REgrammar/Digit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor" ],
+      "properties": {
+        ":constructor": { "type": "string", "pattern": "REgrammar/Digit" }
+      }
+    },
+    "REgrammar/Space": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor" ],
+      "properties": {
+        ":constructor": { "type": "string", "pattern": "REgrammar/Space" }
+      }
+    },
+    "REgrammar/NotWord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor" ],
+      "properties": {
+        ":constructor": { "type": "string", "pattern": "REgrammar/NotWord" }
+      }
+    },
+    "REgrammar/NotDigit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor" ],
+      "properties": {
+        ":constructor": { "type": "string", "pattern": "REgrammar/NotDigit" }
+      }
+    },
+    "REgrammar/NotSpace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor" ],
+      "properties": {
+        ":constructor": { "type": "string", "pattern": "REgrammar/NotSpace" }
+      }
+    },
+    "REgrammar/terminal": {
+      "anyOf": [
+        { "$ref": "#/definitions/REgrammar/Specific" },
+        { "$ref": "#/definitions/REgrammar/Empty" },
+        { "$ref": "#/definitions/REgrammar/CharacterRange" },
+        { "$ref": "#/definitions/REgrammar/Word" },
+        { "$ref": "#/definitions/REgrammar/Any" },
+        { "$ref": "#/definitions/REgrammar/Digit" },
+        { "$ref": "#/definitions/REgrammar/Space" },
+        { "$ref": "#/definitions/REgrammar/NotWord" },
+        { "$ref": "#/definitions/REgrammar/NotDigit" },
+        { "$ref": "#/definitions/REgrammar/NotSpace" }
+      ]
+    },
+    "REgrammar/Terminal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor", "arg0" ],
+      "properties": {
+        ":constructor": { "type": "string", "pattern": "REgrammar/Terminal" },
+        "arg0": { "$ref": "#/definitions/REgrammar/terminal" }
+      }
+    },
+    "REgrammar/StartOfLine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor", "arg0" ],
+      "properties": {
+        ":constructor": {
+          "type": "string",
+          "pattern": "REgrammar/StartOfLine"
+        },
+        "arg0": { "$ref": "#/definitions/REgrammar/re" }
+      }
+    },
+    "REgrammar/EndOfLine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor", "arg0" ],
+      "properties": {
+        ":constructor": {
+          "type": "string",
+          "pattern": "REgrammar/EndOfLine"
+        },
+        "arg0": { "$ref": "#/definitions/REgrammar/re" }
+      }
+    },
+    "REgrammar/Plus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor", "arg0" ],
+      "properties": {
+        ":constructor": { "type": "string", "pattern": "REgrammar/Plus" },
+        "arg0": { "$ref": "#/definitions/REgrammar/re" }
+      }
+    },
+    "REgrammar/Star": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor", "arg0" ],
+      "properties": {
+        ":constructor": { "type": "string", "pattern": "REgrammar/Star" },
+        "arg0": { "$ref": "#/definitions/REgrammar/re" }
+      }
+    },
+    "REgrammar/Or": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor", "arg0", "arg1" ],
+      "properties": {
+        ":constructor": { "type": "string", "pattern": "REgrammar/Or" },
+        "arg0": { "$ref": "#/definitions/REgrammar/re" },
+        "arg1": { "$ref": "#/definitions/REgrammar/re" }
+      }
+    },
+    "REgrammar/Concat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ ":constructor", "arg0" ],
+      "properties": {
+        ":constructor": { "type": "string", "pattern": "REgrammar/Concat" },
+        "arg0": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/REgrammar/re" }
+        }
+      }
+    },
+    "REgrammar/re": {
+      "anyOf": [
+        { "$ref": "#/definitions/REgrammar/Terminal" },
+        { "$ref": "#/definitions/REgrammar/StartOfLine" },
+        { "$ref": "#/definitions/REgrammar/EndOfLine" },
+        { "$ref": "#/definitions/REgrammar/Plus" },
+        { "$ref": "#/definitions/REgrammar/Star" },
+        { "$ref": "#/definitions/REgrammar/Or" },
+        { "$ref": "#/definitions/REgrammar/Concat" }
+      ]
+    }
+  }
+}
