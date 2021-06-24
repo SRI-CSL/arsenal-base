@@ -58,4 +58,4 @@ FROM debian:stable
 EXPOSE 8080
 RUN mkdir -p /opt/bin
 COPY --from=reformulate-builder /home/opam/reformulate/reformulate/_build/default/src/reformulate.exe /opt/bin/reformulate.exe
-CMD /opt/bin/reformulate.exe 8080 -top "$TOP"
+CMD /opt/bin/reformulate.exe 8080 -top "$TOP" -short -hide-entities
