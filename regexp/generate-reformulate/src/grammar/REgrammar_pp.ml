@@ -95,6 +95,7 @@ let rec pp_re = function
      !?[
          F "zero or more repetitions of %t" // r;
          F "any number of repetitions of %t" // r;
+         F "any repetitions of %t" // r;
        ]
   | Or(r1,r2)     ->
      let r1 = pp_re r1 in

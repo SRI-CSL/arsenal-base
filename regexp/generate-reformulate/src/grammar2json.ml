@@ -14,7 +14,7 @@ let sentence_info =
     "s-exp",         `Assoc [ "type", `String "string" ];
     "reformulation", `Assoc [ "type", `String "string" ];
     "orig-text",     `Assoc [ "type", `String "string" ];
-    "skipped_csts",  `Assoc [ "type", `String "integer" ];
+    "regexp",        `Assoc [ "type", `String "string" ];
   ]
 
 let () =

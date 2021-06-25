@@ -1,5 +1,5 @@
 import * as Actions from './ActionTypes';
-import { createRegexes } from '../regex';
+// import { createRegexes } from '../regex';
 
 export function showApiError(error){
     console.log("Error",error);
@@ -30,9 +30,9 @@ export function setNL(text) {
     return { type: Actions.SET_NL, text}
 }
 
-export function setRegexes(text) {
-    return { type: Actions.SET_REGEXES, text}
-}
+// export function setRegexes(text) {
+//     return { type: Actions.SET_REGEXES, text}
+// }
 
 export function requestCSTResult(text) {
     return { type: Actions.REQUEST_CST_RESULT, text }
@@ -48,6 +48,14 @@ export function requestEntityResult(text) {
   
 export function receiveEntityResult(result) {
     return { type: Actions.RECEIVE_ENTITY_RESULT, result }
+}
+
+export function requestImprovedCSTResult(text) {
+    return { type: Actions.REQUEST_IMPROVED_CST_RESULT, text }
+}
+
+export function receiveImprovedCSTResult(result) {
+    return { type: Actions.RECEIVE_IMPROVED_CST_RESULT, result }
 }
 
 // Async "pseudo-actions" actions below
@@ -109,6 +117,27 @@ function create_ep_request(text){
     });
 }
 
+function create_reformulate_request(ep_sents, cst_sents){
+    if (ep_sents.length !== cst_sents.length){
+        throw Error("Different number of sentences from entity processor vs nl2cst!")
+    }
+    let result_arr = []
+    for (let i=0; i<ep_sents.length; i++){
+        let ep_obj = ep_sents[i]
+        let cst_obj = cst_sents[i]
+        if (ep_obj['id'] !== cst_obj['id']){
+            throw Error("Inconsistent sentence IDs from entity processor vs nl2cst!")
+        }
+        result_arr.push({
+            id: ep_obj['id'],
+            'orig-text': ep_obj['orig-text'],
+            cst: cst_obj['cst'],
+            substitutions: ep_obj['substitutions']
+        })
+    }
+    return result_arr
+}
+
 export function generateModel(text){
     return (dispatch,getState) => {
         dispatch(requestEntityResult(text));
@@ -140,12 +169,31 @@ export function generateModel(text){
                 if (response.ok) return response.json();
                 else return response.text().then(text => {throw Error(text)});
             })
-            .then( (json) => {
-                let realJson = substituteEntities(json, ep_results);
-                dispatch(receiveCSTResult(realJson));
-                let regexes = createRegexes(realJson);
-                dispatch(setRegexes(regexes));
+            .then( (cst_json) => {
+                console.log('Got CSTs',cst_json)
+                dispatch(receiveCSTResult(cst_json));
+                let cst_results = cst_json['sentences']
+                dispatch(requestImprovedCSTResult(cst_results));
+                return fetch('/reformulate/', { method: "POST",
+                    redirect: "follow", body: JSON.stringify({
+                        sentences: create_reformulate_request(ep_results, cst_results)
+                    })
+                })
             })
+            .then( (response) => {
+                if (response.ok) return response.json();
+                else return response.text().then(text => {throw Error(text)});
+            })
+            .then( (json) => {
+                console.log('Got reformulated CSTs',json)
+                dispatch(receiveImprovedCSTResult(json));
+            })
+            // .then( (json) => {
+            //     let realJson = substituteEntities(json, ep_results);
+            //     dispatch(receiveCSTResult(realJson));
+            //     let regexes = createRegexes(realJson);
+            //     dispatch(setRegexes(regexes));
+            // })
             .catch( (error) => dispatch(showApiError(error)) );
     }
 

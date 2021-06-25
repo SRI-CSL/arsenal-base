@@ -10,7 +10,7 @@ char_regexp = re.compile(r"('.')")
 def replace_all(prefix,regexp,text):
     substs = {}
     new_text = text
-    idx = 1
+    idx = 0
     for m in re.finditer(regexp, text):
         match = m.group(1)
         placeholder = "{}{:03}".format(prefix,idx)

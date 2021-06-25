@@ -1,8 +1,10 @@
+open Containers
 open Sexplib
 
 open Arsenal.Postprocess
 open Arsenal.Arsenal_lib
 open Arsenal.Arsenal_options
+open Grammar.REgrammar
 open Grammar.REgrammar_pp
 
 let () = Grammar.REgrammar.load
@@ -10,29 +12,34 @@ let () = Grammar.REgrammar_pp.load
 
 let () = deterministic := true
 
-let cst_process serialise pp ?global_options ?options ?original ~id ~to_sexp csts =
-  (* Polish JSON list -> list of Polish JSONs *)
-  let csts = match csts with
-    | `List csts -> csts
-    | json -> raise (Conversion("Not a good json for csts; this should be a JSON array: "^(JSON.to_string json)))
-  in
-  (* Build from the list of Polish JSONs a list of 'a; ill-typed Polish JSONS are skipped *)
-  let cst, i =
-    let rec aux ?e i = function
-      | [] ->
-         begin
-           match e with
-           | Some e -> raise e
-           | None -> raise(Conversion("Reformulate: Didn't get a single Polish sequence from NL2CST"))
-         end
-      | cst::tail ->
-         try
-           (cst |> to_sexp |> serialise.PPX_Serialise.of_sexp), i
-         with
-           e -> aux ~e (i+1) tail
-    in
-    aux 0 csts
-  in
+let rec regexp fmt =
+  let open Format in
+  function
+  | StartOfLine re -> fprintf fmt "^%a" regexp re
+  | EndOfLine re   -> fprintf fmt "%a$" regexp re
+  | Plus(Terminal _ as re) -> fprintf fmt "%a+" regexp re
+  | Plus re        -> fprintf fmt "(%a)+" regexp re
+  | Star(Terminal _ as re) -> fprintf fmt "%a*" regexp re
+  | Star re        -> fprintf fmt "(%a)*" regexp re
+  | Or(re1, re2)   -> fprintf fmt "(%a)|(%a)" regexp re1 regexp re2
+  | Concat l -> fprintf fmt "%a" (List.pp ~pp_sep:(fun _ () -> ()) regexp) l
+  | Terminal terminal ->
+     match terminal with
+     | Specific s -> fprintf fmt "%s" (Entity.get_subst s)
+     | Empty      -> fprintf fmt "\"\""
+     | CharacterRange(a,z) -> fprintf fmt "[%s-%s]" (Entity.get_subst a) (Entity.get_subst z)
+     | Word       -> fprintf fmt "\\w"
+     | Any        -> fprintf fmt "."
+     | Digit      -> fprintf fmt "\\d"
+     | Space      -> fprintf fmt "\\s"
+     | NotWord    -> fprintf fmt "\\W"
+     | NotDigit   -> fprintf fmt "\\D"
+     | NotSpace   -> fprintf fmt "\\S"
+
+  
+let cst_process serialise pp ?global_options ?options ?original ~id ~to_sexp cst =
+
+  let cst = cst |> to_sexp |> serialise.PPX_Serialise.of_sexp in
 
   (* now we construct the json dictionary for the output *)
   let dico = [] in
@@ -46,6 +53,11 @@ let cst_process serialise pp ?global_options ?options ?original ~id ~to_sexp cst
                   (serialise.PPX_Serialise.to_sexp cst)))
       ::dico
     else dico
+  in
+  let dico =
+    ("regexp",
+     `String (Format.sprintf "%a" regexp cst))
+    ::dico
   in
   (* constructing reformulation if asked *)
   let dico =
@@ -63,7 +75,7 @@ let cst_process serialise pp ?global_options ?options ?original ~id ~to_sexp cst
   in
   (* outputting the json and number of outputs skipped *)
   let dico =
-    ("cst", serialise.PPX_Serialise.to_json cst) :: ("skipped_csts", `Int i) :: dico
+    ("cst", serialise.PPX_Serialise.to_json cst) :: dico
   in
   let dico =
     let id = match id with
@@ -102,9 +114,6 @@ let () = Arg.parse options (fun arg -> port := int_of_string arg) (description "
 
 let run serialise pp = Lwt_main.run (main ~port:!port (cst_process serialise pp))
 
-let run a = match Register.find_opt a with
-  | Some (About{ key; serialise; _ }) -> run serialise !(TUID.get_pp key)
-  | None -> run Grammar.REgrammar.serialise_re pp_re
-
 let () =
-  run !top
+  Unix.sleep 5;
+  run Grammar.REgrammar.serialise_re pp_re
