@@ -16,7 +16,7 @@ services:
     environment:
       NL2CST_HOST: nl2cst
       NL2CST_PORT: 8080
-      MODEL_ROOT: /opt/models/REdataset
+      MODEL_ROOT: /opt/models/2021-06-24T1637-07_41c4757_REgrammar-re_2021-06-24T1816-07
     ports:
       - 8070:8080
   ui:

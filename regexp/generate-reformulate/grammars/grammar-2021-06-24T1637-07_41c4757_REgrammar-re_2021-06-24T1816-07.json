@@ -14,7 +14,7 @@
         "s-exp": { "type": "string" },
         "reformulation": { "type": "string" },
         "orig-text": { "type": "string" },
-        "skipped_csts": { "type": "integer" }
+        "regexp": { "type": "string" }
       }
     },
     "REgrammar/Char": {

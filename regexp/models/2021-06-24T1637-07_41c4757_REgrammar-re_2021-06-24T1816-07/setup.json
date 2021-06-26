@@ -1,0 +1,12 @@
+{
+    "dropout": 0.1,
+    "hidden_size": 128,
+    "init_type": "REgrammar/re",
+    "input_lang": "eng",
+    "iterations": 1000000,
+    "match_parens": false,
+    "max_length": 1000,
+    "num_attn": 2,
+    "num_layers": 4,
+    "output_lang": "pn"
+}

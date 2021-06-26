@@ -1,0 +1,10 @@
+input_lang=eng, #=107
+output_lang=pn, #=110
+max_length=1000
+num_layers=4
+num_attn=2
+hidden_size=128
+match_parens=False
+init_type=REgrammar/re
+dropout=0.1
+iterations=1000000
