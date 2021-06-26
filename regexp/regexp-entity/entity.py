@@ -1,19 +1,19 @@
 import re
 import json
 
-string_prefix = 'String_'
+string_prefix = '_REgrammar/String_'
 string_regexp = re.compile(r'("[^"]+")')
 
-char_prefix = 'Char_'
+char_prefix = '_REgrammar/Char_'
 char_regexp = re.compile(r"('.')")
 
 def replace_all(prefix,regexp,text):
     substs = {}
     new_text = text
-    idx = 1
+    idx = 0
     for m in re.finditer(regexp, text):
         match = m.group(1)
-        placeholder = prefix + str(idx)
+        placeholder = "{}{:03}".format(prefix,idx)
         idx += 1
         substs[placeholder] = match
         new_text = new_text.replace(match, placeholder)

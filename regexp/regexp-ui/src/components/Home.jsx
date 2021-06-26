@@ -3,7 +3,8 @@ import ErrorModal from './ErrorModal';
 import NLInput from './NLInput';
 import EntityPanel from './EntityPanel';
 import CSTPanel from './CSTPanel';
-import RegexpPanel from './RegexpPanel';
+// import RegexpPanel from './RegexpPanel';
+import ImprovedCSTPanel from './ImprovedCSTPanel';
 import { Button, Row, Col, Navbar, NavbarBrand, Container } from 'reactstrap';
 import { connect } from 'react-redux';
 import { hideApiError, generateModel, showCST, hideCST, showEntities, hideEntities } from '../actions/Actions';
@@ -95,7 +96,7 @@ class Home extends React.Component {
                 </Row>}
                 <Row>
                     <Col md={12}>
-                        <RegexpPanel title={'Regular Expressions'} value={this.props.regexes}/>
+                        <ImprovedCSTPanel cst={this.props.improvedCst}/>
                     </Col>
                 </Row>
             </Container>

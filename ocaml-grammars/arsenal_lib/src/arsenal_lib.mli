@@ -1,58 +1,28 @@
+open Containers
 open Format
 
 open Sexplib
-open Std
 
-(* Useful abbreviation *)
-module JSON = Yojson.Safe
+(*********************************)
+(* Managing debug and exceptions *)
+(*********************************)
 
-(************************************************************)
-(* Conversions between json, S-expressions, Polish notation *)
+type 'a printf = ('a, Format.formatter, unit) format -> 'a
+val verb  : int ref      (* Verbosity level *)
+val debug : int -> 'a printf
+val exc   : ?stdout:bool
+            -> (string -> exn)
+            -> ?margin:int
+            -> ('a, Format.formatter, unit, 'b) format4 -> 'a
 
-module PPX_Sexp : sig
-  val print_types : bool ref (* Print types in S-expressions? *)
-  val constructor : string -> string -> Sexp.t
-end
+val short   : bool ref
+(* Hashtables for strings, used several times *)
+module Stbl : CCHashtbl.S with type key = string
 
-exception Conversion of string
-val exn : ('a -> ('b, string) result) -> 'a -> 'b
-val json_of_sexp : Sexplib.Sexp.t -> JSON.t
-val json_clean : JSON.t -> JSON.t
+(*******************************************************************)
+(* Mandatory environment for ppx_random, which produces random AST *)
+(*******************************************************************)
 
-(* A module for Polish notation *)
-module Polish : sig
-  val arity : string ref
-  val of_sexp : Sexplib.Sexp.t -> string list
-  val to_sexp : (string * int) list -> Sexplib.Sexp.t
-  val to_string : string list -> string
-  val of_string : arity:Char.t -> string -> (string * int) list
-end
-
-(* (\* Function used for checking whether conversions between the formats are correct *\)
- * val check :
- *   ('a -> JSON.t) ->
- *   (JSON.t -> ('a, string) result) ->
- *   ('a -> Sexplib.Sexp.t) ->
- *   (Sexplib.Sexp.t -> 'a) ->
- *   'a ->
- *   unit *)
-
-(********************************************************)
-(* Lists and options: conversions to/from S-expressions *)
-
-val typestring_bool: string
-val typestring_int : string
-val typestring_list: string -> string
-val typestring_option: string -> string
-
-val sexp_of_bool   : bool -> Sexplib.Sexp.t
-val sexp_of_int    : int -> Sexplib.Sexp.t
-val sexp_of_list   : (('a -> Sexplib.Sexp.t)*string) -> 'a list -> Sexplib.Sexp.t
-val sexp_of_option : (('a -> Sexplib.Sexp.t)*string) -> 'a option -> Sexplib.Sexp.t
-
-(******************)
-(* For random AST *)
-    
 module PPX_Random : sig
   type state
   type 'a t = state -> 'a
@@ -61,25 +31,59 @@ module PPX_Random : sig
   val case_30b : state -> int
   val init : unit -> state
 end
-val depth             : PPX_Random.state -> float
-val random_int        : int PPX_Random.t
-val random_bool       : bool PPX_Random.t
-val random_ascii      : char PPX_Random.t
-val random_ascii_pair : (char * char) PPX_Random.t
-val random_option     : ?p:float -> ('b PPX_Random.t) -> 'b option PPX_Random.t
-val ( +? ) : ('b PPX_Random.t) -> float -> 'b option PPX_Random.t
-val ( *? ) : ('b PPX_Random.t) -> ('c PPX_Random.t) -> ('b * 'c) PPX_Random.t
-val random_list :
-  ?min:int -> ?max:int -> ?empty:float -> ('b PPX_Random.t) -> 'b list PPX_Random.t
-val string_of_char : char -> string
-val random_string : string PPX_Random.t
-type 'a distribution = ('a*float) list
-    
-(****************)
-(* For printing *)
 
-type print = Format.formatter ->  unit
+val depth : PPX_Random.state -> float
+
+(************************************************************)
+(* Conversions between json, S-expressions, Polish notation *)
+(************************************************************)
+
+(* Useful abbreviation *)
+module JSON = Yojson.Safe
+
+exception Conversion of string
+val raise_conv : ('a, Format.formatter, unit, 'b) format4 -> 'a
+
+module PPX_Serialise : sig
+  type 'a t = {
+      to_json : 'a -> JSON.t;
+      to_sexp : 'a -> Sexp.t;
+      of_sexp : Sexp.t -> 'a;
+      hash    : 'a Hash.t;
+      compare : 'a Ord.t;
+      typestring : unit -> string;
+    }
+  val print_null  : bool ref (* Does not print null values in JSON *)
+  val json_cons   : (string * JSON.t) -> (string * JSON.t) list -> (string * JSON.t) list
+  val print_types : bool ref (* Print types in S-expressions? *)
+  val sexp_constructor : string -> string -> Sexp.t
+  val sexp_throw    : who:tag -> Sexp.t -> _
+  val sexp_is_atom  : Sexp.t -> bool
+  val sexp_get_cst  : who:tag -> Sexp.t -> tag
+  val sexp_get_type : who:tag -> Sexp.t -> tag
+end
+
+val sexp2json : Sexp.t -> JSON.t
+val exn : ('a -> ('b, string) result) -> 'a -> 'b
+
+(* A module for Polish notation *)
+module Polish : sig
+  val arity : string ref
+  val of_sexp : Sexplib.Sexp.t -> string list
+  val to_sexp : (string * int) list -> Sexplib.Sexp.t
+  val to_string : string list -> string
+  val of_list   : string list -> (string * int) list
+  val of_string : arity:Char.t -> string -> (string * int) list
+end
+
+(****************************)
+(* Printing functionalities *)
+(****************************)
+
+type print = Format.formatter -> unit
 type 'a pp = 'a -> print
+
+val deterministic : bool ref
 
 val (^^)   : print -> print -> print
 val return : string pp
@@ -93,7 +97,7 @@ type 'a formatted =
 val print : 'a formatted -> formatter -> 'a
 val (//)  : ('a -> 'b) formatted -> 'a  -> 'b formatted
 
-val pick  : ('a * int) list -> 'a
+(* val pick  : ('a * int) list -> 'a *)
 
 val toString : print -> string
 
@@ -130,11 +134,128 @@ val ( +? ) : 'a pp -> print -> 'a option pp
 val ( ?+ ) : 'a pp -> 'a option pp (* noop if not present *)
 
 (* has the option? *)
-val ( ?++ ) : 'a option -> bool
+val ( ?? ) : 'a option -> bool
+
+
+(**********************************************************************)
+(* Type Unique ID                                                     *)
+(* Registering type t produces a TUID for t, a value of type t TUID.t *)
+(**********************************************************************)
+
+(* Comparison result type for polymorphic types *)
+module Order : sig
+  type (_,_) t =
+    | Eq : ('a,'a) t
+    | Lt : ('a,'b) t
+    | Gt : ('a,'b) t
+end
+
+module TUID : sig
+  type _ t
+  val create (* Creating TUID for type 'a requires providing hash and compare functions for 'a *)
+      : hash: 'a Hash.t -> compare : 'a Ord.t -> random : 'a PPX_Random.t -> name:string -> 'a t
+  val hash        : 'a t Hash.t                      (* Hashing a TUID *)
+  val compare     : 'a t -> 'b t -> ('a, 'b) Order.t (* Comparing TUIDs *)
+  val name        : 'a t -> string    (* name of 'a *)
+  val get_hash    : 'a t -> 'a Hash.t (* Given a TUID for 'a, get a hash function for 'a *)
+  val get_compare : 'a t -> 'a Ord.t  (* Given a TUID for 'a, get a compare function for 'a *)
+  val get_pp      : 'a t -> 'a pp ref (* Given a TUID for 'a, get a pretty-printer for 'a *)
+  val get_random  : 'a t -> 'a PPX_Random.t ref (* Given a TUID for 'a, get a random generator for 'a *)
+end
+
+(*************************************)
+(* The registration system for types *)
+(*************************************)
+
+(* We keep a global mapping from strings (identifying types)
+   to a record values containing information about the type.
+   The type's pretty-printer can be modified, hence the ref *)
+
+module About : sig
+  type t = About : { key       : 'a TUID.t;
+                     json_desc : unit -> unit;
+                     serialise : 'a PPX_Serialise.t;
+                   } -> t
+end
+
+(* The register of types is indexed by (fully qualified) type names (strings) *)
+module Register : sig
+  val mem        : string -> bool
+  val add        : string -> About.t -> unit
+  val find_opt   : string -> About.t option
+  val all        : unit -> string list (* List all registered types *)
+end
+
+(* Module to produce a description of types in JSON format *)
+module JSONindex : sig
+
+  (* Low-level primitives, for the Arsenal PPX; do not use yourself *)
+  type t
+  val mem  : string -> bool
+  val find : string -> (string*JSON.t) list
+  val mark : string -> t
+  val add  : t -> (string*JSON.t) list -> unit
+
+  (* Functions to be used by user *)
+  val populate : string -> unit (* Produces the JSON description from a given entry point *)
+  (* Gives back the produced JSON description,
+     "id" and "description" appearing in JSON header,
+     "sentence_info" being the description of what is produced for each sentence, besides 1 cst. *)
+  val out :
+    id:string ->
+    description:string ->
+    sentence_info: (string*JSON.t) list ->
+    toptype:string ->
+    JSON.t
+end
+     
+
+(**********************************************)
+(* Built-in types (bool, int, list and option *)
+(**********************************************)
+
+val typestring_bool: string
+val typestring_int : string
+val typestring_list: string -> string
+val typestring_option: string -> string
+
+val json_desc_bool  : unit -> unit
+val json_desc_int   : unit -> unit
+val json_desc_list  : string -> unit -> unit
+val json_desc_option: string -> unit -> unit
+
+val serialise_bool   : bool PPX_Serialise.t
+val serialise_int    : int PPX_Serialise.t
+val serialise_list   : ('a PPX_Serialise.t) -> 'a list PPX_Serialise.t
+val serialise_option : ('a PPX_Serialise.t) -> 'a option PPX_Serialise.t
+
+val random_bool   : bool PPX_Random.t
+val true_p        : float -> bool PPX_Random.t
+val random_int    : int  PPX_Random.t
+(* min by default is 0; empty is the probability of terminatig the list generation at every step, if unspecified empty=0.5 *)
+val random_list   :
+  ?min:int -> ?max:int -> ?empty:float -> ('b PPX_Random.t) -> 'b list PPX_Random.t
+(* p is the probability of None *)
+val random_option : ?p:float -> ('b PPX_Random.t) -> 'b option PPX_Random.t
+(* Same as above, the float is the probability of None *)
+val none_p : float -> ('b PPX_Random.t) -> 'b option PPX_Random.t
+
+(* Other useful primitives for random generation *)
+val random_ascii      : char PPX_Random.t          (* Random char *)
+val random_ascii_pair : (char * char) PPX_Random.t (* Random pair of chars *)
+val ( *! ) : ('b PPX_Random.t) -> ('c PPX_Random.t) -> ('b * 'c) PPX_Random.t (* Random product *)
+val random_string : ?min:int -> ?max:int -> ?eos:float -> string PPX_Random.t (* Random string *)
+
+type 'a distribution = ('a*float) list
+
+(* Useful for normalizing *)
+val flatten      : ('a -> 'a list option) -> 'a -> 'a list
+val flatten_list : ('a -> 'a list option) -> 'a list -> 'a list
 
 
 (*************************************************)
 (* Small extension of the standard Result module *)
+(*************************************************)
 
 module Result : sig
   include module type of Result
@@ -148,26 +269,39 @@ val ( >>| ) : ('a, 'b) Result.result -> ('a -> 'c) -> ('c, 'b) Result.result
 
 (***********************)
 (* Module for entities *)
+(***********************)
 
 module Entity :
 sig
   val one_entity_kind : bool ref
   val warnings : [ `NoSubst of string ] list ref
-  val strict : float ref
+  val strict   : float ref
+  val ppkind   : bool ref
+  val init : unit -> unit
 
-  type 'a t
-  val pp     : (Format.formatter -> 'a -> unit) -> 'a t pp
-  val random : ('b PPX_Random.t) -> 'b t PPX_Random.t
-  val to_yojson : ('a -> JSON.t) -> 'a t -> JSON.t
-  val sexp_of : (('a -> Sexplib.Sexp.t)*string) -> 'a t -> Sexplib.Sexp.t
-  val typestring : string -> string
+  type 'a t [@@deriving arsenal]
+  val get_subst : 'a t -> string
+  val pp    : 'a TUID.t -> 'a PPX_Serialise.t -> 'a t pp
   val to_id : string -> (string * int, string) result
   val entity_mk :
     string ->
     ?kind:'a option ->
     ?counter:int ->
     ?substitution:string option -> unit -> ('a t, 'b) Result.result
-  val of_yojson : (JSON.t -> ('a, _) Result.result) -> JSON.t -> ('a t, string) Result.result
-  val pick : ('a * float) list -> _ -> 'a
+  val pick : ('a * float) list -> PPX_Random.state -> 'a
 end
 
+(******************)
+(* Postprocessing *)
+(******************)
+
+type cst_process =
+  ?global_options:(string * JSON.t) list ->
+  ?options:(string * JSON.t) list ->
+  ?original:string ->
+  id:JSON.t ->
+  to_sexp:(JSON.t -> Sexp.t) -> (* Turns 1 polish notation into a Sexp with substituted placeholders *)
+  JSON.t -> (* Contents of ths "cst" field sent to the reformulator *)
+  JSON.t
+
+val postprocess : cst_process -> JSON.t -> JSON.t

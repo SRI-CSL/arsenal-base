@@ -1,0 +1,23 @@
+opam-version: "2.0"
+name: "arsenalRE"
+synopsis: "Arsenal dependencies"
+description: "Arsenal dependencies"
+maintainer: "Stephane Graham-Lengrand <stephane.graham-lengrand@csl.sri.com>"
+authors: "Stephane Graham-Lengrand <stephane.graham-lengrand@csl.sri.com>"
+# license: "none yet"
+# homepage: "none yet"
+# bug-reports: "no way"
+depends: [
+  "ocaml" {>= "4.11" & < "4.12"}
+  "ocamlfind" {build}
+  "dune" {build}
+  "sexplib"
+  "ppx_deriving"
+  "ppxlib"
+  "yojson"
+  "ppx_deriving_random"
+  "containers"
+  "cohttp-lwt"
+  "cohttp-lwt-unix"
+  "webmachine"
+]

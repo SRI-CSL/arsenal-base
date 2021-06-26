@@ -5,7 +5,7 @@ export const initialState = {
   nl: '',
   entities: null,
   cst: null,
-  regexes: '',
+  improvedCst: null,
   cstIsHidden: true,
   cstIsLoading: false,
   entitiesIsHidden: true,
@@ -24,12 +24,16 @@ function rootReducer(state = initialState, action) {
     case Actions.RECEIVE_CST_RESULT: return {...state, cst: action.result, cstIsLoading: false };
     case Actions.SET_NL: return {...state, nl: action.text }
     case Actions.SET_REGEXES: return {...state, regexes: action.text }
+    case Actions.REQUEST_IMPROVED_CST_RESULT: return {...state, improvedCst: null, improvedCstIsLoading: true };
+    case Actions.RECEIVE_IMPROVED_CST_RESULT: return {...state, improvedCst: action.result, improvedCstIsLoading: false };
     case Actions.HIDE_CST: return {...state, cstIsHidden: true };
     case Actions.SHOW_CST: return {...state, cstIsHidden: false };
     case Actions.HIDE_ENTITIES: return {...state, entitiesIsHidden: true };
     case Actions.SHOW_ENTITIES: return {...state, entitiesIsHidden: false };
     default: return state;
   }
+
+
 }
 
 export default rootReducer;

@@ -58,16 +58,16 @@ def is_numbered_placeholder(tok):
     """ Determines if the given token ends with a '_$DIGIT'.
     If the token is bracketed by double-quotes (for JSON), does this
     check within as well."""
-    dpat = '^(\D+)\d+$'  # Starts with a non-digit, ends with a digit
-    is_quoted = False
-    tok_txt = tok.strip()
-    if tok_txt.startswith('"') and tok_txt.endswith('"'):
-        tok_txt = tok_txt[1:-1]
-    m = re.search(dpat, tok_txt)
-    if m is not None:
-        if is_quoted:
-            return '"' + m.groups()[0] + "{}" + '"'
-        return m.groups()[0] + '{}'
+    # dpat = '^(\D+)\d+$'  # Starts with a non-digit, ends with a digit
+    # is_quoted = False
+    # tok_txt = tok.strip()
+    # if tok_txt.startswith('"') and tok_txt.endswith('"'):
+    #     tok_txt = tok_txt[1:-1]
+    # m = re.search(dpat, tok_txt)
+    # if m is not None:
+    #     if is_quoted:
+    #         return '"' + m.groups()[0] + "{}" + '"'
+    #     return m.groups()[0] + '{}'
     return None
 
 def get_split(token):

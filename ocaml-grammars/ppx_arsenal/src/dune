@@ -1,0 +1,8 @@
+(library
+ (public_name ppx_deriving_arsenal)
+ (libraries containers ppxlib ppx_deriving.api ppx_deriving_random)
+ (preprocess (pps ppxlib.metaquot))
+ (synopsis "[@@deriving arsenal]")
+ (kind ppx_deriver))
+
+(env (dev (flags (:standard -warn-error -A))))

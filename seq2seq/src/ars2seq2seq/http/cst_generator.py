@@ -11,6 +11,7 @@ from ars2seq2seq.util.txt2dict import gen_toks2dict
 from nvidia_utils import *
 from ars2seq2seq.util.polish import convert_pn2sexp
 from ars2seq2seq.util.polish import convert_pn2json
+from ars2seq2seq.util.polish import convert_pn2pn
 from ars2seq2seq.util.vocab import normalize_string
 from ars2seq2seq.util.entities import normalize_sal_entities, reorder_numbered_placeholders, reinsert_from_lookup
 
@@ -162,8 +163,9 @@ class CSTGenerator:
                         gen_str_form = convert_sexp2json(gen_str_form)
                     elif self.output_lang_name=='pn':
                         #debugging - making this call prints out before and after
-                        print(convert_pn2sexp(gen_str_form))
-                        gen_str_form = convert_pn2json(gen_str_form)
+                        # gen_str_form = convert_pn2json(gen_str_form)
+                        gen_str_form = convert_pn2pn(gen_str_form)
+                        print(gen_str_form)
                 gen_cst_dict = json.loads(gen_str_form)
                 if self.verbose:
                     print("... remapping done")

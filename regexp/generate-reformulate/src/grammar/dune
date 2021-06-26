@@ -1,0 +1,7 @@
+(library
+ (name grammar)
+ (libraries containers str yojson sexplib arsenal)
+ (preprocess (pps ppx_deriving.std ppx_deriving_arsenal))
+)
+
+(env (dev (flags (:standard -warn-error -A -w -27-39))))
