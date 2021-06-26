@@ -238,6 +238,11 @@ if __name__ == "__main__":
     print('Inferring raw CSTs...')
     raw_csts = callNl2CstProcessor(entity_processed_data)
 
+    if args.cst:
+        outhandle.write("CSTs (Polish notation):\n")
+        rulesText = json.dumps(raw_csts,indent=2)
+        outhandle.write(rulesText + '\n')
+
     # call reformulate with both ep results and csts
     print('Creating final CSTs...')
     final_csts = callReformulate(entity_processed_data, raw_csts)
@@ -247,11 +252,6 @@ if __name__ == "__main__":
         
     # # adds the definitions to the rules_data
     # embedEntityDefinitions(rules_data, entity_processed_data)
-
-    # if args.cst:
-    #     outhandle.write("CSTs:\n")
-    #     rulesText = json.dumps(rules_data,indent=2)
-    #     outhandle.write(rulesText + '\n')        
 
     #print out the generated results
     outhandle.write("Output:\n")
