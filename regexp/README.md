@@ -12,95 +12,105 @@
 This directory contains an example of Arsenal applied to the natural language description
 of regular expressions.
 
-You can either run the demo using pre-canned Docker images or you can compile the source code
-(as needed) and run on your native system.  
+At runtime, Arsenal takes inputs that are natural-language (NL) sentences describing regular expressions and produces outputs that are regular expressions as syntax trees as well as their reformulations in natural language.
+
+You can either run the demo using Docker images or you can compile the source code (as needed) and run on your native system.  
 
 Whether running from Docker images or from native-built source code, you can process input text and
-choose the output options with the command-line tool "gen_regexps.py".
+choose the output options with the command-line tool `gen_regexps.py`.
 When running from Docker images you can also choose to use a graphical user interface to take in
 input and choose between various output options.
 
-The custom components of this demo are:
-- a regular expression domain entity processor to identify entities from natural language text, found in `regexp-entity/entity.py`
-- a regular expression domain grammar and its pretty-printing functions as well as a current model
-that has been trained on the current grammar and its pretty-printing functions, found in `generate-reformulate/src`
-- an option GUI found in `regexp-ui/src`
+The domain-specific components of this demo are:
 
-The standard Arsenal components of this demo are:
-- the NL to CST (natural language to syntax tree) engine that uses the defined model
-- the underlying Arsenal base grammar support found in `../ocaml-grammars/arsenal_lib/src`
+- An entity processor that identifies regular expression entities (strings and characters) in natural language, found in `regexp-entity/entity.py`;
+- A machine learning model trained to translate a natural language description of a regular expression into a syntax tree for it (the tree is produced in Polish notation), found in `models/2021-06-24T1637-07_41c4757_REgrammar-re_2021-06-24T1816-07`;
+- A reformulation service that turns the Polish notation of a syntax tree into an actual tree in JSON format, accompanied by a new natural language rendering of it (for verification purposes), found in `generate-reformulate`;
+- An optional GUI found in `regexp-ui/src`.
 
-When running a model, Arsenal takes inputs that are natural-language (NL) sentences representing regular expression syntax
-and gives outputs that are regular expressions as well as optionl concrete syntax trees (CSTs) or reformulations of the original input.
+The regular expression trees are trees that are well-formed according to a grammar that was specifically and manually designed for regular expressions, and that can also be found in `generate-reformulate`. That component also provides pretty-printing functions into natural language, and a generator of training datasets (pairs of tree + natural language renderings), used to train the model.
+
+The domain generic Arsenal components of this demo are:
+
+- the underlying Arsenal base grammar and pretty-printer, found in `../ocaml-grammars/arsenal_lib`;
+- an NL to CST (natural language to syntax tree) engine that reads and runs any trained model, found in `../seq2seq`.
+
 
 ## Building the Docker Images
 
 To build all the docker images for the regexp example, execute the command
 
-  docker-compose build
-
+```bash
+docker compose build
+```
 in the current directory.
 
 To rebuild a specific image, or several images but not all, append the corresponding
 service names from the docker-compose file at the end of the command, e.g.,
 
-  docker-compose build ui entity
+```
+docker compose build ui entity
+```
 
 ## Running The Demo
 
 To run the demo, from the regexp directory, execute the command
 
-  docker-compose up
-
+```
+docker compose up
+```
 To use the UI, point a browser at http://localhost:8080.
-Sample input is in the file "example.txt"
+Sample input is in the file `example.txt`.
 
-To use the command line interface gen_regexps.py, see the instructions for running
-native local executables (INSERT LINK)
+To use the command line interface gen_regexps.py, see the instructions for [running native local executables](#command-line-processing).
 
 To quit a demo, hit ctrl+c in the same terminal (possibly several times),
 and then
 
-  docker-compose down -v
+```
+docker compose down -v
+```
 
 ## Running Components Manually
 
-It is possible to run the regexp example directly from locally built source code (without use of Docker containers)
+It is possible to run the regexp example directly from locally built source code (without use of Docker containers).
 
-NL2CST
-The code is the Arsenal core and is found under <arsenal_root>/seq2seq and is written in Python and doesn't require additional compilation.
+### NL2CST:
+The code is the Arsenal core and is found under `<arsenal_root>/seq2seq` and is written in Python and doesn't require additional compilation.
 
-ENTITY PROCESSOR
-The code is specific to the regular expression example and is found under <arsenal_root>/regexp/regexp-entity. It is written in Python and
+### Entity Processor:
+The code is specific to the regular expression example and is found under `<arsenal_root>/regexp/regexp-entity`. It is written in Python and
 doesn't require any additional compilation.
 
-REFORMULATION
-The code is specific to the regular expression example and is found under <arsenal_root>/regexp/generate-reformulate.
-It is written in ocaml and relies on Arsenal core libraries found in <arsenal_root>/ocaml-grammars.
+### Generation and reformulation:
+The code is specific to the regular expression example and is found under `<arsenal_root>/regexp/generate-reformulate`.
+It is written in ocaml and relies on Arsenal core libraries found in `<arsenal_root>/ocaml-grammars`.
 
 The defined grammar is used to generate a model that is used by the NL2CST processor. Most changes to the grammar would
 require generating a new model to have Arsenal work properly.
-If you make changes to either the core ocaml libraries or the regular expression grammar, you need to do the following.
+If you make changes to either the core ocaml libraries or the regular expression grammar, you need to re-build the grammar component as follows.
 
-# Rebuild the grammar component like this:
-From the <arsenal_root>/regepx directory
+From the `<arsenal_root>/regexp` directory:
+
+```bash
 eval $(opam env)
 opam update
-opam pin add -y ppx_deriving_random git+https://github.com/disteph/ppx_deriving_random.git
+opam pin add -y ppx_deriving_random git+https://github.com/disteph/ppx_deriving_random.git#4.11
 opam pin add -y ppx_deriving_arsenal ../ocaml-grammars/ppx_arsenal/
 opam pin -y arsenal_lib ../ocaml-grammars/arsenal_lib/
 cd generate-reformulate/
 opam install ./arsenal_re.opam --deps-only
-rm -rf _build
+dune build
+```
 
 ### How to start the components manually
 Start up the components manually on the host system from the <arsenal_root>/regexp directory
 
 ```bash
-$export MODEL_ROOT=./models/regexp_2019-09-26
-$python ../seq2seq/src/run_nl2cst_server.py 8070 &
-$python regexp-entity/server.py 8060 &
-$generate-reformulate/REreformulate.native 8090 &
+export MODEL_ROOT=./models/2021-06-24T1637-07_41c4757_REgrammar-re_2021-06-24T1816-07/
+python ../seq2seq/src/run_nl2cst_server.py 8070 &
+python regexp-entity/server.py 8060 &
+generate-reformulate/_build/default/src/reformulate.exe 8090 &
 ```
 
 ## Command Line Processing
@@ -109,22 +119,22 @@ The `gen_regexps.py` tool allows you to process input text at the command line.
 The default output will be the regexp equivalent to the natural language input text.
 
 ```bash
-$python gen_regexps.py example.txt
+python gen_regexps.py example.txt
 ```
 
-Optional output, which can be compbined:
+Optional output, which can be combined:
 ```bash
-$python gen_regexps.py example.txt -r  
+python gen_regexps.py example.txt -r  
 ```
 > Show the reformulation with substitutions in addition to the regular expressions.
 
 ```bash
-$python gen_regexps.py example.txt -c
+python gen_regexps.py example.txt -c
 ```
 > Show the CSTs generated from the natural language in addition to the regular expressions.
 
 ```bash
-$python gen_regexps.py example.txt -e
+python gen_regexps.py example.txt -e
 ```
 > Show the interim JSON with the entity subsitutions in addition to the regular expressions.
 

@@ -140,111 +140,55 @@ def embedEntityDefinitions(cst_data, ep_data):
 # Call Arsenal's reformulation utiltity 
 # and then return only the string text from the reformulations list
 #
-def reformulateRules(cst_data):
+# def reformulateRules(cst_data):
+#     ref_url = REF_URL_TEMPLATE.format(HOST,PORT_REF)
+#     ref_input = json.dumps(cst_data)
+#     response = requests.post(ref_url,data=ref_input)
+#     if (response.ok):
+#         ref_data = json.loads(response.text)
+#         #this is a list of lists
+#         ref_lists = ["\n".join(d.get('reformulations')) for d in ref_data.get('sentences')]
+#         return "\n".join(ref_lists)
+#     return "Was not able to reformulate result"
+
+
+def callReformulate(ep_data, cst_data):
+    # Combine EP and CST data into the reformulate request
+    ep_sents = ep_data['sentences']
+    cst_sents = cst_data['sentences']
+    if len(ep_sents) != len(cst_sents):
+        raise Exception("Different number of sentences from entity processor vs nl2cst!")
+    result_arr = []
+    for i in range(len(ep_sents)):
+        ep_obj = ep_sents[i]
+        cst_obj = cst_sents[i]
+        id = ep_obj['id']
+        if id != cst_obj['id']:
+            raise Exception("Inconsistent sentence IDs from entity processor vs nl2cst!")
+        #print(f"Processing sentence {id}: {cst_obj}")
+        if 'error' in cst_obj.keys():
+            print(f"Error processing sentence {id}: {cst_obj['error']}")
+            continue
+        result_arr.append({ 
+            "orig-text": ep_obj['orig-text'],
+            "id": ep_obj['id'], 
+            "cst": cst_obj['cst'], 
+            "substitutions": ep_obj['substitutions']
+        })
+    
     ref_url = REF_URL_TEMPLATE.format(HOST,PORT_REF)
-    ref_input = json.dumps(cst_data)
+    ref_input = json.dumps({ 
+        "sentences": result_arr,
+        "options" : {
+            "prefix": "namespace"
+        }
+    })
     response = requests.post(ref_url,data=ref_input)
     if (response.ok):
         ref_data = json.loads(response.text)
-        #this is a list of lists
-        ref_lists = ["\n".join(d.get('reformulations')) for d in ref_data.get('sentences')]
-        return "\n".join(ref_lists)
-    return "Was not able to reformulate result"
-
-
-###################REGEXP generation logic
-DUBQUOTE_RE = re.compile('^"(.*)"$')
-SINGQUOTE_RE = re.compile("^'(.*)'$")
-
-def disquote(str):
-    q_match = DUBQUOTE_RE.match(str)
-    if q_match:
-        return q_match.group(1)
-    q_match = SINGQUOTE_RE.match(str)
-    if q_match:
-        return q_match.group(1)
-    return str
-
-terminalDict = {
-  'empty': '',
-  'word': '\\w',
-  'any': '.',
-  'digit': '\\d',
-  'space': '\\s',
-  'notword': '\\W',
-  'notdigit': '\\D',
-  'notspace': '\\S'
-}
-
-#
-# When handling an entity substitution, the placeholder is subbed back in like this:
-# 'subtrees': [
-#    {'node': 
-#       {'placeholder': 'Char_1', 'text': "'a'"}, 'type': 'entity<kchar>', 'subtrees': []}
-#       {'placeholder': 'Char_2', 'text': "'b'"}, 'type': 'entity<kchar>', 'subtrees': []}
-#
-def createTerminal(cstnode):
-    node_val = cstnode.get('node')
-    if not node_val:
-        return "Unknown node"
-    node_val = node_val.lower()
-    if node_val in terminalDict:
-        return terminalDict.get(node_val)
-    # From here we'll pull out any specific values
-    subtrees = cstnode.get('subtrees')
-    if subtrees and len(subtrees) > 0:
-        subtree0_node = subtrees[0].get('node')
-        subtree0_val = subtree0_node.get('text')
-        if node_val == 'specific':
-            return disquote(subtree0_val)
-        elif node_val == 'characterrange' and len(subtrees) > 1:
-            subtree1_node = subtrees[1].get('node')
-            subtree1_val = subtree1_node.get('text')
-            return '[' + disquote(subtree0_val) + '-' + disquote(subtree1_val) + ']';
-    return("Unknown terminal node")
-
-def createConcat(cstnode):
-    if not isinstance(cstnode, list):
-        return createRegex(cstnode)
-    retval = reduce(lambda thisVal, nextVal: createRegex(thisVal) + createRegex(nextVal), cstnode)
-    return retval
-
-def createRegex(cstnode):
-    node_val = cstnode.get('node')
-    subtree0 = None
-    subtrees = cstnode.get('subtrees')
-    if subtrees and len(subtrees) > 0:
-        subtree0 = subtrees[0]
-    if not node_val or not subtree0:
-        return "Was not able to generate a regular expression from this CST"
-    node_val = node_val.lower()
-    if node_val == 'terminal':
-        return createTerminal(subtree0)
-    elif node_val == 'startofline':
-        return '(^' + createRegex(subtree0) + ')'
-    elif node_val == 'endofline':
-        return '($' + createRegex(subtree0) + ')'
-    elif node_val == 'plus':
-        return '(' + createRegex(subtree0) + '+)'
-    elif node_val == 'star':
-        return '(' + createRegex(subtree0) + '*)'
-    elif node_val == 'or':
-        subtree1 = subtrees[1]
-        return '(' + createRegex(subtree0) + '|' + createRegex(subtree1) + ')'
-    elif node_val == 'concat':
-        #subtree0 should be a list of tree nodes
-        return '(' + createConcat(subtree0) + ')'
+        return ref_data
     else:
-        return "Was not able to identify CST node of {}".format(node_val)
-
-def createRegexes(cst_data):
-    sentence_list = cst_data['sentences']
-    regexes = []
-    for data in sentence_list:
-        cst = data.get('cst')
-        regexp = createRegex(cst)
-        regexes.append(regexp)
-    return regexes
+        raise Exception("Was not able to process CSTs!")
 
 ####################
 
@@ -283,6 +227,7 @@ if __name__ == "__main__":
     sentence_data = importSentenceData(args) 
 
     # call the API for the entity processor for 
+    print('Processing entities...')
     entity_processed_data = callEntityProcessor(sentence_data)
 
     if args.entities:
@@ -290,26 +235,33 @@ if __name__ == "__main__":
         outhandle.write(json.dumps(entity_processed_data,indent=2) + '\n')
 
     # call the API for the language processor
-    rules_data = callNl2CstProcessor(entity_processed_data)
+    print('Inferring raw CSTs...')
+    raw_csts = callNl2CstProcessor(entity_processed_data)
 
-    # adds the definitions to the rules_data
-    embedEntityDefinitions(rules_data, entity_processed_data)
+    # call reformulate with both ep results and csts
+    print('Creating final CSTs...')
+    final_csts = callReformulate(entity_processed_data, raw_csts)
+    fcsts = json.dumps(final_csts, indent=2)
+    # print(f'Final CSTs: {fcsts}')
 
-    if args.cst:
-        outhandle.write("CSTs:\n")
-        rulesText = json.dumps(rules_data,indent=2)
-        outhandle.write(rulesText + '\n')        
+        
+    # # adds the definitions to the rules_data
+    # embedEntityDefinitions(rules_data, entity_processed_data)
+
+    # if args.cst:
+    #     outhandle.write("CSTs:\n")
+    #     rulesText = json.dumps(rules_data,indent=2)
+    #     outhandle.write(rulesText + '\n')        
 
     #print out the generated results
-    regexps = createRegexes(rules_data)
-    outhandle.write("Regular Expressions:\n")
-    outhandle.write('\n'.join(regexps))
+    outhandle.write("Output:\n")
+    outhandle.write(fcsts)
     outhandle.write('\n')
 
-    # if requested, generate human-readable output sentences
-    if args.reformulate:
-        rulesText = reformulateRules(rules_data)
-        outhandle.write(rulesText + '\n')
+    # # if requested, generate human-readable output sentences
+    # if args.reformulate:
+    #     rulesText = reformulateRules(rules_data)
+    #     outhandle.write(rulesText + '\n')
 
     if outhandle is not sys.stdout:
         outhandle.close()
