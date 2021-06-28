@@ -3,6 +3,8 @@
  (public_name arsenal_RE_generate)
  (libraries containers str yojson sexplib arsenal grammar)
  (preprocess (pps ppx_deriving.std ppx_deriving_arsenal))
+ (modes exe)
+ (promote (until-clean) (into ".."))
  (modules Generate)
 )
 
@@ -11,6 +13,8 @@
  (public_name arsenal_RE_reformulate)
  (libraries containers str yojson sexplib lwt cohttp cohttp-lwt cohttp-lwt-unix webmachine arsenal grammar)
  (preprocess (pps ppx_deriving.std ppx_deriving_arsenal))
+ (modes exe)
+ (promote (until-clean) (into ".."))
  (modules Reformulate)
 )
 
@@ -19,6 +23,8 @@
  (public_name arsenal_RE_reformulateCI)
  (libraries containers str yojson sexplib lwt cohttp cohttp-lwt cohttp-lwt-unix webmachine arsenal grammar)
  (preprocess (pps ppx_deriving.std ppx_deriving_arsenal))
+ (modes exe)
+ (promote (until-clean) (into ".."))
  (modules ReformulateCI)
 )
 
@@ -27,6 +33,8 @@
  (public_name arsenal_RE_grammar2json)
  (libraries containers str yojson sexplib arsenal grammar)
  (preprocess (pps ppx_deriving.std ppx_deriving_arsenal))
+ (modes exe)
+ (promote (until-clean) (into ".."))
  (modules Grammar2json)
 )
 
