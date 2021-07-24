@@ -97,7 +97,7 @@ eval $(opam env)
 opam update
 opam pin add -y ppx_deriving_random git+https://github.com/disteph/ppx_deriving_random.git#4.11
 opam pin add -y ppx_deriving_arsenal ../ocaml-grammars/ppx_arsenal/
-opam pin -y arsenal_lib ../ocaml-grammars/arsenal_lib/
+opam pin add -y arsenal ../ocaml-grammars/arsenal_lib
 cd generate-reformulate/
 opam install ./arsenal_re.opam --deps-only
 dune build
