@@ -19,50 +19,62 @@ let noun_mk () = Qualif.Noun{ article = if bchoose () then Definite else Indefin
                               singplu = if bchoose () then Singular else Plural }
 
 let rec conjugate state stem =
+  let stem, rest =
+    match String.split_on_char ' ' stem with
+    | stem::rest -> stem, rest
+    | [] -> failwith "conjugate: should not happen"
+  in
   let Qualif.(Verb{ vplural; neg; aux }) = state in
-  match aux with
-  | Some `Need ->
-     !![
-         if neg then "need not "^stem
-         else if vplural then "need to "^stem
-         else "needs to "^stem
-       ]
+  let stem = 
+    match aux with
+    | Some `Need ->
+       !![
+           if neg then "need not "^stem
+           else if vplural then "need to "^stem
+           else "needs to "^stem
+         ]
 
-  | Some a ->
-     let a = match a with
-       | `Can   -> "can"
-       | `Shall -> "shall"
-       | `Will  -> "will"
-       | `May   -> "may"
-       | `Might -> "might"
-       | `Must  -> "must"
-       | `Need  -> "need"
-     in
-     !![
-         if neg then a^" not "^stem
-         else a^" "^stem
-       ]
+    | Some a ->
+       let a = match a with
+         | `Can   -> "can"
+         | `Shall -> "shall"
+         | `Will  -> "will"
+         | `May   -> "may"
+         | `Might -> "might"
+         | `Must  -> "must"
+         | `Need  -> "need"
+       in
+       !![
+           if neg then a^" not "^stem
+           else a^" "^stem
+         ]
 
-  | None ->
-     match stem with
-     | "be"   -> let a = if vplural then "are" else "is" in
-                 !![ if neg then a^" not" else a ]
-     | "have" -> if neg then
-                   !?[ F "%t %s" // conjugate state "do" // "have" ]
-                 else
-                   !![ if vplural then "have" else "has" ]
+    | None ->
+       match stem with
+       | "be"   -> let a = if vplural then "are" else "is" in
+                   !![ if neg then a^" not" else a ]
+       | "have" -> if neg then
+                     !?[ F "%t %s" // conjugate state "do" // "have" ]
+                   else
+                     !![ if vplural then "have" else "has" ]
 
-     | "do"   -> let a = if vplural then "do" else "does" in
-                 !![ if neg then a^" not" else a ]
-     | _      -> if neg then
-                   !?[ F "%t %s" // conjugate state "do" // stem ]
-                 else
-                   !![ if vplural then stem
-                       else
-                         let l = String.length stem in
-                         match String.sub stem (l - 1) 1 with
-                         | "y" -> String.sub stem 0 (l - 1)^"ies"
-                         | _ -> stem^"s" ]
+       | "do"   -> let a = if vplural then "do" else "does" in
+                   !![ if neg then a^" not" else a ]
+       | _      -> if neg then
+                     !?[ F "%t %s" // conjugate state "do" // stem ]
+                   else
+                     !![ if vplural then stem
+                         else
+                           let l = String.length stem in
+                           match String.sub stem (l - 1) 1 with
+                           | "y" -> String.sub stem 0 (l - 1)^"ies"
+                           | _ -> stem^"s" ]
+  in
+  match rest with
+  | [] -> stem
+  | _::_ ->
+     let rest = pp_list ~sep:" " return rest in
+     !?[ F "%t %t" // stem // rest]
 
 let modal_pure = !!!["can ",1; "may ",1; "might ",1; "",4]
     
