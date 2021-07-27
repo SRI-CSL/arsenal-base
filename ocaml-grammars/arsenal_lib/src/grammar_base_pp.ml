@@ -20,7 +20,13 @@ let noun_mk () = Qualif.Noun{ article = if bchoose () then Definite else Indefin
                               singplu = if bchoose () then Singular else Plural }
 
 let rec conjugate state stem =
+  let stem, rest =
+    match String.split_on_char ' ' stem with
+    | stem::rest -> stem, rest
+    | [] -> failwith "conjugate: should not happen"
+  in
   let Qualif.(Verb{ vplural; neg; aux }) = state in
+  let stem = 
   match aux with
   | Some `Need ->
      let aux =
@@ -69,6 +75,12 @@ let rec conjugate state stem =
                           match String.sub stem (l - 1) 1 with
                           | "y" -> String.sub stem 0 (l - 1)^"ies"
                           | _ -> stem^"s" ]
+  in
+  match rest with
+  | [] -> stem
+  | _::_ ->
+     let rest = pp_list ~sep:" " return rest in
+     !?[ F "%t %t" // stem // rest]
 
 let modal_pure = !!!["can ",1; "may ",1; "might ",1; "",4]
     
