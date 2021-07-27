@@ -4,17 +4,18 @@ open Grammar_base
 (************************)
 (* Pretty-print helpers *)
 
-let sverb = Qualif.Verb{ vplural = false; neg = false; aux = None }
-let pverb = Qualif.Verb{ vplural = true; neg = false; aux = None }
+let sverb = Qualif.Verb{ vplural = Singular; neg = false; aux = None }
+let pverb = Qualif.Verb{ vplural = Plural; neg = false; aux = None }
 
 let sd_noun = Qualif.Noun{ article = Definite; singplu = Singular }
 let si_noun = Qualif.Noun{ article = Indefinite; singplu = Singular }
 let pd_noun = Qualif.Noun{ article = Definite; singplu = Plural }
 let pi_noun = Qualif.Noun{ article = Indefinite; singplu = Plural }
 
+let singplu_choose = !&[Singular; Plural]
 let bchoose = !&[true; false]
 
-let verb_mk () = Qualif.Verb{ vplural = bchoose (); neg = false; aux = None }
+let verb_mk () = Qualif.Verb{ vplural = singplu_choose (); neg = false; aux = None }
 let noun_mk () = Qualif.Noun{ article = if bchoose () then Definite else Indefinite;
                               singplu = if bchoose () then Singular else Plural }
 
@@ -22,10 +23,14 @@ let rec conjugate state stem =
   let Qualif.(Verb{ vplural; neg; aux }) = state in
   match aux with
   | Some `Need ->
+     let aux =
+       match vplural with
+       | Plural   -> "need"
+       | Singular -> "needs"
+     in
      !![
-         if neg then "need not "^stem
-         else if vplural then "need to "^stem
-         else "needs to "^stem
+         if neg then aux^" not to "^stem
+         else aux^" to "^stem
        ]
 
   | Some a ->
@@ -45,24 +50,25 @@ let rec conjugate state stem =
 
   | None ->
      match stem with
-     | "be"   -> let a = if vplural then "are" else "is" in
+     | "be"   -> let a = match vplural with Plural -> "are" | Singular -> "is" in
                  !![ if neg then a^" not" else a ]
      | "have" -> if neg then
                    !?[ F "%t %s" // conjugate state "do" // "have" ]
                  else
-                   !![ if vplural then "have" else "has" ]
+                   !![ match vplural with Plural -> "have" | Singular -> "has" ]
 
-     | "do"   -> let a = if vplural then "do" else "does" in
+     | "do"   -> let a = match vplural with Plural -> "do" | Singular -> "does" in
                  !![ if neg then a^" not" else a ]
      | _      -> if neg then
                    !?[ F "%t %s" // conjugate state "do" // stem ]
                  else
-                   !![ if vplural then stem
-                       else
-                         let l = String.length stem in
-                         match String.sub stem (l - 1) 1 with
-                         | "y" -> String.sub stem 0 (l - 1)^"ies"
-                         | _ -> stem^"s" ]
+                   !![ match vplural with
+                       | Plural -> stem
+                       | Singular -> 
+                          let l = String.length stem in
+                          match String.sub stem (l - 1) 1 with
+                          | "y" -> String.sub stem 0 (l - 1)^"ies"
+                          | _ -> stem^"s" ]
 
 let modal_pure = !!!["can ",1; "may ",1; "might ",1; "",4]
     

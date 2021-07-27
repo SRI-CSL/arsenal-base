@@ -23,7 +23,7 @@ type singplu = Singular | Plural
 module Qualif = struct
 
   type verb = Verb of {
-      vplural : bool;
+      vplural : singplu;
       (* person  : [`First | `Second | `Third ]; *)
       (* tense   : [ `Present | `Infinitive ]; *)
       neg     : bool;
