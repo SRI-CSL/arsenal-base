@@ -27,54 +27,54 @@ let rec conjugate state stem =
   in
   let Qualif.(Verb{ vplural; neg; aux }) = state in
   let stem = 
-  match aux with
-  | Some `Need ->
-     let aux =
-       match vplural with
-       | Plural   -> "need"
-       | Singular -> "needs"
-     in
-     !![
-         if neg then aux^" not to "^stem
-         else aux^" to "^stem
-       ]
+    match aux with
+    | Some `Need ->
+       let aux =
+         match vplural with
+         | Plural   -> "need"
+         | Singular -> "needs"
+       in
+       !![
+           if neg then aux^" not to "^stem
+           else aux^" to "^stem
+         ]
 
-  | Some a ->
-     let a = match a with
-       | `Can   -> "can"
-       | `Shall -> "shall"
-       | `Will  -> "will"
-       | `May   -> "may"
-       | `Might -> "might"
-       | `Must  -> "must"
-       | `Need  -> "need"
-     in
-     !![
-         if neg then a^" not "^stem
-         else a^" "^stem
-       ]
+    | Some a ->
+       let a = match a with
+         | `Can   -> "can"
+         | `Shall -> "shall"
+         | `Will  -> "will"
+         | `May   -> "may"
+         | `Might -> "might"
+         | `Must  -> "must"
+         | `Need  -> "need"
+       in
+       !![
+           if neg then a^" not "^stem
+           else a^" "^stem
+         ]
 
-  | None ->
-     match stem with
-     | "be"   -> let a = match vplural with Plural -> "are" | Singular -> "is" in
-                 !![ if neg then a^" not" else a ]
-     | "have" -> if neg then
-                   !?[ F "%t %s" // conjugate state "do" // "have" ]
-                 else
-                   !![ match vplural with Plural -> "have" | Singular -> "has" ]
+    | None ->
+       match stem with
+       | "be"   -> let a = match vplural with Plural -> "are" | Singular -> "is" in
+                   !![ if neg then a^" not" else a ]
+       | "have" -> if neg then
+                     !?[ F "%t %s" // conjugate state "do" // "have" ]
+                   else
+                     !![ match vplural with Plural -> "have" | Singular -> "has" ]
 
-     | "do"   -> let a = match vplural with Plural -> "do" | Singular -> "does" in
-                 !![ if neg then a^" not" else a ]
-     | _      -> if neg then
-                   !?[ F "%t %s" // conjugate state "do" // stem ]
-                 else
-                   !![ match vplural with
-                       | Plural -> stem
-                       | Singular -> 
-                          let l = String.length stem in
-                          match String.sub stem (l - 1) 1 with
-                          | "y" -> String.sub stem 0 (l - 1)^"ies"
-                          | _ -> stem^"s" ]
+       | "do"   -> let a = match vplural with Plural -> "do" | Singular -> "does" in
+                   !![ if neg then a^" not" else a ]
+       | _      -> if neg then
+                     !?[ F "%t %s" // conjugate state "do" // stem ]
+                   else
+                     !![ match vplural with
+                         | Plural -> stem
+                         | Singular -> 
+                            let l = String.length stem in
+                            match String.sub stem (l - 1) 1 with
+                            | "y" -> String.sub stem 0 (l - 1)^"ies"
+                            | _ -> stem^"s" ]
   in
   match rest with
   | [] -> stem
