@@ -93,7 +93,7 @@ let generate (About.About{ key ; serialise = { to_json ; to_sexp; _} ; _ }) n =
                if not (Sexp.equal sexp sexp')
                then
                  begin
-                   Format.(fprintf stderr "@[<v>Natural language@,  @[%s@]@,maps to@,  @[<v>%a@]@,and to@,  @[<v>%a@]@,@]" nl Sexplib.Sexp.pp sexp' Sexplib.Sexp.pp sexp);
+                   Format.(fprintf stderr "@[<v>Natural language@,  @[%s@]@,maps to@,  @[<v>%a@]@,and to@,  @[<v>%a@]@,@]" nl Sexp.pp_hum sexp' Sexp.pp_hum sexp);
                    raise (NonInjective { nl ; ast_old = sexp' ; ast_new = sexp })
                  end;
                if not !no_duplicates then go_ahead sexp
