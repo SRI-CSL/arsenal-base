@@ -26,6 +26,7 @@ let rec conjugate state stem =
     | [] -> failwith "conjugate: should not happen"
   in
   let Qualif.(Verb{ vplural; neg; aux }) = state in
+  let l = String.length stem in
   let stem = 
     match aux with
     | Some `Need ->
@@ -39,6 +40,28 @@ let rec conjugate state stem =
            else aux^" to "^stem
          ]
 
+    | Some `PresentPart ->
+       let steming =
+         match String.sub stem (l - 1) 1 with
+         | "e" -> String.sub stem 0 (l - 1)^"ing"
+         | _ -> stem^"ing"
+       in
+       !![
+           if neg then "not "^steming
+           else steming
+         ]
+
+    | Some `PastPart ->
+       let stemed =
+         match String.sub stem (l - 1) 1 with
+         | "y" -> String.sub stem 0 (l - 1)^"ied"
+         | _ -> stem^"ed"
+       in
+       !![
+           if neg then "not "^stemed
+           else stemed
+         ]
+
     | Some a ->
        let a = match a with
          | `Can   -> "can"
@@ -47,7 +70,7 @@ let rec conjugate state stem =
          | `May   -> "may"
          | `Might -> "might"
          | `Must  -> "must"
-         | `Need  -> "need"
+         | _  -> failwith "should not happen"
        in
        !![
            if neg then a^" not "^stem
@@ -71,7 +94,6 @@ let rec conjugate state stem =
                      !![ match vplural with
                          | Plural -> stem
                          | Singular -> 
-                            let l = String.length stem in
                             match String.sub stem (l - 1) 1 with
                             | "y" -> String.sub stem 0 (l - 1)^"ies"
                             | _ -> stem^"s" ]

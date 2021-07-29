@@ -27,7 +27,9 @@ module Qualif = struct
       (* person  : [`First | `Second | `Third ]; *)
       (* tense   : [ `Present | `Infinitive ]; *)
       neg     : bool;
-      aux     : [`Can | `Shall | `Will | `May | `Might | `Must | `Need ] option
+      aux     : [`Can | `Shall | `Will | `May | `Might | `Must | `Need
+                 | `PresentPart | `PastPart
+                ] option
     }
 
   type noun = Noun of {
