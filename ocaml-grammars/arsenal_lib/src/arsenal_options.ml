@@ -54,6 +54,7 @@ let generate (About.About{ key ; serialise = { to_json ; to_sexp; _} ; _ }) n =
   in
   let print_tab s = print_string ("\t"^s) in
   let sofar = ref 0 in
+  let duplicates = ref 0 in
   while (!sofar < n) do
     let t = PPX_Random.init() |> !(TUID.get_random key) in
     Entity.init();
@@ -79,21 +80,33 @@ let generate (About.About{ key ; serialise = { to_json ; to_sexp; _} ; _ }) n =
       if !verb > 0 && !sofar mod 1000 = 0 then Format.(fprintf stderr) "@[%i@]@,%!" !sofar;
       incr sofar;
     in
-    if !injectivity || !no_duplicates
+    begin
+      if !injectivity || !no_duplicates
+      then
+        begin
+          match Stbl.find_opt memo nl with
+          | Some sexp' ->
+             incr duplicates;
+             if not !injectivity then () (* not checking injectivity means we reject duplicates *) 
+             else (* checking injectivity *)
+               let sexp = sexp () in
+               if not (Sexp.equal sexp sexp')
+               then
+                 begin
+                   Format.(fprintf stderr "@[<v>Natural language@,  @[%s@]@,maps to@,  @[<v>%a@]@,and to@,  @[<v>%a@]@,@]" nl Sexp.pp_hum sexp' Sexp.pp_hum sexp);
+                   raise (NonInjective { nl ; ast_old = sexp' ; ast_new = sexp })
+                 end;
+               if not !no_duplicates then go_ahead sexp
+          | None ->
+             let sexp = sexp () in Stbl.add memo nl sexp; go_ahead sexp
+        end
+      else 
+        go_ahead (sexp())
+    end;
+    if !sofar mod 1000 = 0 || (!duplicates > 0 && !duplicates mod 1000 = 0)
     then
-      match Stbl.find_opt memo nl with
-      | Some sexp' ->
-         if not !injectivity then () (* not checking injectivity means we reject duplicates *) 
-         else (* checking injectivity *)
-           let sexp = sexp () in
-           if not (Sexp.equal sexp sexp')
-           then
-             begin
-               Format.(fprintf stderr "@[<v>Natural language@,  @[%s@]@,maps to@,  @[<v>%a@]@,and to@,  @[<v>%a@]@,@]" nl Sexplib.Sexp.pp sexp' Sexplib.Sexp.pp sexp);
-               raise (NonInjective { nl ; ast_old = sexp' ; ast_new = sexp })
-             end;
-           if not !no_duplicates then go_ahead sexp
-      | None -> let sexp = sexp () in Stbl.add memo nl sexp; go_ahead sexp
-           else 
-             go_ahead (sexp())
+      begin
+        let dup = if !duplicates > 0 then Format.sprintf " (%d dup)" !duplicates else "" in 
+        Format.(fprintf stderr "@[<v>%d%s / %d@]\n%!" !sofar dup n)
+      end
   done

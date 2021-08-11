@@ -150,7 +150,7 @@ let build_cases compare loc str build_case l =
     i+1, (x0::cases0), (x1::cases1), (x2::cases2), (x3::cases3)
   in
   let _, cases0, cases1, cases2, cases3 =
-    l |> List.rev |> List.fold_left aux (0, [],[],[], [default_case loc])
+    l |> List.rev |> List.fold_left aux (0, [],[],[], [default_case str loc])
   in
   [%expr
       PPX_Serialise.{ 
