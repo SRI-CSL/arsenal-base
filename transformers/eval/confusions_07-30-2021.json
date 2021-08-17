@@ -1,0 +1,1045 @@
+{
+   "[SEP]": {
+      "total_correct": 298021,
+      "None#option(entity(Grammar_effigy/hashT))": 5,
+      "Grammar_effigy/Expression/GArith#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/gen": 3,
+      "Grammar_effigy/Expression/TArith#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithEx": 2,
+      "Grammar_effigy/Data/Entity#Grammar_effigy/Data/t#entity(Grammar_effigy/data_or_messageT)": 1,
+      "None#option(Grammar_effigy/Type/t)": 1
+   },
+   "Grammar_base/Definite#Grammar_base/article": {
+      "total_correct": 8405,
+      "Grammar_base/Indefinite#Grammar_base/article": 1
+   },
+   "Grammar_base/Indefinite#Grammar_base/article": {
+      "total_correct": 4238,
+      "Grammar_base/Definite#Grammar_base/article": 3
+   },
+   "Grammar_base/Integer_000#entity(Grammar_base/integerT)": {
+      "total_correct": 79569,
+      "Grammar_base/Integer_002#entity(Grammar_base/integerT)": 1
+   },
+   "Grammar_base/Integer_001#entity(Grammar_base/integerT)": {
+      "total_correct": 25332,
+      "Grammar_base/Integer_000#entity(Grammar_base/integerT)": 2
+   },
+   "Grammar_base/Integer_002#entity(Grammar_base/integerT)": {
+      "total_correct": 8082,
+      "Grammar_base/Integer_000#entity(Grammar_base/integerT)": 1
+   },
+   "Grammar_base/Integer_003#entity(Grammar_base/integerT)": {
+      "total_correct": 2262
+   },
+   "Grammar_base/Integer_004#entity(Grammar_base/integerT)": {
+      "total_correct": 616,
+      "Grammar_base/Integer_003#entity(Grammar_base/integerT)": 1
+   },
+   "Grammar_base/Integer_005#entity(Grammar_base/integerT)": {
+      "total_correct": 133,
+      "Grammar_base/Integer_004#entity(Grammar_base/integerT)": 2,
+      "Grammar_base/Integer_001#entity(Grammar_base/integerT)": 1
+   },
+   "Grammar_base/Integer_006#entity(Grammar_base/integerT)": {
+      "total_correct": 7,
+      "Grammar_base/Integer_005#entity(Grammar_base/integerT)": 20,
+      "Grammar_base/Integer_000#entity(Grammar_base/integerT)": 1
+   },
+   "Grammar_base/Integer_007#entity(Grammar_base/integerT)": {
+      "total_correct": 0
+   },
+   "Grammar_base/Integer_008#entity(Grammar_base/integerT)": {
+      "total_correct": 0
+   },
+   "Grammar_base/Integer_009#entity(Grammar_base/integerT)": {
+      "total_correct": 0
+   },
+   "Grammar_base/Integer_010#entity(Grammar_base/integerT)": {
+      "total_correct": 0
+   },
+   "Grammar_base/Plural#Grammar_base/singplu": {
+      "total_correct": 6276
+   },
+   "Grammar_base/Qualif#Grammar_base/qualif(Grammar_effigy/Type/t)#Grammar_effigy/Type/t#Grammar_base/Qualif/noun": {
+      "total_correct": 12654
+   },
+   "Grammar_base/Qualif/Noun#Grammar_base/Qualif/noun#Grammar_base/article#Grammar_base/singplu": {
+      "total_correct": 12647
+   },
+   "Grammar_base/Singular#Grammar_base/singplu": {
+      "total_correct": 6367
+   },
+   "Grammar_effigy/Actor/Entity#Grammar_effigy/Actor/t#entity(Grammar_effigy/actorT)": {
+      "total_correct": 221048,
+      "Grammar_effigy/Actor/Proxy#Grammar_effigy/Actor/t#entity(Grammar_effigy/actorT)": 2
+   },
+   "Grammar_effigy/Actor/Proxy#Grammar_effigy/Actor/t#entity(Grammar_effigy/actorT)": {
+      "total_correct": 29085
+   },
+   "Grammar_effigy/Actor_000#entity(Grammar_effigy/actorT)": {
+      "total_correct": 149019
+   },
+   "Grammar_effigy/Actor_001#entity(Grammar_effigy/actorT)": {
+      "total_correct": 74818
+   },
+   "Grammar_effigy/Actor_002#entity(Grammar_effigy/actorT)": {
+      "total_correct": 19942
+   },
+   "Grammar_effigy/Actor_003#entity(Grammar_effigy/actorT)": {
+      "total_correct": 5632
+   },
+   "Grammar_effigy/Actor_004#entity(Grammar_effigy/actorT)": {
+      "total_correct": 703
+   },
+   "Grammar_effigy/Actor_005#entity(Grammar_effigy/actorT)": {
+      "total_correct": 19
+   },
+   "Grammar_effigy/Actor_006#entity(Grammar_effigy/actorT)": {
+      "total_correct": 0
+   },
+   "Grammar_effigy/Cst_000#entity(Grammar_effigy/cstT)": {
+      "total_correct": 103442,
+      "Grammar_effigy/Cst_001#entity(Grammar_effigy/cstT)": 2
+   },
+   "Grammar_effigy/Cst_001#entity(Grammar_effigy/cstT)": {
+      "total_correct": 35156,
+      "Grammar_effigy/Cst_004#entity(Grammar_effigy/cstT)": 1,
+      "Grammar_effigy/Cst_003#entity(Grammar_effigy/cstT)": 1,
+      "Grammar_effigy/Cst_002#entity(Grammar_effigy/cstT)": 1
+   },
+   "Grammar_effigy/Cst_002#entity(Grammar_effigy/cstT)": {
+      "total_correct": 9188
+   },
+   "Grammar_effigy/Cst_003#entity(Grammar_effigy/cstT)": {
+      "total_correct": 2187
+   },
+   "Grammar_effigy/Cst_004#entity(Grammar_effigy/cstT)": {
+      "total_correct": 467,
+      "Grammar_effigy/Cst_003#entity(Grammar_effigy/cstT)": 1,
+      "Grammar_effigy/Cst_001#entity(Grammar_effigy/cstT)": 1
+   },
+   "Grammar_effigy/Cst_005#entity(Grammar_effigy/cstT)": {
+      "total_correct": 90,
+      "Grammar_effigy/Cst_003#entity(Grammar_effigy/cstT)": 1,
+      "Grammar_effigy/Cst_002#entity(Grammar_effigy/cstT)": 1
+   },
+   "Grammar_effigy/Cst_006#entity(Grammar_effigy/cstT)": {
+      "total_correct": 22,
+      "Grammar_effigy/Cst_004#entity(Grammar_effigy/cstT)": 1
+   },
+   "Grammar_effigy/Cst_007#entity(Grammar_effigy/cstT)": {
+      "total_correct": 0,
+      "Grammar_effigy/Cst_006#entity(Grammar_effigy/cstT)": 5
+   },
+   "Grammar_effigy/Cst_008#entity(Grammar_effigy/cstT)": {
+      "total_correct": 0
+   },
+   "Grammar_effigy/Cst_009#entity(Grammar_effigy/cstT)": {
+      "total_correct": 0
+   },
+   "Grammar_effigy/Data/Entity#Grammar_effigy/Data/t#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 225360,
+      "Grammar_effigy/Data/Value#Grammar_effigy/Data/t": 4,
+      "None#option(Grammar_effigy/Data/datamessage_qualif)": 3,
+      "Grammar_effigy/Data/Response#Grammar_effigy/Data/t": 2,
+      "Grammar_effigy/Data/Expression#Grammar_effigy/Data/t#Grammar_effigy/Expression/t": 1
+   },
+   "Grammar_effigy/Data/Expression#Grammar_effigy/Data/t#Grammar_effigy/Expression/t": {
+      "total_correct": 33914,
+      "Grammar_effigy/Data/Entity#Grammar_effigy/Data/t#entity(Grammar_effigy/data_or_messageT)": 2,
+      "Grammar_effigy/Expression/Bits#Grammar_effigy/Expression/t#Grammar_effigy/Expression/bitsEx": 1,
+      "Grammar_effigy/Expression/GArith#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/gen": 1,
+      "Grammar_effigy/Expression/Var#Grammar_effigy/Expression/gen#entity(Grammar_effigy/varT)#option(entity(Grammar_effigy/locT))": 1
+   },
+   "Grammar_effigy/Data/Qualif#Grammar_effigy/Data/q(Grammar_effigy/Data/t)#list(Grammar_effigy/Data/t)#option(Grammar_effigy/Data/datamessage_qualif)": {
+      "total_correct": 245322,
+      "Grammar_effigy/Protocol/Present#Grammar_effigy/Protocol/mode": 1
+   },
+   "Grammar_effigy/Data/Received#Grammar_effigy/Data/datamessage_qualif#option(Grammar_effigy/random_qualif(Grammar_effigy/Message/t))": {
+      "total_correct": 31553
+   },
+   "Grammar_effigy/Data/Response#Grammar_effigy/Data/t": {
+      "total_correct": 52425,
+      "Grammar_effigy/Data/Entity#Grammar_effigy/Data/t#entity(Grammar_effigy/data_or_messageT)": 7,
+      "None#option(Grammar_effigy/Data/datamessage_qualif)": 2,
+      "Some#option(Grammar_effigy/Data/datamessage_qualif)#Grammar_effigy/Data/datamessage_qualif": 1,
+      "Grammar_effigy/Data/Expression#Grammar_effigy/Data/t#Grammar_effigy/Expression/t": 1,
+      "Grammar_effigy/Expression/Output#Grammar_effigy/Expression/gen#option(Grammar_effigy/Expression/fun_id)": 1
+   },
+   "Grammar_effigy/Data/Value#Grammar_effigy/Data/t": {
+      "total_correct": 26509,
+      "Grammar_effigy/Data/Expression#Grammar_effigy/Data/t#Grammar_effigy/Expression/t": 1
+   },
+   "Grammar_effigy/Data_000#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 113386
+   },
+   "Grammar_effigy/Data_001#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 62063,
+      "Grammar_effigy/Data_002#entity(Grammar_effigy/data_or_messageT)": 1
+   },
+   "Grammar_effigy/Data_002#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 26988
+   },
+   "Grammar_effigy/Data_003#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 9991,
+      "Grammar_effigy/Data_007#entity(Grammar_effigy/data_or_messageT)": 1
+   },
+   "Grammar_effigy/Data_004#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 3328,
+      "Grammar_effigy/Data_003#entity(Grammar_effigy/data_or_messageT)": 1
+   },
+   "Grammar_effigy/Data_005#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 1020,
+      "Grammar_effigy/Data_006#entity(Grammar_effigy/data_or_messageT)": 1
+   },
+   "Grammar_effigy/Data_006#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 289
+   },
+   "Grammar_effigy/Data_007#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 76
+   },
+   "Grammar_effigy/Data_008#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 19
+   },
+   "Grammar_effigy/Data_009#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 0,
+      "Grammar_effigy/Data_008#entity(Grammar_effigy/data_or_messageT)": 6
+   },
+   "Grammar_effigy/Data_010#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 0
+   },
+   "Grammar_effigy/Expression/And#Grammar_effigy/Expression/boolEx#list(Grammar_effigy/Expression/boolExP)": {
+      "total_correct": 7399,
+      "Grammar_effigy/Expression/Or#Grammar_effigy/Expression/boolEx#list(Grammar_effigy/Expression/boolExP)": 84,
+      "Grammar_effigy/Expression/Equal#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t": 22,
+      "Grammar_effigy/Expression/LessThan#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 6,
+      "Grammar_effigy/Expression/Not#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/boolExP": 5,
+      "Grammar_effigy/Expression/LessThanEq#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 4
+   },
+   "Grammar_effigy/Expression/Apply#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/fun_id#Grammar_effigy/Expression/t": {
+      "total_correct": 12982,
+      "Grammar_effigy/Expression/GBool#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/gen": 1
+   },
+   "Grammar_effigy/Expression/Arith#Grammar_effigy/Expression/t#Grammar_effigy/Expression/arithEx": {
+      "total_correct": 80235,
+      "Grammar_effigy/Expression/Gen#Grammar_effigy/Expression/t#Grammar_effigy/Expression/gen": 69,
+      "Grammar_effigy/Expression/TArith#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithEx": 4,
+      "None#option(entity(Grammar_effigy/hashT))": 1
+   },
+   "Grammar_effigy/Expression/Base#Grammar_effigy/Expression/encoding#entity(Grammar_base/integerT)": {
+      "total_correct": 230,
+      "Grammar_effigy/Expression/Binary#Grammar_effigy/Expression/encoding": 1
+   },
+   "Grammar_effigy/Expression/Binary#Grammar_effigy/Expression/encoding": {
+      "total_correct": 1118
+   },
+   "Grammar_effigy/Expression/Bits#Grammar_effigy/Expression/t#Grammar_effigy/Expression/bitsEx": {
+      "total_correct": 45378,
+      "Grammar_effigy/Expression/Gen#Grammar_effigy/Expression/t#Grammar_effigy/Expression/gen": 3,
+      "Grammar_effigy/Expression/Arith#Grammar_effigy/Expression/t#Grammar_effigy/Expression/arithEx": 2,
+      "None#option(Grammar_effigy/Type/t)": 1,
+      "Some#option(Grammar_effigy/Type/t)#Grammar_effigy/Type/t": 1
+   },
+   "Grammar_effigy/Expression/Concat#Grammar_effigy/Expression/bitsEx#list(Grammar_effigy/Expression/gen)": {
+      "total_correct": 52183
+   },
+   "Grammar_effigy/Expression/Cst#Grammar_effigy/Expression/fun_id#entity(Grammar_effigy/cstT)": {
+      "total_correct": 76083,
+      "Grammar_effigy/Expression/Var#Grammar_effigy/Expression/fun_id#entity(Grammar_effigy/varT)#option(entity(Grammar_effigy/locT))": 4
+   },
+   "Grammar_effigy/Expression/Cst#Grammar_effigy/Expression/gen#entity(Grammar_effigy/cstT)": {
+      "total_correct": 74484,
+      "Grammar_effigy/Expression/Output#Grammar_effigy/Expression/gen#option(Grammar_effigy/Expression/fun_id)": 3,
+      "Grammar_effigy/Expression/Epsilon#Grammar_effigy/Expression/gen#Grammar_base/qualif(Grammar_effigy/Type/t)#option(Grammar_effigy/Expression/boolExP)": 2,
+      "Grammar_effigy/Expression/Gen#Grammar_effigy/Expression/t#Grammar_effigy/Expression/gen": 2,
+      "Grammar_effigy/Data/Entity#Grammar_effigy/Data/t#entity(Grammar_effigy/data_or_messageT)": 2,
+      "Grammar_effigy/Expression/Arith#Grammar_effigy/Expression/t#Grammar_effigy/Expression/arithEx": 1,
+      "Grammar_effigy/Expression/Apply#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/fun_id#Grammar_effigy/Expression/t": 1,
+      "[SEP]": 1,
+      "Grammar_effigy/Expression/TArith#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithEx": 1,
+      "Grammar_effigy/Expression/Var#Grammar_effigy/Expression/gen#entity(Grammar_effigy/varT)#option(entity(Grammar_effigy/locT))": 1
+   },
+   "Grammar_effigy/Expression/Encode#Grammar_effigy/Expression/gen#option(list(Grammar_effigy/Expression/t))#option(Grammar_effigy/Type/t)#option(Grammar_effigy/Expression/encoding)": {
+      "total_correct": 13041
+   },
+   "Grammar_effigy/Expression/Epsilon#Grammar_effigy/Expression/gen#Grammar_base/qualif(Grammar_effigy/Type/t)#option(Grammar_effigy/Expression/boolExP)": {
+      "total_correct": 12654
+   },
+   "Grammar_effigy/Expression/Equal#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t": {
+      "total_correct": 77416,
+      "Grammar_effigy/Expression/And#Grammar_effigy/Expression/boolEx#list(Grammar_effigy/Expression/boolExP)": 27,
+      "Grammar_effigy/Expression/Or#Grammar_effigy/Expression/boolEx#list(Grammar_effigy/Expression/boolExP)": 8,
+      "Grammar_effigy/Expression/LessThanEq#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 1,
+      "Grammar_effigy/Expression/LessThan#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 1
+   },
+   "Grammar_effigy/Expression/GArith#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/gen": {
+      "total_correct": 83098,
+      "Grammar_effigy/Expression/TArith#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithEx": 60,
+      "None#option(entity(Grammar_effigy/hashT))": 1,
+      "Grammar_effigy/Expression/GBool#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/gen": 1,
+      "Grammar_effigy/Expression/Gen#Grammar_effigy/Expression/t#Grammar_effigy/Expression/gen": 1,
+      "Grammar_effigy/Expression/Encode#Grammar_effigy/Expression/gen#option(list(Grammar_effigy/Expression/t))#option(Grammar_effigy/Type/t)#option(Grammar_effigy/Expression/encoding)": 1,
+      "[SEP]": 1,
+      "Grammar_effigy/Expression/Var#Grammar_effigy/Expression/gen#entity(Grammar_effigy/varT)#option(entity(Grammar_effigy/locT))": 1
+   },
+   "Grammar_effigy/Expression/GBits#Grammar_effigy/Expression/bitsExP#Grammar_effigy/Expression/gen": {
+      "total_correct": 19207
+   },
+   "Grammar_effigy/Expression/GBool#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/gen": {
+      "total_correct": 19747,
+      "Grammar_effigy/Expression/TBool#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolEx": 74,
+      "Grammar_effigy/Expression/Var#Grammar_effigy/Expression/gen#entity(Grammar_effigy/varT)#option(entity(Grammar_effigy/locT))": 2,
+      "Grammar_effigy/Expression/Cst#Grammar_effigy/Expression/gen#entity(Grammar_effigy/cstT)": 1,
+      "Grammar_effigy/Expression/Gen#Grammar_effigy/Expression/t#Grammar_effigy/Expression/gen": 1,
+      "[SEP]": 1,
+      "Grammar_effigy/Expression/Output#Grammar_effigy/Expression/gen#option(Grammar_effigy/Expression/fun_id)": 1
+   },
+   "Grammar_effigy/Expression/Gen#Grammar_effigy/Expression/t#Grammar_effigy/Expression/gen": {
+      "total_correct": 135988,
+      "Grammar_effigy/Expression/Arith#Grammar_effigy/Expression/t#Grammar_effigy/Expression/arithEx": 16,
+      "None#option(Grammar_effigy/Type/t)": 1,
+      "None#option(entity(Grammar_effigy/hashT))": 1,
+      "Grammar_effigy/Expression/Parameter#Grammar_effigy/Expression/gen#Grammar_effigy/random_qualif(option(entity(Grammar_effigy/varT)))#option(Grammar_effigy/Expression/fun_id)": 1,
+      "None#option(Grammar_effigy/Data/datamessage_qualif)": 1,
+      "Grammar_effigy/Expression/Epsilon#Grammar_effigy/Expression/gen#Grammar_base/qualif(Grammar_effigy/Type/t)#option(Grammar_effigy/Expression/boolExP)": 1,
+      "Grammar_effigy/Expression/Cst#Grammar_effigy/Expression/gen#entity(Grammar_effigy/cstT)": 1,
+      "Grammar_effigy/Expression/Bits#Grammar_effigy/Expression/t#Grammar_effigy/Expression/bitsEx": 1
+   },
+   "Grammar_effigy/Expression/Hash#Grammar_effigy/Expression/arithEx#Grammar_effigy/Expression/bitsExP#option(entity(Grammar_effigy/hashT))": {
+      "total_correct": 19683,
+      "Grammar_effigy/Expression/Plus#Grammar_effigy/Expression/arithEx#list(Grammar_effigy/Expression/arithExP)": 20,
+      "Grammar_effigy/Expression/Times#Grammar_effigy/Expression/arithEx#list(Grammar_effigy/Expression/arithExP)": 12,
+      "Grammar_effigy/Expression/Length#Grammar_effigy/Expression/arithEx#Grammar_effigy/Length/t": 4
+   },
+   "Grammar_effigy/Expression/LSB#Grammar_effigy/Expression/bitsEx#Grammar_effigy/Expression/arithExP": {
+      "total_correct": 4458
+   },
+   "Grammar_effigy/Expression/Length#Grammar_effigy/Expression/arithEx#Grammar_effigy/Length/t": {
+      "total_correct": 103992,
+      "Grammar_effigy/Expression/LengthOf#Grammar_effigy/Expression/arithEx#option(Grammar_effigy/Expression/bitsExP)": 1,
+      "Grammar_effigy/Expression/Times#Grammar_effigy/Expression/arithEx#list(Grammar_effigy/Expression/arithExP)": 1
+   },
+   "Grammar_effigy/Expression/LengthOf#Grammar_effigy/Expression/arithEx#option(Grammar_effigy/Expression/bitsExP)": {
+      "total_correct": 17544,
+      "Grammar_effigy/Expression/Plus#Grammar_effigy/Expression/arithEx#list(Grammar_effigy/Expression/arithExP)": 8,
+      "Grammar_effigy/Expression/Times#Grammar_effigy/Expression/arithEx#list(Grammar_effigy/Expression/arithExP)": 2
+   },
+   "Grammar_effigy/Expression/LessThan#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": {
+      "total_correct": 23401,
+      "Grammar_effigy/Expression/And#Grammar_effigy/Expression/boolEx#list(Grammar_effigy/Expression/boolExP)": 9,
+      "Grammar_effigy/Expression/Or#Grammar_effigy/Expression/boolEx#list(Grammar_effigy/Expression/boolExP)": 6,
+      "Grammar_effigy/Expression/Not#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/boolExP": 2,
+      "Grammar_effigy/Expression/LessThanEq#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 1
+   },
+   "Grammar_effigy/Expression/LessThanEq#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": {
+      "total_correct": 22916,
+      "Grammar_effigy/Expression/And#Grammar_effigy/Expression/boolEx#list(Grammar_effigy/Expression/boolExP)": 10,
+      "Grammar_effigy/Expression/Or#Grammar_effigy/Expression/boolEx#list(Grammar_effigy/Expression/boolExP)": 7,
+      "Grammar_effigy/Expression/Equal#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t": 3
+   },
+   "Grammar_effigy/Expression/MSB#Grammar_effigy/Expression/bitsEx#Grammar_effigy/Expression/arithExP": {
+      "total_correct": 4453
+   },
+   "Grammar_effigy/Expression/Not#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/boolExP": {
+      "total_correct": 12550,
+      "Grammar_effigy/Expression/LessThanEq#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 22,
+      "Grammar_effigy/Expression/Equal#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t": 22,
+      "Grammar_effigy/Expression/LessThan#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 9,
+      "Grammar_effigy/Expression/And#Grammar_effigy/Expression/boolEx#list(Grammar_effigy/Expression/boolExP)": 7,
+      "Grammar_effigy/Expression/Or#Grammar_effigy/Expression/boolEx#list(Grammar_effigy/Expression/boolExP)": 3
+   },
+   "Grammar_effigy/Expression/Number#Grammar_effigy/Expression/arithEx#entity(Grammar_effigy/numberT)": {
+      "total_correct": 9878,
+      "Grammar_effigy/Expression/Length#Grammar_effigy/Expression/arithEx#Grammar_effigy/Length/t": 2,
+      "Grammar_effigy/Expression/Plus#Grammar_effigy/Expression/arithEx#list(Grammar_effigy/Expression/arithExP)": 1
+   },
+   "Grammar_effigy/Expression/Or#Grammar_effigy/Expression/boolEx#list(Grammar_effigy/Expression/boolExP)": {
+      "total_correct": 7545,
+      "Grammar_effigy/Expression/And#Grammar_effigy/Expression/boolEx#list(Grammar_effigy/Expression/boolExP)": 67,
+      "Grammar_effigy/Expression/Equal#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t": 4,
+      "Grammar_effigy/Expression/LessThanEq#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 2,
+      "Grammar_effigy/Expression/Not#Grammar_effigy/Expression/boolEx#Grammar_effigy/Expression/boolExP": 1
+   },
+   "Grammar_effigy/Expression/Output#Grammar_effigy/Expression/gen#option(Grammar_effigy/Expression/fun_id)": {
+      "total_correct": 81102,
+      "Grammar_effigy/Expression/Epsilon#Grammar_effigy/Expression/gen#Grammar_base/qualif(Grammar_effigy/Type/t)#option(Grammar_effigy/Expression/boolExP)": 3,
+      "Grammar_effigy/Type/Array#Grammar_effigy/Type/t#option(entity(Grammar_base/integerT))": 1,
+      "Grammar_effigy/Expression/Var#Grammar_effigy/Expression/gen#entity(Grammar_effigy/varT)#option(entity(Grammar_effigy/locT))": 1,
+      "Grammar_effigy/Expression/Parameter#Grammar_effigy/Expression/gen#Grammar_effigy/random_qualif(option(entity(Grammar_effigy/varT)))#option(Grammar_effigy/Expression/fun_id)": 1
+   },
+   "Grammar_effigy/Expression/Parameter#Grammar_effigy/Expression/gen#Grammar_effigy/random_qualif(option(entity(Grammar_effigy/varT)))#option(Grammar_effigy/Expression/fun_id)": {
+      "total_correct": 108507,
+      "Grammar_effigy/Expression/Output#Grammar_effigy/Expression/gen#option(Grammar_effigy/Expression/fun_id)": 2,
+      "Grammar_effigy/Expression/Encode#Grammar_effigy/Expression/gen#option(list(Grammar_effigy/Expression/t))#option(Grammar_effigy/Type/t)#option(Grammar_effigy/Expression/encoding)": 1,
+      "Grammar_effigy/Expression/GArith#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/gen": 1,
+      "None#option(Grammar_effigy/Type/t)": 1
+   },
+   "Grammar_effigy/Expression/Plus#Grammar_effigy/Expression/arithEx#list(Grammar_effigy/Expression/arithExP)": {
+      "total_correct": 19185,
+      "Grammar_effigy/Expression/Times#Grammar_effigy/Expression/arithEx#list(Grammar_effigy/Expression/arithExP)": 41,
+      "Grammar_effigy/Expression/Length#Grammar_effigy/Expression/arithEx#Grammar_effigy/Length/t": 10,
+      "Grammar_effigy/Expression/LengthOf#Grammar_effigy/Expression/arithEx#option(Grammar_effigy/Expression/bitsExP)": 4,
+      "Grammar_effigy/Expression/Number#Grammar_effigy/Expression/arithEx#entity(Grammar_effigy/numberT)": 1,
+      "Grammar_effigy/Expression/Hash#Grammar_effigy/Expression/arithEx#Grammar_effigy/Expression/bitsExP#option(entity(Grammar_effigy/hashT))": 1
+   },
+   "Grammar_effigy/Expression/TArith#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithEx": {
+      "total_correct": 109655,
+      "Grammar_effigy/Expression/GArith#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/gen": 44,
+      "Grammar_effigy/Expression/Arith#Grammar_effigy/Expression/t#Grammar_effigy/Expression/arithEx": 8,
+      "Grammar_effigy/Expression/GBool#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/gen": 3,
+      "None#option(entity(Grammar_effigy/hashT))": 2,
+      "[SEP]": 2,
+      "Grammar_effigy/Expression/Cst#Grammar_effigy/Expression/gen#entity(Grammar_effigy/cstT)": 1,
+      "Grammar_effigy/Expression/Output#Grammar_effigy/Expression/gen#option(Grammar_effigy/Expression/fun_id)": 1,
+      "Grammar_effigy/Expression/Var#Grammar_effigy/Expression/gen#entity(Grammar_effigy/varT)#option(entity(Grammar_effigy/locT))": 1
+   },
+   "Grammar_effigy/Expression/TBits#Grammar_effigy/Expression/bitsExP#Grammar_effigy/Expression/bitsEx": {
+      "total_correct": 15716,
+      "Grammar_effigy/Expression/GBits#Grammar_effigy/Expression/bitsExP#Grammar_effigy/Expression/gen": 1
+   },
+   "Grammar_effigy/Expression/TBool#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolEx": {
+      "total_correct": 37384,
+      "Grammar_effigy/Expression/GBool#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/gen": 134,
+      "Grammar_effigy/Expression/Arith#Grammar_effigy/Expression/t#Grammar_effigy/Expression/arithEx": 2,
+      "Grammar_effigy/Expression/TArith#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithEx": 2,
+      "Grammar_effigy/Expression/Parameter#Grammar_effigy/Expression/gen#Grammar_effigy/random_qualif(option(entity(Grammar_effigy/varT)))#option(Grammar_effigy/Expression/fun_id)": 1,
+      "[SEP]": 1
+   },
+   "Grammar_effigy/Expression/Times#Grammar_effigy/Expression/arithEx#list(Grammar_effigy/Expression/arithExP)": {
+      "total_correct": 19182,
+      "Grammar_effigy/Expression/Plus#Grammar_effigy/Expression/arithEx#list(Grammar_effigy/Expression/arithExP)": 291,
+      "Grammar_effigy/Expression/LengthOf#Grammar_effigy/Expression/arithEx#option(Grammar_effigy/Expression/bitsExP)": 11,
+      "Grammar_effigy/Expression/Length#Grammar_effigy/Expression/arithEx#Grammar_effigy/Length/t": 8,
+      "Grammar_effigy/Expression/Hash#Grammar_effigy/Expression/arithEx#Grammar_effigy/Expression/bitsExP#option(entity(Grammar_effigy/hashT))": 5,
+      "Grammar_effigy/Expression/Number#Grammar_effigy/Expression/arithEx#entity(Grammar_effigy/numberT)": 3
+   },
+   "Grammar_effigy/Expression/Var#Grammar_effigy/Expression/fun_id#entity(Grammar_effigy/varT)#option(entity(Grammar_effigy/locT))": {
+      "total_correct": 83600,
+      "Grammar_effigy/Expression/Cst#Grammar_effigy/Expression/fun_id#entity(Grammar_effigy/cstT)": 4
+   },
+   "Grammar_effigy/Expression/Var#Grammar_effigy/Expression/gen#entity(Grammar_effigy/varT)#option(entity(Grammar_effigy/locT))": {
+      "total_correct": 80781,
+      "Grammar_effigy/Expression/Gen#Grammar_effigy/Expression/t#Grammar_effigy/Expression/gen": 5,
+      "Grammar_effigy/Expression/Parameter#Grammar_effigy/Expression/gen#Grammar_effigy/random_qualif(option(entity(Grammar_effigy/varT)))#option(Grammar_effigy/Expression/fun_id)": 5,
+      "Grammar_effigy/Expression/Cst#Grammar_effigy/Expression/gen#entity(Grammar_effigy/cstT)": 3,
+      "Grammar_effigy/Expression/Arith#Grammar_effigy/Expression/t#Grammar_effigy/Expression/arithEx": 2,
+      "[SEP]": 1,
+      "Grammar_effigy/Expression/GBool#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/gen": 1,
+      "Grammar_effigy/Expression/Epsilon#Grammar_effigy/Expression/gen#Grammar_base/qualif(Grammar_effigy/Type/t)#option(Grammar_effigy/Expression/boolExP)": 1
+   },
+   "Grammar_effigy/Hash_000#entity(Grammar_effigy/hashT)": {
+      "total_correct": 8090,
+      "Grammar_effigy/Hash_001#entity(Grammar_effigy/hashT)": 2
+   },
+   "Grammar_effigy/Hash_001#entity(Grammar_effigy/hashT)": {
+      "total_correct": 83
+   },
+   "Grammar_effigy/Hash_002#entity(Grammar_effigy/hashT)": {
+      "total_correct": 0,
+      "Grammar_effigy/Hash_001#entity(Grammar_effigy/hashT)": 1
+   },
+   "Grammar_effigy/Length/Length#Grammar_effigy/Length/t#entity(Grammar_base/integerT)#Grammar_effigy/Unit/t": {
+      "total_correct": 108125
+   },
+   "Grammar_effigy/Loc_000#entity(Grammar_effigy/locT)": {
+      "total_correct": 106500,
+      "Grammar_effigy/Loc_001#entity(Grammar_effigy/locT)": 1
+   },
+   "Grammar_effigy/Loc_001#entity(Grammar_effigy/locT)": {
+      "total_correct": 18031,
+      "Grammar_effigy/Loc_002#entity(Grammar_effigy/locT)": 1
+   },
+   "Grammar_effigy/Loc_002#entity(Grammar_effigy/locT)": {
+      "total_correct": 2089,
+      "Grammar_effigy/Loc_001#entity(Grammar_effigy/locT)": 2
+   },
+   "Grammar_effigy/Loc_003#entity(Grammar_effigy/locT)": {
+      "total_correct": 244,
+      "Grammar_effigy/Loc_004#entity(Grammar_effigy/locT)": 1,
+      "Grammar_effigy/Loc_001#entity(Grammar_effigy/locT)": 1
+   },
+   "Grammar_effigy/Loc_004#entity(Grammar_effigy/locT)": {
+      "total_correct": 34,
+      "Grammar_effigy/Loc_003#entity(Grammar_effigy/locT)": 5,
+      "Grammar_effigy/Loc_001#entity(Grammar_effigy/locT)": 1
+   },
+   "Grammar_effigy/Loc_005#entity(Grammar_effigy/locT)": {
+      "total_correct": 0,
+      "Grammar_effigy/Loc_004#entity(Grammar_effigy/locT)": 2
+   },
+   "Grammar_effigy/Location/AsFollows#Grammar_effigy/Location/t": {
+      "total_correct": 1863
+   },
+   "Grammar_effigy/Location/Loc#Grammar_effigy/Location/t#entity(Grammar_effigy/locT)": {
+      "total_correct": 2259
+   },
+   "Grammar_effigy/Message/Entity#Grammar_effigy/Message/t#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 35364
+   },
+   "Grammar_effigy/Message/Request#Grammar_effigy/Message/t#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 4291
+   },
+   "Grammar_effigy/Message_000#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 42817,
+      "Grammar_effigy/Data_001#entity(Grammar_effigy/data_or_messageT)": 1
+   },
+   "Grammar_effigy/Message_001#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 4720,
+      "Grammar_effigy/Data_000#entity(Grammar_effigy/data_or_messageT)": 2,
+      "Grammar_effigy/Data_006#entity(Grammar_effigy/data_or_messageT)": 1
+   },
+   "Grammar_effigy/Message_002#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 291
+   },
+   "Grammar_effigy/Message_003#entity(Grammar_effigy/data_or_messageT)": {
+      "total_correct": 13
+   },
+   "Grammar_effigy/Number_000#entity(Grammar_effigy/numberT)": {
+      "total_correct": 9582
+   },
+   "Grammar_effigy/Number_001#entity(Grammar_effigy/numberT)": {
+      "total_correct": 288,
+      "Grammar_effigy/Number_000#entity(Grammar_effigy/numberT)": 1
+   },
+   "Grammar_effigy/Number_002#entity(Grammar_effigy/numberT)": {
+      "total_correct": 0,
+      "Grammar_effigy/Number_001#entity(Grammar_effigy/numberT)": 5,
+      "Grammar_effigy/Number_000#entity(Grammar_effigy/numberT)": 2
+   },
+   "Grammar_effigy/Procedure_000#entity(Grammar_effigy/procedureT)": {
+      "total_correct": 8427
+   },
+   "Grammar_effigy/Procedure_001#entity(Grammar_effigy/procedureT)": {
+      "total_correct": 142
+   },
+   "Grammar_effigy/Protocol/Acceptable#Grammar_effigy/Protocol/condition#Grammar_effigy/Data/q(Grammar_effigy/Data/t)": {
+      "total_correct": 12722
+   },
+   "Grammar_effigy/Protocol/ActAs#Grammar_effigy/Protocol/compute_step#Grammar_effigy/Actor/t": {
+      "total_correct": 14061
+   },
+   "Grammar_effigy/Protocol/And#Grammar_effigy/Protocol/intro_phrase": {
+      "total_correct": 1906
+   },
+   "Grammar_effigy/Protocol/Authentication#Grammar_effigy/Protocol/event": {
+      "total_correct": 10218
+   },
+   "Grammar_effigy/Protocol/Authentication#Grammar_effigy/Protocol/procedure": {
+      "total_correct": 9080
+   },
+   "Grammar_effigy/Protocol/Check#Grammar_effigy/Protocol/compute_step#Grammar_effigy/Protocol/condition": {
+      "total_correct": 30326
+   },
+   "Grammar_effigy/Protocol/ComputeStep#Grammar_effigy/Protocol/how#bool#Grammar_effigy/Protocol/compute_step": {
+      "total_correct": 16061
+   },
+   "Grammar_effigy/Protocol/DataComparison#Grammar_effigy/Protocol/condition#Grammar_effigy/Protocol/comparison#Grammar_effigy/Data/q(Grammar_effigy/Data/t)#Grammar_effigy/Data/q(Grammar_effigy/Data/t)": {
+      "total_correct": 15428
+   },
+   "Grammar_effigy/Protocol/Else#Grammar_effigy/Protocol/intro_phrase": {
+      "total_correct": 2266
+   },
+   "Grammar_effigy/Protocol/Entity#Grammar_effigy/Protocol/procedure#entity(Grammar_effigy/procedureT)": {
+      "total_correct": 8569
+   },
+   "Grammar_effigy/Protocol/Equal#Grammar_effigy/Protocol/comparison": {
+      "total_correct": 7666
+   },
+   "Grammar_effigy/Protocol/Expired#Grammar_effigy/Protocol/event#Grammar_effigy/Data/q(Grammar_effigy/Data/t)": {
+      "total_correct": 13116
+   },
+   "Grammar_effigy/Protocol/ExtendedStep#Grammar_effigy/Protocol/compute_step_extended#option(Grammar_effigy/Actor/t)#Grammar_effigy/Protocol/compute_step#Grammar_effigy/Protocol/mode#bool#option(Grammar_effigy/Protocol/how)#option(entity(Grammar_effigy/locT))": {
+      "total_correct": 175371
+   },
+   "Grammar_effigy/Protocol/Fail#Grammar_effigy/Protocol/condition#Grammar_effigy/Protocol/procedure": {
+      "total_correct": 13313
+   },
+   "Grammar_effigy/Protocol/Finally#Grammar_effigy/Protocol/intro_phrase": {
+      "total_correct": 1955
+   },
+   "Grammar_effigy/Protocol/Freshness#Grammar_effigy/Protocol/condition#Grammar_effigy/Data/q(Grammar_effigy/Data/t)": {
+      "total_correct": 12696
+   },
+   "Grammar_effigy/Protocol/Get#Grammar_effigy/Protocol/compute_step#Grammar_effigy/Data/q(Grammar_effigy/Data/t)#option(Grammar_effigy/random_qualif(Grammar_effigy/Actor/t))": {
+      "total_correct": 25906
+   },
+   "Grammar_effigy/Protocol/GoTo#Grammar_effigy/Protocol/compute_step#entity(Grammar_effigy/locT)": {
+      "total_correct": 15522,
+      "Grammar_effigy/Data/Qualif#Grammar_effigy/Data/q(Grammar_effigy/Data/t)#list(Grammar_effigy/Data/t)#option(Grammar_effigy/Data/datamessage_qualif)": 1
+   },
+   "Grammar_effigy/Protocol/However#Grammar_effigy/Protocol/intro_phrase": {
+      "total_correct": 2500
+   },
+   "Grammar_effigy/Protocol/ITE#Grammar_effigy/Protocol/compute_step_in_ctxt#Grammar_effigy/Protocol/condition#Grammar_effigy/Protocol/compute_step_extended#option(Grammar_effigy/Protocol/compute_step_extended)": {
+      "total_correct": 49124
+   },
+   "Grammar_effigy/Protocol/IfSo#Grammar_effigy/Protocol/intro_phrase": {
+      "total_correct": 2252
+   },
+   "Grammar_effigy/Protocol/Includes#Grammar_effigy/Protocol/comparison": {
+      "total_correct": 7762
+   },
+   "Grammar_effigy/Protocol/IntroPhrase#Grammar_effigy/Protocol/compute_step_in_ctxt#option(Grammar_effigy/Protocol/intro_phrase)#Grammar_effigy/Protocol/compute_step_extended": {
+      "total_correct": 63602
+   },
+   "Grammar_effigy/Protocol/Present#Grammar_effigy/Protocol/mode": {
+      "total_correct": 88904
+   },
+   "Grammar_effigy/Protocol/Proceed#Grammar_effigy/Protocol/compute_step": {
+      "total_correct": 15796
+   },
+   "Grammar_effigy/Protocol/Produce#Grammar_effigy/Protocol/compute_step#Grammar_effigy/Data/q(Grammar_effigy/Data/t)#option(Grammar_effigy/Data/q(Grammar_effigy/Data/t))": {
+      "total_correct": 28750
+   },
+   "Grammar_effigy/Protocol/Receive#Grammar_effigy/Protocol/condition#Grammar_effigy/Actor/t#Grammar_effigy/Message/t": {
+      "total_correct": 11889
+   },
+   "Grammar_effigy/Protocol/Reception#Grammar_effigy/Protocol/event#Grammar_effigy/Data/q(Grammar_effigy/Data/t)": {
+      "total_correct": 12983
+   },
+   "Grammar_effigy/Protocol/Restoration#Grammar_effigy/Protocol/procedure": {
+      "total_correct": 9066
+   },
+   "Grammar_effigy/Protocol/Send#Grammar_effigy/Protocol/compute_step#Grammar_effigy/random_qualif(Grammar_effigy/Actor/t)#Grammar_effigy/Data/q(Grammar_effigy/Data/t)#option(Grammar_effigy/random_qualif(Grammar_effigy/Message/t))#bool": {
+      "total_correct": 32256
+   },
+   "Grammar_effigy/Protocol/Set#Grammar_effigy/Protocol/compute_step#Grammar_effigy/Data/q(Grammar_effigy/Data/t)#option(Grammar_effigy/Data/q(Grammar_effigy/Data/t))": {
+      "total_correct": 28814
+   },
+   "Grammar_effigy/Protocol/Shall#Grammar_effigy/Protocol/mode": {
+      "total_correct": 86369,
+      "None#option(Grammar_effigy/Protocol/how)": 1
+   },
+   "Grammar_effigy/Protocol/Success#Grammar_effigy/Protocol/condition#Grammar_effigy/Protocol/procedure": {
+      "total_correct": 13402
+   },
+   "Grammar_effigy/Protocol/Then#Grammar_effigy/Protocol/intro_phrase": {
+      "total_correct": 1881
+   },
+   "Grammar_effigy/Protocol/Using#Grammar_effigy/Protocol/how#Grammar_effigy/Data/t": {
+      "total_correct": 12797
+   },
+   "Grammar_effigy/Protocol/When#Grammar_effigy/Protocol/compute_step_in_ctxt#Grammar_effigy/Protocol/event#Grammar_effigy/Protocol/compute_step_extended": {
+      "total_correct": 36317
+   },
+   "Grammar_effigy/RandomQualif#Grammar_effigy/random_qualif(Grammar_effigy/Actor/t)#Grammar_effigy/Actor/t": {
+      "total_correct": 48814
+   },
+   "Grammar_effigy/RandomQualif#Grammar_effigy/random_qualif(Grammar_effigy/Message/t)#Grammar_effigy/Message/t": {
+      "total_correct": 24985
+   },
+   "Grammar_effigy/RandomQualif#Grammar_effigy/random_qualif(option(entity(Grammar_effigy/varT)))#option(entity(Grammar_effigy/varT))": {
+      "total_correct": 108507
+   },
+   "Grammar_effigy/Top/Assign#Grammar_effigy/Top/t#option(entity(Grammar_effigy/varT))#Grammar_effigy/Expression/t#option(Grammar_effigy/Location/t)#option(entity(Grammar_effigy/varT))": {
+      "total_correct": 15051
+   },
+   "Grammar_effigy/Top/HasType#Grammar_effigy/Top/t#Grammar_effigy/Expression/t#Grammar_effigy/Type/t": {
+      "total_correct": 16753
+   },
+   "Grammar_effigy/Top/Holds#Grammar_effigy/Top/t#Grammar_effigy/Expression/boolEx": {
+      "total_correct": 114176
+   },
+   "Grammar_effigy/Top/MessageContains#Grammar_effigy/Top/t#option(Grammar_effigy/Message/t)#Grammar_effigy/Data/q(Grammar_effigy/Data/t)": {
+      "total_correct": 4797
+   },
+   "Grammar_effigy/Top/See#Grammar_effigy/Top/t#entity(Grammar_effigy/locT)": {
+      "total_correct": 0
+   },
+   "Grammar_effigy/Top/Step#Grammar_effigy/Top/t#Grammar_effigy/Protocol/compute_step_in_ctxt": {
+      "total_correct": 149043
+   },
+   "Grammar_effigy/Type/Array#Grammar_effigy/Type/t#option(entity(Grammar_base/integerT))": {
+      "total_correct": 7603
+   },
+   "Grammar_effigy/Type/Bool#Grammar_effigy/Type/t": {
+      "total_correct": 7142,
+      "Grammar_effigy/Type/CharString#Grammar_effigy/Type/t#option(entity(Grammar_base/integerT))": 1,
+      "Grammar_effigy/Type/String#Grammar_effigy/Type/t#option(Grammar_effigy/Length/t)": 1
+   },
+   "Grammar_effigy/Type/CharString#Grammar_effigy/Type/t#option(entity(Grammar_base/integerT))": {
+      "total_correct": 7784
+   },
+   "Grammar_effigy/Type/Int#Grammar_effigy/Type/t": {
+      "total_correct": 7799,
+      "Grammar_effigy/Type/String#Grammar_effigy/Type/t#option(Grammar_effigy/Length/t)": 1
+   },
+   "Grammar_effigy/Type/String#Grammar_effigy/Type/t#option(Grammar_effigy/Length/t)": {
+      "total_correct": 8067
+   },
+   "Grammar_effigy/Unit/Bit#Grammar_effigy/Unit/t": {
+      "total_correct": 52667,
+      "Grammar_effigy/Unit/Byte#Grammar_effigy/Unit/t": 2
+   },
+   "Grammar_effigy/Unit/Byte#Grammar_effigy/Unit/t": {
+      "total_correct": 55425,
+      "Grammar_effigy/Unit/Bit#Grammar_effigy/Unit/t": 3
+   },
+   "Grammar_effigy/Var_000#entity(Grammar_effigy/varT)": {
+      "total_correct": 131167,
+      "Grammar_effigy/Var_002#entity(Grammar_effigy/varT)": 1
+   },
+   "Grammar_effigy/Var_001#entity(Grammar_effigy/varT)": {
+      "total_correct": 67335,
+      "Grammar_effigy/Var_004#entity(Grammar_effigy/varT)": 1
+   },
+   "Grammar_effigy/Var_002#entity(Grammar_effigy/varT)": {
+      "total_correct": 24737
+   },
+   "Grammar_effigy/Var_003#entity(Grammar_effigy/varT)": {
+      "total_correct": 7812
+   },
+   "Grammar_effigy/Var_004#entity(Grammar_effigy/varT)": {
+      "total_correct": 2311
+   },
+   "Grammar_effigy/Var_005#entity(Grammar_effigy/varT)": {
+      "total_correct": 703,
+      "Grammar_effigy/Var_006#entity(Grammar_effigy/varT)": 1
+   },
+   "Grammar_effigy/Var_006#entity(Grammar_effigy/varT)": {
+      "total_correct": 183
+   },
+   "Grammar_effigy/Var_007#entity(Grammar_effigy/varT)": {
+      "total_correct": 44,
+      "Grammar_effigy/Var_006#entity(Grammar_effigy/varT)": 1
+   },
+   "Grammar_effigy/Var_008#entity(Grammar_effigy/varT)": {
+      "total_correct": 0,
+      "Grammar_effigy/Var_007#entity(Grammar_effigy/varT)": 11,
+      "Grammar_effigy/Var_004#entity(Grammar_effigy/varT)": 1
+   },
+   "Grammar_effigy/Var_009#entity(Grammar_effigy/varT)": {
+      "total_correct": 0
+   },
+   "Grammar_effigy/Var_010#entity(Grammar_effigy/varT)": {
+      "total_correct": 0
+   },
+   "List#list(Grammar_effigy/Data/t)#Grammar_effigy/Data/t": {
+      "total_correct": 182963,
+      "List#list(Grammar_effigy/Data/t)#Grammar_effigy/Data/t#Grammar_effigy/Data/t": 8,
+      "List#list(Grammar_effigy/Data/t)#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t": 1
+   },
+   "List#list(Grammar_effigy/Data/t)#Grammar_effigy/Data/t#Grammar_effigy/Data/t": {
+      "total_correct": 48146,
+      "List#list(Grammar_effigy/Data/t)#Grammar_effigy/Data/t": 3
+   },
+   "List#list(Grammar_effigy/Data/t)#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t": {
+      "total_correct": 11174
+   },
+   "List#list(Grammar_effigy/Data/t)#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t": {
+      "total_correct": 2384
+   },
+   "List#list(Grammar_effigy/Data/t)#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t": {
+      "total_correct": 510,
+      "List#list(Grammar_effigy/Data/t)#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t": 1
+   },
+   "List#list(Grammar_effigy/Data/t)#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t": {
+      "total_correct": 104,
+      "List#list(Grammar_effigy/Data/t)#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t": 1
+   },
+   "List#list(Grammar_effigy/Data/t)#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t": {
+      "total_correct": 0,
+      "List#list(Grammar_effigy/Data/t)#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t": 22
+   },
+   "List#list(Grammar_effigy/Data/t)#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t": {
+      "total_correct": 0,
+      "List#list(Grammar_effigy/Data/t)#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t": 5
+   },
+   "List#list(Grammar_effigy/Data/t)#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t#Grammar_effigy/Data/t": {
+      "total_correct": 0
+   },
+   "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": {
+      "total_correct": 27153,
+      "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 9,
+      "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 1,
+      "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 1
+   },
+   "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": {
+      "total_correct": 8045,
+      "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 2,
+      "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 1,
+      "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 1
+   },
+   "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": {
+      "total_correct": 2264,
+      "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 2,
+      "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 1
+   },
+   "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": {
+      "total_correct": 667,
+      "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 5,
+      "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 2
+   },
+   "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": {
+      "total_correct": 146,
+      "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 1
+   },
+   "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": {
+      "total_correct": 0,
+      "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 53
+   },
+   "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": {
+      "total_correct": 0,
+      "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 11
+   },
+   "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": {
+      "total_correct": 0,
+      "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": 2
+   },
+   "List#list(Grammar_effigy/Expression/arithExP)#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithExP": {
+      "total_correct": 0
+   },
+   "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": {
+      "total_correct": 10854,
+      "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": 14,
+      "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": 2,
+      "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": 1
+   },
+   "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": {
+      "total_correct": 3073,
+      "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": 6
+   },
+   "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": {
+      "total_correct": 782,
+      "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": 4,
+      "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": 1,
+      "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": 1
+   },
+   "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": {
+      "total_correct": 176,
+      "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": 1
+   },
+   "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": {
+      "total_correct": 0,
+      "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": 26
+   },
+   "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": {
+      "total_correct": 0,
+      "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": 2
+   },
+   "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": {
+      "total_correct": 0
+   },
+   "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": {
+      "total_correct": 0,
+      "List#list(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP#Grammar_effigy/Expression/boolExP": 1
+   },
+   "List#list(Grammar_effigy/Expression/gen)#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen": {
+      "total_correct": 35963,
+      "List#list(Grammar_effigy/Expression/gen)#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen": 1,
+      "List#list(Grammar_effigy/Expression/gen)#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen": 1
+   },
+   "List#list(Grammar_effigy/Expression/gen)#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen": {
+      "total_correct": 11931,
+      "List#list(Grammar_effigy/Expression/gen)#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen": 5,
+      "List#list(Grammar_effigy/Expression/gen)#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen": 1,
+      "List#list(Grammar_effigy/Expression/gen)#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen": 1
+   },
+   "List#list(Grammar_effigy/Expression/gen)#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen": {
+      "total_correct": 3409,
+      "List#list(Grammar_effigy/Expression/gen)#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen": 1
+   },
+   "List#list(Grammar_effigy/Expression/gen)#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen": {
+      "total_correct": 867,
+      "List#list(Grammar_effigy/Expression/gen)#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen#Grammar_effigy/Expression/gen": 3
+   },
+   "List#list(Grammar_effigy/Expression/t)#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t": {
+      "total_correct": 8302,
+      "List#list(Grammar_effigy/Expression/t)#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t": 2
+   },
+   "List#list(Grammar_effigy/Expression/t)#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t": {
+      "total_correct": 2658,
+      "List#list(Grammar_effigy/Expression/t)#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t": 2
+   },
+   "List#list(Grammar_effigy/Expression/t)#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t": {
+      "total_correct": 755,
+      "List#list(Grammar_effigy/Expression/t)#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t": 1
+   },
+   "List#list(Grammar_effigy/Expression/t)#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t#Grammar_effigy/Expression/t": {
+      "total_correct": 178
+   },
+   "None#option(Grammar_effigy/Data/datamessage_qualif)": {
+      "total_correct": 213635,
+      "Grammar_effigy/Data/Response#Grammar_effigy/Data/t": 3,
+      "Some#option(Grammar_effigy/Data/datamessage_qualif)#Grammar_effigy/Data/datamessage_qualif": 2,
+      "Grammar_effigy/Expression/Arith#Grammar_effigy/Expression/t#Grammar_effigy/Expression/arithEx": 2,
+      "Grammar_effigy/Data/Value#Grammar_effigy/Data/t": 1,
+      "[SEP]": 1
+   },
+   "None#option(Grammar_effigy/Data/q(Grammar_effigy/Data/t))": {
+      "total_correct": 15099
+   },
+   "None#option(Grammar_effigy/Expression/bitsExP)": {
+      "total_correct": 2303
+   },
+   "None#option(Grammar_effigy/Expression/boolExP)": {
+      "total_correct": 2440,
+      "Some#option(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP": 3
+   },
+   "None#option(Grammar_effigy/Expression/encoding)": {
+      "total_correct": 11466,
+      "Some#option(Grammar_effigy/Expression/encoding)#Grammar_effigy/Expression/encoding": 16
+   },
+   "None#option(Grammar_effigy/Expression/fun_id)": {
+      "total_correct": 42886,
+      "Some#option(Grammar_effigy/Expression/fun_id)#Grammar_effigy/Expression/fun_id": 7
+   },
+   "None#option(Grammar_effigy/Length/t)": {
+      "total_correct": 3934
+   },
+   "None#option(Grammar_effigy/Location/t)": {
+      "total_correct": 10813
+   },
+   "None#option(Grammar_effigy/Message/t)": {
+      "total_correct": 2015,
+      "Some#option(Grammar_effigy/Message/t)#Grammar_effigy/Message/t": 1
+   },
+   "None#option(Grammar_effigy/Protocol/compute_step_extended)": {
+      "total_correct": 22727
+   },
+   "None#option(Grammar_effigy/Protocol/how)": {
+      "total_correct": 146415
+   },
+   "None#option(Grammar_effigy/Protocol/intro_phrase)": {
+      "total_correct": 50842
+   },
+   "None#option(Grammar_effigy/Type/t)": {
+      "total_correct": 3753,
+      "Some#option(Grammar_effigy/Type/t)#Grammar_effigy/Type/t": 33,
+      "Grammar_effigy/Expression/TArith#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithEx": 5,
+      "Grammar_effigy/Expression/Arith#Grammar_effigy/Expression/t#Grammar_effigy/Expression/arithEx": 3,
+      "[SEP]": 3,
+      "None#option(Grammar_effigy/Location/t)": 2,
+      "Some#option(Grammar_effigy/Data/datamessage_qualif)#Grammar_effigy/Data/datamessage_qualif": 1,
+      "None#option(Grammar_effigy/Data/datamessage_qualif)": 1,
+      "Grammar_effigy/Expression/Output#Grammar_effigy/Expression/gen#option(Grammar_effigy/Expression/fun_id)": 1,
+      "Grammar_effigy/Expression/Parameter#Grammar_effigy/Expression/gen#Grammar_effigy/random_qualif(option(entity(Grammar_effigy/varT)))#option(Grammar_effigy/Expression/fun_id)": 1,
+      "None#option(entity(Grammar_effigy/hashT))": 1,
+      "Grammar_effigy/Type/CharString#Grammar_effigy/Type/t#option(entity(Grammar_base/integerT))": 1,
+      "Grammar_effigy/Expression/Gen#Grammar_effigy/Expression/t#Grammar_effigy/Expression/gen": 1
+   },
+   "None#option(Grammar_effigy/random_qualif(Grammar_effigy/Actor/t))": {
+      "total_correct": 9338
+   },
+   "None#option(Grammar_effigy/random_qualif(Grammar_effigy/Message/t))": {
+      "total_correct": 38807,
+      "Some#option(Grammar_effigy/random_qualif(Grammar_effigy/Message/t))#Grammar_effigy/random_qualif(Grammar_effigy/Message/t)": 2
+   },
+   "None#option(entity(Grammar_base/integerT))": {
+      "total_correct": 7706,
+      "Some#option(entity(Grammar_base/integerT))#entity(Grammar_base/integerT)": 6
+   },
+   "None#option(entity(Grammar_effigy/hashT))": {
+      "total_correct": 11442,
+      "Grammar_effigy/Expression/TArith#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/arithEx": 5,
+      "Grammar_effigy/Expression/GArith#Grammar_effigy/Expression/arithExP#Grammar_effigy/Expression/gen": 4,
+      "Grammar_effigy/Expression/Arith#Grammar_effigy/Expression/t#Grammar_effigy/Expression/arithEx": 2,
+      "Grammar_effigy/Expression/Gen#Grammar_effigy/Expression/t#Grammar_effigy/Expression/gen": 2,
+      "[SEP]": 2,
+      "Some#option(entity(Grammar_effigy/hashT))#entity(Grammar_effigy/hashT)": 2,
+      "Grammar_effigy/Expression/Parameter#Grammar_effigy/Expression/gen#Grammar_effigy/random_qualif(option(entity(Grammar_effigy/varT)))#option(Grammar_effigy/Expression/fun_id)": 1,
+      "Grammar_effigy/Type/Int#Grammar_effigy/Type/t": 1,
+      "Grammar_effigy/Type/CharString#Grammar_effigy/Type/t#option(entity(Grammar_base/integerT))": 1,
+      "Grammar_effigy/Type/String#Grammar_effigy/Type/t#option(Grammar_effigy/Length/t)": 1
+   },
+   "None#option(entity(Grammar_effigy/locT))": {
+      "total_correct": 230483,
+      "[SEP]": 10,
+      "Some#option(entity(Grammar_effigy/locT))#entity(Grammar_effigy/locT)": 2
+   },
+   "None#option(entity(Grammar_effigy/varT))": {
+      "total_correct": 68563,
+      "Some#option(entity(Grammar_effigy/varT))#entity(Grammar_effigy/varT)": 2
+   },
+   "None#option(list(Grammar_effigy/Expression/t))": {
+      "total_correct": 1143
+   },
+   "Some#option(Grammar_effigy/Actor/t)#Grammar_effigy/Actor/t": {
+      "total_correct": 175371
+   },
+   "Some#option(Grammar_effigy/Data/datamessage_qualif)#Grammar_effigy/Data/datamessage_qualif": {
+      "total_correct": 31553,
+      "None#option(Grammar_effigy/Data/datamessage_qualif)": 1,
+      "Grammar_effigy/Data/Value#Grammar_effigy/Data/t": 1
+   },
+   "Some#option(Grammar_effigy/Data/q(Grammar_effigy/Data/t))#Grammar_effigy/Data/q(Grammar_effigy/Data/t)": {
+      "total_correct": 42435,
+      "None#option(Grammar_effigy/Data/q(Grammar_effigy/Data/t))": 4
+   },
+   "Some#option(Grammar_effigy/Expression/bitsExP)#Grammar_effigy/Expression/bitsExP": {
+      "total_correct": 15241
+   },
+   "Some#option(Grammar_effigy/Expression/boolExP)#Grammar_effigy/Expression/boolExP": {
+      "total_correct": 10199,
+      "None#option(Grammar_effigy/Expression/boolExP)": 1
+   },
+   "Some#option(Grammar_effigy/Expression/encoding)#Grammar_effigy/Expression/encoding": {
+      "total_correct": 1349,
+      "None#option(Grammar_effigy/Expression/encoding)": 2
+   },
+   "Some#option(Grammar_effigy/Expression/fun_id)#Grammar_effigy/Expression/fun_id": {
+      "total_correct": 146709,
+      "None#option(Grammar_effigy/Expression/fun_id)": 3
+   },
+   "Some#option(Grammar_effigy/Length/t)#Grammar_effigy/Length/t": {
+      "total_correct": 4133
+   },
+   "Some#option(Grammar_effigy/Location/t)#Grammar_effigy/Location/t": {
+      "total_correct": 4122
+   },
+   "Some#option(Grammar_effigy/Message/t)#Grammar_effigy/Message/t": {
+      "total_correct": 2781
+   },
+   "Some#option(Grammar_effigy/Protocol/compute_step_extended)#Grammar_effigy/Protocol/compute_step_extended": {
+      "total_correct": 26352,
+      "Some#option(entity(Grammar_effigy/locT))#entity(Grammar_effigy/locT)": 1
+   },
+   "Some#option(Grammar_effigy/Protocol/how)#Grammar_effigy/Protocol/how": {
+      "total_correct": 28858
+   },
+   "Some#option(Grammar_effigy/Protocol/intro_phrase)#Grammar_effigy/Protocol/intro_phrase": {
+      "total_correct": 12760
+   },
+   "Some#option(Grammar_effigy/Type/t)#Grammar_effigy/Type/t": {
+      "total_correct": 9084,
+      "None#option(Grammar_effigy/Type/t)": 8,
+      "Grammar_effigy/Expression/Gen#Grammar_effigy/Expression/t#Grammar_effigy/Expression/gen": 1,
+      "None#option(entity(Grammar_effigy/hashT))": 1
+   },
+   "Some#option(Grammar_effigy/random_qualif(Grammar_effigy/Actor/t))#Grammar_effigy/random_qualif(Grammar_effigy/Actor/t)": {
+      "total_correct": 16558,
+      "None#option(Grammar_effigy/Data/datamessage_qualif)": 1
+   },
+   "Some#option(Grammar_effigy/random_qualif(Grammar_effigy/Message/t))#Grammar_effigy/random_qualif(Grammar_effigy/Message/t)": {
+      "total_correct": 24985,
+      "None#option(Grammar_effigy/random_qualif(Grammar_effigy/Message/t))": 1
+   },
+   "Some#option(entity(Grammar_base/integerT))#entity(Grammar_base/integerT)": {
+      "total_correct": 7675
+   },
+   "Some#option(entity(Grammar_effigy/hashT))#entity(Grammar_effigy/hashT)": {
+      "total_correct": 8176,
+      "None#option(entity(Grammar_effigy/hashT))": 3,
+      "Grammar_effigy/Expression/Var#Grammar_effigy/Expression/gen#entity(Grammar_effigy/varT)#option(entity(Grammar_effigy/locT))": 1,
+      "Grammar_effigy/Expression/Epsilon#Grammar_effigy/Expression/gen#Grammar_base/qualif(Grammar_effigy/Type/t)#option(Grammar_effigy/Expression/boolExP)": 1,
+      "Grammar_effigy/Expression/Gen#Grammar_effigy/Expression/t#Grammar_effigy/Expression/gen": 1,
+      "[SEP]": 1
+   },
+   "Some#option(entity(Grammar_effigy/locT))#entity(Grammar_effigy/locT)": {
+      "total_correct": 109131,
+      "None#option(entity(Grammar_effigy/locT))": 2
+   },
+   "Some#option(entity(Grammar_effigy/varT))#entity(Grammar_effigy/varT)": {
+      "total_correct": 69927,
+      "None#option(entity(Grammar_effigy/varT))": 1
+   },
+   "Some#option(list(Grammar_effigy/Expression/t))#list(Grammar_effigy/Expression/t)": {
+      "total_correct": 11898
+   },
+   "false#bool": {
+      "total_correct": 185136
+   },
+   "true#bool": {
+      "total_correct": 38437,
+      "false#bool": 1
+   }
+}
