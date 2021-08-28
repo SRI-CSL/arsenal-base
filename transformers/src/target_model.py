@@ -89,14 +89,7 @@ def train_targetmodel(args):
 
 if __name__ == "__main__":
     args = parse_arguments(sys.argv[1:])
-
     print(tabulate(vars(args).items(), headers={"parameter", "value"}))
-
-    with open(os.path.join(Path(args.output_dir).parent, "target-args.txt"), "w") as f:
-        print(tabulate(vars(args).items(), headers={"parameter", "value"}), file=f)
-
-    # we pass the output dir as a separate argument b/c in the main script we create different
-    # output subdirs based on the provided root output dir
-    train_targetmodel(args, args.output_dir)
+    train_targetmodel(args)
 
 

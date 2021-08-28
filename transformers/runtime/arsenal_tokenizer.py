@@ -100,12 +100,25 @@ class PreTrainedArsenalTokenizer(PreTrainedTokenizerFast):
     def save_pretrained(self, output_dir):
         pass
 
+    # decodes tokens into a string of words, ignoring padding
     def decode(self, tokens):
         decoded = []
         for token in tokens:
-            if token != 0 and token != -100:
-                decoded.append(self.id2vocab[token])
-
+            if token != -100: # dummy token to ignore padding, cf. build_dataset.py
+                word = self.id2vocab[token]
+                if word != "[PAD]":
+                    decoded.append(self.id2vocab[token])
         return " ".join(decoded)
 
+    # at runtime, slightly different decoding is expected:
+    # - special tokens to mark begin and end of the sequence are filtered out
+    # - the decoded words are returned as a list instead of a string
+    def runtime_decode(self, tokens):
+        decoded = []
+        for token in tokens:
+            if token != -100:  # dummy token to ignore padding, cf. build_dataset.py
+                word = self.id2vocab[token]
+                if word != "[PAD]" and word != "[CLS]" and word != "[SEP]":
+                    decoded.append(self.id2vocab[token])
+        return decoded
 

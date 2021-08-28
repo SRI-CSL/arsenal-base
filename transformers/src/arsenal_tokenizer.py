@@ -72,14 +72,19 @@ class FastArsenalTokenizer(BaseTokenizer):
 
         super().__init__(tokenizer, parameters)
 
-        # need to save the tokenizer s.t.
         tokenizer.save(PRETRAINED_TOKENIZER_FILE)
 
 # wrapper class to make tokenizer available for huggingface transformers
 class PreTrainedArsenalTokenizer(PreTrainedTokenizerFast):
     def __init__(self, target_vocab):
-        FastArsenalTokenizer(target_vocab) # this doesn't need to be done everytime, but it is so fast that it doesn't matter
+        FastArsenalTokenizer(target_vocab)
+
+        # todo: FastArsenalTokenizer is saved to a file just to be able to use the tokenizer_file argument below
+        #  afterwards the file is deleted again. There's probably a better way to it then taking the detour of
+        #  writing/loading/deleting the tokenizer file
         super().__init__(tokenizer_file=PRETRAINED_TOKENIZER_FILE)
+        os.remove(PRETRAINED_TOKENIZER_FILE)
+
         self.add_special_tokens({"pad_token": "[PAD]"})
         self.add_special_tokens({"mask_token": "[MASK]"})
         self.add_special_tokens({"sep_token": "[SEP]"})
@@ -95,12 +100,25 @@ class PreTrainedArsenalTokenizer(PreTrainedTokenizerFast):
     def save_pretrained(self, output_dir):
         pass
 
+    # decodes tokens into a string of words, ignoring padding
     def decode(self, tokens):
         decoded = []
         for token in tokens:
-            if token != 0 and token != -100:
-                decoded.append(self.id2vocab[token])
-
+            if token != -100: # dummy token to ignore padding, cf. build_dataset.py
+                word = self.id2vocab[token]
+                if word != "[PAD]":
+                    decoded.append(self.id2vocab[token])
         return " ".join(decoded)
 
+    # at runtime, slightly different decoding is expected:
+    # - special tokens to mark begin and end of the sequence are filtered out
+    # - the decoded words are returned as a list instead of a string
+    def runtime_decode(self, tokens):
+        decoded = []
+        for token in tokens:
+            if token != -100:  # dummy token to ignore padding, cf. build_dataset.py
+                word = self.id2vocab[token]
+                if word != "[PAD]" and word != "[CLS]" and word != "[SEP]":
+                    decoded.append(self.id2vocab[token])
+        return decoded
 

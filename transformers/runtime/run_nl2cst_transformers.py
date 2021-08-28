@@ -95,7 +95,7 @@ def process():
                 # outputs of different sentences, so we'll need to iterate over the output tensor in intervals of NUM_OUTPUTS
                 csts = []
                 for k in range(j-batch_start, j-batch_start+NUM_OUTPUTS):
-                    csts.append(target_tokenizer.decode(output_tokens[k].tolist()))
+                    csts.append(target_tokenizer.runtime_decode(output_tokens[k].tolist()))
                 results.append({"id": id, "nl": nl, "cst": csts})
             except Exception as e:
                 print(f"Exception processing sentence: {repr(e)}")
