@@ -22,18 +22,18 @@ import tensorboard
 logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description="Building the translation model form NL to AST")
-parser.add_argument("-data_dir",       type=str,       default="../arsenal/large_files/datasets/2021-07-30T0004", help="location of the data directory ")
-parser.add_argument("-test_file",      type=str,       default="../source-documents/sentence_corpus/spec_sentences_clean.txt", help="location of the test file (real sentences from the specs)")
-parser.add_argument("-example_dir",    type=str,       default="../source-documents/entities", help="location of the (entity-processed) example snippets directory")
+parser.add_argument("-data_dir",       type=str,       default="../../../large_files/datasets/2021-07-30T0004", help="location of the data directory ")
+parser.add_argument("-test_file",      type=str,       default="../../../../source-documents/sentence_corpus/spec_sentences_clean.txt", help="location of the test file (real sentences from the specs)")
+parser.add_argument("-example_dir",    type=str,       default="../../../../source-documents/entities", help="location of the (entity-processed) example snippets directory")
 parser.add_argument("-val_size",       type=int,       default=10000,          help="number of instances to use from the validation set (if none is provided, the entire val set is scored - this might take days!)")
 parser.add_argument("-model_dir",      type=str,                               help="model location; if none is provided, ../arsenal/large_files/models/lm/[data_dir]_[model_type] is used for training")
-parser.add_argument("-out_dir",        type=str,       default="./eval",       help="output location")
+parser.add_argument("-out_dir",        type=str,       default="../../../eval",help="output location")
 parser.add_argument("-epochs",         type=int,       default=1,              help="number of training epochs")
 parser.add_argument("-resume",                         action='store_true',    help="tries to resume training from latest model/checkpoint")
 parser.add_argument("-skiptrain",                      action='store_true',    help="skip model training")
 parser.add_argument("-skipeval",                       action='store_true',    help="skip evaluation")
 parser.add_argument("-model_type",     type=str,       default="gpt2",         help="the type of model to use, gpt2 or bert")
-
+parser.add_argument("-cuda_devices",   type=str,       default="6,7",          help="GPUs to use (as a list of comma-separated numbers)")
 
 args = parser.parse_args()
 
@@ -44,6 +44,9 @@ if args.val_size is None:
     args.val_size = -1
 
 print(tabulate(vars(args).items(), headers={"parameter", "value"}))
+
+os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda_devices
+
 data_dir = args.data_dir
 test_file = args.test_file
 val_size = args.val_size
@@ -234,8 +237,14 @@ if eval:
         instances = results[r]
         instances.sort(key= lambda x: x["score"])
 
-        scores = [i["score"] for i in instances]
+        scores = []
+        for i in instances:
+            if math.isnan(i["score"]):
+                print(f"no score for sentence '{i['sentence']}'")
+            else:
+                scores.append(i["score"])
 
+        stats['dataset'] = r
         stats['mean'] = np.mean(scores)
         stats["median"] = np.median(scores)
         stats['std'] = np.std(scores)
