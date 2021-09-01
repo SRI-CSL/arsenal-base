@@ -38,7 +38,7 @@ parser.add_argument("-batch_size",     type=int,       default=1,              h
 args = parser.parse_args()
 
 if args.model_dir is None:
-    args.model_dir = os.path.join("../arsenal/large_files/models/lm-scoring/", os.path.basename(args.data_dir) + "_" + args.model_type)
+    args.model_dir = os.path.join("../../../large_files/models/lm-scoring/", os.path.basename(args.data_dir) + "_" + args.model_type)
 
 if args.val_size is None:
     args.val_size = -1
@@ -62,8 +62,9 @@ if not os.path.exists(model_dir):
     os.makedirs(model_dir)
 logging_dir=os.path.join(model_dir, "logs")
 
-with open(os.path.join(model_dir, "args.txt"), "w") as f:
-    print(tabulate(vars(args).items(), headers={"parameter", "value"}), file=f)
+if train:
+    with open(os.path.join(model_dir, "args.txt"), "w") as f:
+        print(tabulate(vars(args).items(), headers={"parameter", "value"}), file=f)
 
 # Setup logging
 logging.basicConfig(
