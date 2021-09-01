@@ -26,7 +26,6 @@ def get_env(argname, default=None):
 MODEL_ROOT = get_env('MODEL_ROOT') # the root of the training output
 NL2CST_HOST = get_env('NL2CST_HOST', '127.0.0.1')
 NL2CST_PORT = get_env('NL2CST_PORT', 8080)
-MAX_SEQ_LEN = int(get_env("MAX_SEQ_LEN"))
 NUM_BEAMS = int(get_env("NUM_BEAMS"))
 NUM_OUTPUTS = int(get_env("NUM_OUTPUTS"))
 TYPE_FORCING = int(get_env("TYPE_FORCING"))
@@ -37,6 +36,7 @@ app = Flask(__name__)
 dataset_properties = json.load(open(os.path.join(MODEL_ROOT, "dataset_properties.json")))
 target_vocab = dataset_properties["target_vocab"]
 special_tokens = dataset_properties["special_tokens"]
+max_input_length = dataset_properties["encoder_max_len"]
 
 bert2arsenal = EncoderDecoderModel.from_pretrained(get_last_checkpoint(MODEL_ROOT))
 source_tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
@@ -74,7 +74,7 @@ def process():
         batch = nl_inputs[batch_start:batch_end]
 
         input_tokens = source_tokenizer(batch, padding="max_length", truncation=True, return_tensors="pt",
-                              max_length=MAX_SEQ_LEN)
+                              max_length=max_input_length)
         output_tokens = bert2arsenal.generate(
             input_ids=input_tokens.input_ids,
             attention_mask=input_tokens.attention_mask,

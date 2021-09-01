@@ -62,7 +62,9 @@ def train_translationmodel(args):
     bert2arsenal.config.vocab_size = bert2arsenal.encoder.vocab_size
     bert2arsenal.config.encoder.vocab_size = bert2arsenal.encoder.vocab_size
 
-    # todo: verify that these parameters actually refer to target/decoder sequences
+    # the model has min/max length settings in three places: for the main moder (EncoderDecoder) and both encoder
+    # and decoder as submodels. Settings in the latter two parts seem to be completely irrelevant (unless one would
+    # try to use the trained encoder or decoder parts from the translation model in isolation).
     bert2arsenal.config.max_length = dataset_properties["decoder_max_len"]
     bert2arsenal.config.min_length = dataset_properties["decoder_min_len"]
 
