@@ -36,7 +36,7 @@ def parse_arguments(input_args):
     parser.add_argument("-num_attention_heads",     type=int,   default=12,                 help="number of LM attention heads in target LM model")
 
     # training process configuration
-    parser.add_argument("-batch_size",              type=int,   default=4,                  help="batch size for tokenizing")
+    parser.add_argument("-batch_size",              type=int,   default=4,                  help="batch size for training")
     parser.add_argument("-warmup_steps",            type=int,   default=500,                help="number of warmup steps for learning rate scheduler")
     parser.add_argument("-weight_decay",            type=float, default=0.01,               help="strength of weight decay")
     parser.add_argument("-logging_steps",           type=int,   default=100,                help="step interval to log progress")

@@ -34,7 +34,7 @@ parser.add_argument("-skiptrain",                      action='store_true',    h
 parser.add_argument("-skipeval",                       action='store_true',    help="skip evaluation")
 parser.add_argument("-model_type",     type=str,       default="gpt2",         help="the type of model to use, gpt2 or bert")
 parser.add_argument("-cuda_devices",   type=str,       default="6,7",          help="GPUs to use (as a list of comma-separated numbers)")
-
+parser.add_argument("-batch_size",     type=int,       default=1,              help="batch size (should be 1 b/c scoring doesn't seem to work in batches)")
 args = parser.parse_args()
 
 if args.model_dir is None:
@@ -244,6 +244,8 @@ if eval:
             else:
                 scores.append(i["score"])
 
+        model_id = os.path.basename(os.path.normpath(args.model_dir))
+        stats["model"] = model_id
         stats['dataset'] = r
         stats['mean'] = np.mean(scores)
         stats["median"] = np.median(scores)
@@ -255,7 +257,7 @@ if eval:
         print(tabulate(stats.items()))
         print("\n")
 
-        file_prefix = os.path.join(out_dir, f"lm_scores_{os.path.basename(data_dir)}_{model_type}_{r}")
+        file_prefix = os.path.join(out_dir, f"lm_scores_{model_id}_{r}")
 
         # with open(f"{file_prefix}_scores.json", "w") as f:
         #     json.dump(instances, f, indent=3)
