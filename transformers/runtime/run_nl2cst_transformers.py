@@ -39,8 +39,18 @@ special_tokens = dataset_properties["special_tokens"]
 max_input_length = dataset_properties["encoder_max_len"]
 
 bert2arsenal = EncoderDecoderModel.from_pretrained(get_last_checkpoint(MODEL_ROOT))
-source_tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
-source_tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
+
+tokenizer_path = os.path.join(MODEL_ROOT, "source_tokenizer")
+
+# Try to use saved source tokenizer from file to prevent any downloads.
+# Our older trained models didn't save the source tokenizer to disk, so use
+# the download method as a fallback to remain compatible with older models.
+if os.path.exists(tokenizer_path):
+    source_tokenizer = BertTokenizerFast.from_pretrained(tokenizer_path)
+else:
+    print(f"no existing source tokenizer found, downloading...")
+    source_tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
+    source_tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
 target_tokenizer = PreTrainedArsenalTokenizer(target_vocab=target_vocab)
 type_forcing_vocab =  target_tokenizer.id2vocab if TYPE_FORCING else None
 

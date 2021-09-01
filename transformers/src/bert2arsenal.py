@@ -45,6 +45,9 @@ def train_translationmodel(args):
     source_tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
     source_tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
 
+    # save it for later use s.t. we don't have to download anything for the runtime
+    source_tokenizer.save_pretrained(os.path.join(output_dir, "source_tokenizer"))
+
     # only needed to get the id of the EOS token in the target language
     target_tokenizer = PreTrainedArsenalTokenizer(target_vocab=target_vocab)
 
