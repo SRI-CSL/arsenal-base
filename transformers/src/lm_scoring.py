@@ -4,9 +4,12 @@ import argparse
 import json
 import logging
 import math
+import re
 import sys
 from datetime import datetime
 import os
+from pathlib import Path
+
 import numpy as np
 
 import datasets
@@ -21,13 +24,39 @@ import tensorboard
 
 logger = logging.getLogger(__name__)
 
+
+def clean_set(instances, min_len=3):
+    '''
+    transform all sentences to lowercase, remove duplicates, and discard sentences shorter than min_len
+    '''
+
+    # lowercase everything (our bert model is uncased, and lowercasing everything will help to remove more duplicates)
+    instances = [i.strip().lower() for i in instances]
+    # remove duplicates
+    instances = list(set(instances))
+
+    cleaned = []
+    discarded = []
+
+    for i in instances:
+        # strip away all html tags
+        i = re.sub("<.*?>", " ", i)
+
+        # discard all instances with less than 5 words
+        if len(i.split()) < min_len:
+            discarded.append(i)
+        else:
+            cleaned.append(i)
+
+    return cleaned, discarded
+
 parser = argparse.ArgumentParser(description="Building the translation model form NL to AST")
 parser.add_argument("-data_dir",       type=str,       default="../../../large_files/datasets/2021-07-30T0004", help="location of the data directory ")
-parser.add_argument("-test_file",      type=str,       default="../../../../source-documents/sentence_corpus/spec_sentences_clean.txt", help="location of the test file (real sentences from the specs)")
+parser.add_argument("-test_file",      type=str,       default="../../../../source-documents/sentence_corpus/spec_sentences.txt", help="location of the test file (real sentences from the specs)")
 parser.add_argument("-example_dir",    type=str,       default="../../../../source-documents/entities", help="location of the (entity-processed) example snippets directory")
 parser.add_argument("-val_size",       type=int,       default=10000,          help="number of instances to use from the validation set (if none is provided, the entire val set is scored - this might take days!)")
 parser.add_argument("-model_dir",      type=str,                               help="model location; if none is provided, ../arsenal/large_files/models/lm/[data_dir]_[model_type] is used for training")
-parser.add_argument("-out_dir",        type=str,       default="../../../eval",help="output location")
+parser.add_argument("-out_dir",        type=str,       default="../../../eval/try2",help="output location")
 parser.add_argument("-epochs",         type=int,       default=1,              help="number of training epochs")
 parser.add_argument("-resume",                         action='store_true',    help="tries to resume training from latest model/checkpoint")
 parser.add_argument("-skiptrain",                      action='store_true',    help="skip model training")
@@ -35,6 +64,7 @@ parser.add_argument("-skipeval",                       action='store_true',    h
 parser.add_argument("-model_type",     type=str,       default="gpt2",         help="the type of model to use, gpt2 or bert")
 parser.add_argument("-cuda_devices",   type=str,       default="6,7",          help="GPUs to use (as a list of comma-separated numbers)")
 parser.add_argument("-batch_size",     type=int,       default=1,              help="batch size (should be 1 b/c scoring doesn't seem to work in batches)")
+parser.add_argument("-min_length",     type=int,       default=5,              help="minimum sentence length in words (shorter sentences will be discarded)")
 args = parser.parse_args()
 
 if args.model_dir is None:
@@ -43,7 +73,6 @@ if args.model_dir is None:
 if args.val_size is None:
     args.val_size = -1
 
-print(tabulate(vars(args).items(), headers={"parameter", "value"}))
 
 os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda_devices
 
@@ -57,14 +86,18 @@ example_dir = args.example_dir
 val_size = args.val_size
 train = not args.skiptrain
 eval = not args.skipeval
+min_len = args.min_length
+
+if not os.path.exists(out_dir):
+    os.makedirs(out_dir)
+
+print(tabulate(vars(args).items(), headers={"parameter", "value"}))
+with open(os.path.join(Path(out_dir), "args.txt"), "w") as f:
+    print(tabulate(vars(args).items(), headers={"parameter", "value"}), file=f)
 
 if not os.path.exists(model_dir):
     os.makedirs(model_dir)
 logging_dir=os.path.join(model_dir, "logs")
-
-if train:
-    with open(os.path.join(model_dir, "args.txt"), "w") as f:
-        print(tabulate(vars(args).items(), headers={"parameter", "value"}), file=f)
 
 # Setup logging
 logging.basicConfig(
@@ -75,9 +108,11 @@ logging.basicConfig(
 logger.setLevel(logging.INFO)
 
 if model_type == "gpt2":
-    tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+    # the huggingface servers had temporary problems to serve the tokenizer, so we saved it for
+    # offline use - replacing "gpt2_offline" with "gpt2" will download the latest again. The one
+    # saved for offline use should be identical to the regular one.
+    tokenizer = GPT2TokenizerFast.from_pretrained("gpt2_offline")
     tokenizer.add_special_tokens({"pad_token": "[PAD]"})
-
     config = GPT2Config()
     model = GPT2LMHeadModel(config)
     model.resize_token_embeddings(len(tokenizer))
@@ -123,8 +158,6 @@ if train:
         per_device_eval_batch_size=args.batch_size,   # batch size for evaluation
         warmup_steps=500,                # number of warmup steps for learning rate scheduler
         weight_decay=0.01,               # strength of weight decay
-        do_train=args.train,
-        do_eval=args.eval,
         save_steps=200,
         save_total_limit=1,
     )
@@ -133,7 +166,7 @@ if train:
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=train_dataset if training_args.do_train else None,
+        train_dataset=train_dataset,
         tokenizer=tokenizer,
         data_collator=data_collator,
     )
@@ -204,7 +237,7 @@ if eval:
     val_set = []
     with open(val_file, "r") as f:
         for l in f.read().splitlines()[:val_size]:
-            val_set.append(l.split("\t")[1])
+            val_set.append(l.split("\t")[0])
 
     # the set of all collected (and entity-processed) sentences from the standards docs
     with open(test_file, "r") as f:
@@ -222,8 +255,13 @@ if eval:
             instances = json.load(f)
             example_set.extend([i["new-text"] for i in instances])
 
+    val_set, _ = clean_set(val_set, min_len)
+    test_set, _ = clean_set(test_set, min_len)
+    example_set, _ = clean_set(example_set, min_len)
+
     results = {}
     print(f"evaluating {val_file}")
+
     results["val"] = eval_scores(val_set)
 
     print(f"evaluating {test_file}")
