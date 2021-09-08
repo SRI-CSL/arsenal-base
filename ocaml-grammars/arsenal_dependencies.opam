@@ -13,7 +13,7 @@ depends: [
   "dune" {build}
   "sexplib"
   "ppx_deriving"
-  "ppxlib"
+  "ppxlib" {< "0.23"}
   "yojson"
   "ppx_deriving_random"
   "containers"
