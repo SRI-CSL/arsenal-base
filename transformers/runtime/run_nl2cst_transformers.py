@@ -10,6 +10,8 @@ from transformers.trainer_utils import get_last_checkpoint
 
 from arsenal_tokenizer import PreTrainedArsenalTokenizer
 
+from clean_input import clean_input
+
 
 def get_env(argname, default=None):
     is_bool = type(default) == bool
@@ -30,6 +32,7 @@ NUM_BEAMS = int(get_env("NUM_BEAMS"))
 NUM_OUTPUTS = int(get_env("NUM_OUTPUTS"))
 TYPE_FORCING = int(get_env("TYPE_FORCING"))
 BATCH_SIZE = int(get_env("BATCH_SIZE"))
+CLEAN_INPUT = int(get_env("CLEAN_INPUT"))
 
 app = Flask(__name__)
 
@@ -74,6 +77,9 @@ def process():
         # New format
         sentence_dicts = as_dict['sentences']
         nl_inputs = [x["new-text"] for x in sentence_dicts]
+
+    if CLEAN_INPUT:
+        nl_inputs = [clean_input(line) for line in nl_inputs]
 
     num_batches = math.ceil(len(nl_inputs) / BATCH_SIZE)
     results = []
