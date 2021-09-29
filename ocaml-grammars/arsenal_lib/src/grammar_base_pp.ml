@@ -42,9 +42,14 @@ let rec conjugate state stem =
 
     | Some `PresentPart ->
        let steming =
-         match String.sub stem (l - 1) 1 with
-         | "e" -> String.sub stem 0 (l - 1)^"ing"
-         | _ -> stem^"ing"
+        match stem with (* capture irregular forms here*)
+        | "set" -> "setting"
+        | "get" -> "getting"
+        | "run" -> "running"
+        | _ ->
+          match String.sub stem (l - 1) 1 with
+          | "e" -> String.sub stem 0 (l - 1)^"ing"
+          | _ -> stem^"ing"
        in
        !![
            if neg then "not "^steming
@@ -53,9 +58,14 @@ let rec conjugate state stem =
 
     | Some `PastPart ->
        let stemed =
-         match String.sub stem (l - 1) 1 with
-         | "y" -> String.sub stem 0 (l - 1)^"ied"
-         | _ -> stem^"ed"
+        match stem with (* capture irregular forms here*)
+        | "set" -> "set"
+        | "get" -> "got"
+        | "run" -> "ran"
+        | _ ->
+          match String.sub stem (l - 1) 1 with
+          | "y" -> String.sub stem 0 (l - 1)^"ied"
+          | _ -> stem^"ed"
        in
        !![
            if neg then "not "^stemed
