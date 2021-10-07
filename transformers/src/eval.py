@@ -14,8 +14,8 @@ np.set_printoptions(threshold=sys.maxsize, suppress=True)
 from arsenal_tokenizer import PreTrainedArsenalTokenizer
 
 parser = argparse.ArgumentParser(description="Evaluate generated predictions")
-parser.add_argument("-model_dir",       type=str,       default="../arsenal/large_files/models/transformers/07-30-2021/translation_model",  help="location of the trained translation model")
-parser.add_argument("-out_dir",         type=str,       default="./eval",  help="location of the trained translation model")
+parser.add_argument("-model_dir",       type=str,       default="../../../large_files/models/transformers/09-30-2021/translation_model",  help="location of the trained translation model")
+parser.add_argument("-out_dir",         type=str,       default="../../../eval",  help="location of the trained translation model")
 parser.add_argument("-prediction_file", type=str,       help="file with generated predictions (if none provided, the model dir is searched for a suitable file")
 
 args = parser.parse_args()
@@ -75,7 +75,6 @@ unk_cnt = 0
 for i, instance in enumerate(instances):
     [source, truth, preds] = instance.split("\t", 2)
     preds = preds.split("\t")
-    l = len(source.split())
 
     # The generation script was changed at some time to record lists of token ids instead of the actual NL sentence.
     # We make up for this by decoding the source sequences. This is in particular relevant because we are looking at
@@ -206,7 +205,7 @@ fig, axs = plt.subplots(2)
 axs[0].bar(lengths, avg_sim, align="center")
 axs[0].bar(lengths, avg_acc, align="center")
 axs[0].bar(lengths, avg_bin_acc, align="center")
-axs[0].set_xlabel("length (#tokens)")
+axs[0].set_xlabel("length (#words)")
 axs[0].set_ylabel("average per sentence length")
 axs[0].set_title("comparison between true and predicted 'sentences' (CSTs in polish notation)")
 axs[0].set_xlim(0,80)
@@ -214,7 +213,7 @@ axs[0].set_ylim(0,1)
 axs[0].legend(["similarity", "accuracy", "exact matches"], loc="lower left")
 
 axs[1].bar(lengths, counts, align="center")
-axs[1].set_xlabel("length (#tokens)")
+axs[1].set_xlabel("length (#words)")
 axs[1].set_ylabel("# instances")
 axs[1].set_title("instance counts")
 axs[1].set_xlim(0,80)
