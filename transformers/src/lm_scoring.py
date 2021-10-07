@@ -51,12 +51,12 @@ def clean_set(instances, min_len=3):
     return cleaned, discarded
 
 parser = argparse.ArgumentParser(description="Building the translation model form NL to AST")
-parser.add_argument("-data_dir",       type=str,       default="../../../large_files/datasets/2021-07-30T0004", help="location of the data directory ")
+parser.add_argument("-data_dir",       type=str,       default="../../../large_files/datasets/2021-10-06T1610", help="location of the data directory ")
 parser.add_argument("-test_file",      type=str,       default="../../../../source-documents/sentence_corpus/spec_sentences.txt", help="location of the test file (real sentences from the specs)")
 parser.add_argument("-example_dir",    type=str,       default="../../../../source-documents/entities", help="location of the (entity-processed) example snippets directory")
 parser.add_argument("-val_size",       type=int,       default=10000,          help="number of instances to use from the validation set (if none is provided, the entire val set is scored - this might take days!)")
 parser.add_argument("-model_dir",      type=str,                               help="model location; if none is provided, ../arsenal/large_files/models/lm/[data_dir]_[model_type] is used for training")
-parser.add_argument("-out_dir",        type=str,       default="../../../eval/try2",help="output location")
+parser.add_argument("-out_dir",        type=str,       default="../../../eval/",help="output location")
 parser.add_argument("-epochs",         type=int,       default=1,              help="number of training epochs")
 parser.add_argument("-resume",                         action='store_true',    help="tries to resume training from latest model/checkpoint")
 parser.add_argument("-skiptrain",                      action='store_true',    help="skip model training")
@@ -111,7 +111,7 @@ if model_type == "gpt2":
     # the huggingface servers had temporary problems to serve the tokenizer, so we saved it for
     # offline use - replacing "gpt2_offline" with "gpt2" will download the latest again. The one
     # saved for offline use should be identical to the regular one.
-    tokenizer = GPT2TokenizerFast.from_pretrained("gpt2_offline")
+    tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
     tokenizer.add_special_tokens({"pad_token": "[PAD]"})
     config = GPT2Config()
     model = GPT2LMHeadModel(config)

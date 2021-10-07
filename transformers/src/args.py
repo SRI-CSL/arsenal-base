@@ -9,7 +9,7 @@ def parse_arguments(input_args):
     parser = argparse.ArgumentParser(description="Arsenal transformer pipeline")
 
     # environment settings (paths, file/folder names, CUDA devices, etc.)
-    parser.add_argument("-data_dir",                type=str,   default="../../../large_files/datasets/2021-07-30T0004",
+    parser.add_argument("-data_dir",                type=str,   default="../../../large_files/datasets/2021-10-06T1610",
                                                                                             help="location of the input data")
     parser.add_argument("-data_out_dir",            type=str,                               help="location for the generated datasets (if none is provided, data_dir is used")
     parser.add_argument("-train_file",              type=str,   default="eng-pn.train.txt", help="name of iput training data file")
@@ -31,9 +31,9 @@ def parse_arguments(input_args):
     # model configuration for target LM model
     # note: the source LM model uses a pretrained BERT model and thus can't be configured separately
     parser.add_argument("-hidden_size",             type=int,   default=768,                help="size of single token embedding in target LM model")
-    parser.add_argument("-intermediate_size",       type=int,   default=3072,               help="size of feed-forward layer in target LM model")
-    parser.add_argument("-num_hidden_layers",       type=int,   default=12,                 help="number of hidden layers in target LM model")
-    parser.add_argument("-num_attention_heads",     type=int,   default=12,                 help="number of LM attention heads in target LM model")
+    parser.add_argument("-intermediate_size",       type=int,   default=256,               help="size of feed-forward layer in target LM model")
+    parser.add_argument("-num_hidden_layers",       type=int,   default=4,                 help="number of hidden layers in target LM model")
+    parser.add_argument("-num_attention_heads",     type=int,   default=4,                 help="number of LM attention heads in target LM model")
 
     # training process configuration
     parser.add_argument("-batch_size",              type=int,   default=4,                  help="batch size for training")
@@ -43,7 +43,7 @@ def parse_arguments(input_args):
     parser.add_argument("-save_steps",              type=int,   default=10000,              help="step interval to save checkpoint")
     parser.add_argument("-save_total_limit",        type=int,   default=1,                  help="number of checkpoints to keep")
     parser.add_argument("-target_epochs",           type=int,   default=1,                  help="number of training epochs for target LM")
-    parser.add_argument("-translation_epochs",      type=int,   default=1,                  help="number of training epochs for translation model")
+    parser.add_argument("-translation_epochs",      type=int,   default=2,                  help="number of training epochs for translation model")
     parser.add_argument("-skip_databuild",                      action='store_true',        help="skip the dataset building step")
     parser.add_argument("-resume",                              action='store_true',        help="resume training of the translation model  from last checkpoint (automatically skips data build and target LM training)")
 
