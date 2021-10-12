@@ -902,6 +902,8 @@ type cst_process =
   ?global_options:(string * JSON.t) list ->
   ?options:(string * JSON.t) list ->
   ?original:string ->
+  ?ep:string ->
+  ?cleaned:string ->
   id:JSON.t ->
   to_sexp:(JSON.t -> Sexp.t) -> (* Turns 1 polish notation into a Sexp with substituted placeholders *)
   JSON.t -> (* Contents of ths "cst" field sent to the reformulator *)
@@ -962,8 +964,17 @@ let postprocess (cst_process:cst_process) json : JSON.t =
         match JSON.Util.member "orig-text" json with
         | `Null -> None
         | `String s -> Some s
-        | json -> excj "The orig-text should be a string, not:" json
-      in
+        | json -> excj "The orig-text should be a string, not:" json in
+      let ep =
+        match JSON.Util.member "ep-text" json with
+        | `Null -> None
+        | `String s -> Some s
+        | json -> excj "The ep-text should be a string, not:" json in
+      let cleaned =
+        match JSON.Util.member "cleaned-text" json with
+        | `Null -> None
+        | `String s -> Some s
+        | json -> excj "The cleaned-text should be a string, not:" json in
       try
         let options = match JSON.Util.member "options" json with
           | `Null    -> None
@@ -982,7 +993,7 @@ let postprocess (cst_process:cst_process) json : JSON.t =
           | json -> excj "The substitution should be a JSON dictionary, not:" json
         in
         JSON.Util.member "cst" json
-        |> cst_process ?global_options ?options ?original ~id ~to_sexp:(treat_one_cst dictionary)
+        |> cst_process ?global_options ?options ?original ?ep ?cleaned ~id ~to_sexp:(treat_one_cst dictionary)
       with
       | Conversion error ->
         error_object ~id ~json ("Problem with conversion while reading: "^error)

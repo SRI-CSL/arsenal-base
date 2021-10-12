@@ -299,6 +299,8 @@ type cst_process =
   ?global_options:(string * JSON.t) list ->
   ?options:(string * JSON.t) list ->
   ?original:string ->
+  ?ep:string ->
+  ?cleaned:string ->
   id:JSON.t ->
   to_sexp:(JSON.t -> Sexp.t) -> (* Turns 1 polish notation into a Sexp with substituted placeholders *)
   JSON.t -> (* Contents of ths "cst" field sent to the reformulator *)
