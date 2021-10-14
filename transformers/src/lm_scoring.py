@@ -51,7 +51,8 @@ def clean_set(instances, min_len=3):
     return cleaned, discarded
 
 parser = argparse.ArgumentParser(description="Building the translation model form NL to AST")
-parser.add_argument("-data_dir",       type=str,       default="../../../large_files/datasets/2021-10-06T1610", help="location of the data directory ")
+parser.add_argument("-data_basedir",   type=str,       default="../../../large_files/datasets/", help="base directory in which data sets are stored")
+parser.add_argument("-dataset",        type=str,                                help="name of the dataset to be used. If none is provided, the latest dataset is used")
 parser.add_argument("-test_file",      type=str,       default="../../../../source-documents/sentence_corpus/spec_sentences.txt", help="location of the test file (real sentences from the specs)")
 parser.add_argument("-example_dir",    type=str,       default="../../../../source-documents/entities", help="location of the (entity-processed) example snippets directory")
 parser.add_argument("-val_size",       type=int,       default=10000,          help="number of instances to use from the validation set (if none is provided, the entire val set is scored - this might take days!)")
@@ -67,16 +68,25 @@ parser.add_argument("-batch_size",     type=int,       default=1,              h
 parser.add_argument("-min_length",     type=int,       default=5,              help="minimum sentence length in words (shorter sentences will be discarded)")
 args = parser.parse_args()
 
-if args.model_dir is None:
-    args.model_dir = os.path.join("../../../large_files/models/lm-scoring/", os.path.basename(args.data_dir) + "_" + args.model_type)
-
-if args.val_size is None:
-    args.val_size = -1
-
-
 os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda_devices
 
-data_dir = args.data_dir
+if args.dataset is None:
+    for (_, data_sets, _) in os.walk(args.data_basedir):
+        break
+    data_sets = [d for d in data_sets if d.startswith("20")]
+    data_sets.sort()
+    args.dataset = data_sets[-1]
+
+
+if args.model_dir is None:
+    args.model_dir = os.path.join("../../../large_files/models/lm-scoring/", args.dataset + "_" + args.model_type)
+
+if args.val_size is None:
+    val_size = -1
+
+data_basedir = args.data_basedir
+dataset = args.dataset
+data_dir = os.path.join(data_basedir, dataset)
 test_file = args.test_file
 val_size = args.val_size
 model_dir = args.model_dir
@@ -88,12 +98,12 @@ train = not args.skiptrain
 eval = not args.skipeval
 min_len = args.min_length
 
-if not os.path.exists(out_dir):
-    os.makedirs(out_dir)
-
 print(tabulate(vars(args).items(), headers={"parameter", "value"}))
 with open(os.path.join(Path(out_dir), "args.txt"), "w") as f:
     print(tabulate(vars(args).items(), headers={"parameter", "value"}), file=f)
+
+if not os.path.exists(out_dir):
+    os.makedirs(out_dir)
 
 if not os.path.exists(model_dir):
     os.makedirs(model_dir)
