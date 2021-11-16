@@ -42,12 +42,21 @@ let rec conjugate state stem =
 
     | Some `PresentPart ->
        let steming =
-        match stem with (* capture irregular forms here*)
-        | "set" -> "setting"
-        | "get" -> "getting"
-        | "run" -> "running"
-        | "begin" -> "beginning"
-        | _ ->
+       
+       (* "...ie" -> "...ying" *)
+       if Str.(string_match (regexp "ie") stem (l-2)) 
+          then String.sub stem 0 (l-1)^"ying"
+       
+       (* 
+        todo: extend to general pattern: single vowel followed by single consonant
+        should double the last consonant
+       *)
+       (* "...et" -> "...etting" *)
+       else if Str.(string_match (regexp "et") stem (l-2)) 
+          then stem^"ting"
+       else if Str.(string_match (regexp "un") stem (l-2)) 
+          then stem^"ning"
+       else
           match String.sub stem (l - 1) 1 with
           | "e" -> String.sub stem 0 (l - 1)^"ing"
           | _ -> stem^"ing"
