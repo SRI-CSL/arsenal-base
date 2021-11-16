@@ -46,6 +46,7 @@ let rec conjugate state stem =
         | "set" -> "setting"
         | "get" -> "getting"
         | "run" -> "running"
+        | "begin" -> "beginning"
         | _ ->
           match String.sub stem (l - 1) 1 with
           | "e" -> String.sub stem 0 (l - 1)^"ing"
@@ -62,6 +63,7 @@ let rec conjugate state stem =
         | "set" -> "set"
         | "get" -> "got"
         | "run" -> "ran"
+        | "begin" -> "began"
         | _ ->
           match String.sub stem (l - 1) 1 with
           | "y" -> String.sub stem 0 (l - 1)^"ied"
