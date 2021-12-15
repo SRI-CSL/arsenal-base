@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 from datetime import datetime
 
@@ -9,8 +10,8 @@ def parse_arguments(input_args):
     parser = argparse.ArgumentParser(description="Arsenal transformer pipeline")
 
     # environment settings (paths, file/folder names, CUDA devices, etc.)
-    parser.add_argument("-data_dir",                type=str,   default="../../../large_files/datasets/2021-10-06T1610",
-                                                                                            help="location of the input data")
+    parser.add_argument("-data_root_dir", type=str, default="../../../large_files/datasets",help="root location of datasets")
+    parser.add_argument("-data_dir",                type=str,                               help="location of the input data. If none is provided, the latest set (based on dir name) in data_root_dir is used")
     parser.add_argument("-data_out_dir",            type=str,                               help="location for the generated datasets (if none is provided, data_dir is used")
     parser.add_argument("-train_file",              type=str,   default="eng-pn.train.txt", help="name of iput training data file")
     parser.add_argument("-val_file",                type=str,   default="eng-pn.val.txt",   help="name of input validation data file")
@@ -57,7 +58,27 @@ def parse_arguments(input_args):
     if args.run_id is None:
         args.run_id = datetime.now().strftime("%m-%d-%Y")
 
+    if args.data_dir is None:
+        latest = datetime.min
+
+        for (_, dirs, _) in os.walk(args.data_root_dir):
+            break
+
+        for dir in dirs:
+            try:
+                dt = datetime.strptime(dir, '%Y-%m-%dT%H%M')
+                if dt > latest:
+                    latest = dt
+            except:
+                continue
+
+        if latest > datetime.min:
+            args.data_dir = os.path.join(args.data_root_dir,latest.strftime('%Y-%m-%dT%H%M'))
+        else:
+            raise Exception(f"couldn't find a valid dataset dir in {args.data_root_dir}")
+
     if args.data_out_dir is None:
         args.data_out_dir = args.data_dir
+
 
     return args
