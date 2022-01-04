@@ -44,7 +44,7 @@ let hash_list loc ~init elts =
   let aux (f_sofar, e_sofar) (f,e) =
     [%expr CCHash.pair [%e f_sofar] [%e f]], [%expr [%e e_sofar], [%e e]]
   in
-  elts |> List.rev |> List.fold_left aux init
+  elts |> List.fold_left aux init
 
 let json_list loc ?(init=[%expr []]) elts =
   let aux sofar arg =  [%expr PPX_Serialise.json_cons [%e arg] [%e sofar]] in
@@ -60,3 +60,18 @@ let list_pat loc ?(init=[%pat? []]) elts =
 
 let default_case typestring_expr loc =
   Exp.case [%pat? sexp ] [%expr PPX_Serialise.sexp_throw ~who:([%e typestring_expr]^".of_sexp") sexp ]
+
+let get_param param =
+  "poly_"^param.txt
+  |> Lexing.from_string
+  |> Parse.longident
+  |> mknoloc
+  |> Exp.ident
+
+let get_params type_decl =
+  let aux param sofar = get_param param :: sofar in
+  Ppx_deriving.fold_right_type_decl aux type_decl [] |> List.rev
+
+let application_str loc args =
+  let aux param sofar = [%expr [%e sofar]^"("^[%e param]^")"] in
+  List.fold_right aux args

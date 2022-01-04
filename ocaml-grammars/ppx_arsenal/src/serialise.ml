@@ -163,23 +163,16 @@ let build_cases compare loc str build_case l =
   } ]
 
 let expr_of_type_decl ~path type_decl =
-  let loc = type_decl.ptype_loc in
+  let loc  = type_decl.ptype_loc in
+  let args = Utils.get_params type_decl in
   let typestring_expr, compare =
     let aux param (typestring_expr, compare) =
-      let param =
-        "poly_"^param.txt
-        |> Lexing.from_string
-        |> Parse.longident
-        |> mknoloc
-        |> Exp.ident
-      in
       [%expr [%e typestring_expr]^"("^([%e param].PPX_Serialise.typestring())^")"],
       [%expr [%e compare]             ([%e param].PPX_Serialise.compare)]
     in
-    Ppx_deriving.fold_right_type_decl aux type_decl
+    List.fold_right aux args
       (fully_qualified path type_decl.ptype_name.txt |> str2exp,
-       ident_decl "compare" type_decl
-      )
+       ident_decl "compare" type_decl)
   in
   let build_cases2 = build_cases compare in
   match type_decl.ptype_kind, type_decl.ptype_manifest with

@@ -81,7 +81,7 @@ and expr_of_typ typ : expression*bool*bool =
      then raise_errorf ~loc "Deriver %s does not accept option of option." deriver_name;
      args, true, list
 
-  (* Referencing an option type: typs are the types arguments *)
+  (* Referencing a list type: typs are the types arguments *)
   | {ptyp_desc = Ptyp_constr ({txt = Lident "list" ; loc }, [arg]) ; _} ->
      let args,optional,list = expr_of_typ arg in
      if optional || list
@@ -129,8 +129,7 @@ type argument = {
 
 let prefix loc s = [%expr `String ("#/definitions/"^[%e s ]) ]
 
-let build_alternative loc cons args : expression * expression =
-  let cons       = str2exp cons in
+let build_alternative loc qcons cons args : expression * expression =
   let req arg    = not arg.optional in
   let name arg   = str2exp arg.name in
   let nameString arg = [%expr `String [%e name arg]] in
@@ -144,9 +143,9 @@ let build_alternative loc cons args : expression * expression =
     else
       [%expr [%e name arg], [%e common] ]
   in
-  prefix loc cons,
+  prefix loc qcons,
   [%expr
-      [%e cons],
+      [%e qcons],
    `Assoc [
        "type", `String "object";
        "additionalProperties", `Bool false;
@@ -185,7 +184,7 @@ let build_abbrev loc typ body : expression =
      Producing an expression, of type string, describing the type declaration
  *)
   
-let expr_of_type_decl ~path typestring_expr type_decl =
+let expr_of_type_decl ~path poly_args typestring_expr type_decl =
   let loc = type_decl.ptype_loc in (* location of the type declaration *)
   match type_decl.ptype_kind, type_decl.ptype_manifest with
   | Ptype_abstract, Some {ptyp_desc = Ptyp_constr ({txt = lid ; _}, typs) ; _} ->
@@ -196,6 +195,8 @@ let expr_of_type_decl ~path typestring_expr type_decl =
      let treat_field { pcd_name = { txt = name' ; _ }; pcd_args ; _ } =
        (* This treats one particular construction C of t1 * ... * tp
             name' is C *)
+       (* First, we qualify the constructor's name with the type parameters *)
+       let qname = application_str loc poly_args (fully_qualified path name' |> str2exp) in
        match pcd_args with
 
        | Parsetree.Pcstr_tuple typs -> (* typs is the list t1 ... tp *)
@@ -205,7 +206,7 @@ let expr_of_type_decl ~path typestring_expr type_decl =
             { name = argn i; typ; optional; list }
           in
           let args = typs |> List.mapi aux in
-          build_alternative loc (fully_qualified path name') args
+          build_alternative loc qname (str2exp name') args
 
        | Parsetree.Pcstr_record args ->
           let aux (x : label_declaration) =
@@ -213,7 +214,7 @@ let expr_of_type_decl ~path typestring_expr type_decl =
             { name = x.pld_name.txt; typ; optional; list }
           in
           let args = args |> List.map aux in
-          build_alternative loc (fully_qualified path name') args
+          build_alternative loc qname (str2exp name') args
      in
      
      cs |> List.map treat_field |> build_type loc typestring_expr
@@ -230,23 +231,17 @@ let expr_of_type_decl ~path typestring_expr type_decl =
 let expr_of_type_decl in_grammar ~path ~about type_decl : expression * expression * expression=
   let loc = type_decl.ptype_loc in (* location of the type declaration *)
   (* We first build the string "foo(poly_a)...(poly_n)"*)
-  let aux param sofar =
-    ("poly_"^param.txt
-     |> Lexing.from_string
-     |> Parse.longident
-     |> mknoloc
-     |> Exp.ident)::sofar
-  in
-  let l = Ppx_deriving.fold_right_type_decl aux type_decl [] in
+  let args = Utils.get_params type_decl in
   let typestring_expr =
     let name = ident "typestring" (Lident type_decl.ptype_name.txt) in
-    app name l
+    app name args
   in
   let key =
-    match l with
+    match args with
     | [] ->
-       let random = ident "random" (Lident type_decl.ptype_name.txt) in
-       let name   = ident "serialise" (Lident type_decl.ptype_name.txt) in
+       let id      = Lident type_decl.ptype_name.txt in
+       let random  = ident "random"    id in
+       let name    = ident "serialise" id in
        let hash    = [%expr [%e name].PPX_Serialise.hash] in
        let compare = [%expr [%e name].PPX_Serialise.compare] in
        let name    = [%expr [%e name].PPX_Serialise.typestring()] in
@@ -264,13 +259,13 @@ let expr_of_type_decl in_grammar ~path ~about type_decl : expression * expressio
        then
          begin
            let mark = JSONindex.mark [%e typestring_expr] in
-           let json_list = [%e expr_of_type_decl ~path typestring_expr type_decl ] in
+           let json_list = [%e expr_of_type_decl ~path args typestring_expr type_decl ] in
            Format.(fprintf err_formatter) "Registering type %s\n" [%e typestring_expr];
            JSONindex.add mark json_list
          end
     ],
     begin
-      match l with
+      match args with
       | [] ->
          [%expr
              if not(Register.mem [%e typestring_expr])

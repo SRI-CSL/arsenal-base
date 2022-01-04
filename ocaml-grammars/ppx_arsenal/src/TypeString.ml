@@ -56,22 +56,13 @@ let str_of_type ~options ~path type_decl =
   parse_options options;
   let loc = type_decl.ptype_loc in
   (* let path = Ppx_deriving.path_of_type_decl ~path type_decl in *)
-  let type_string = Ppx_deriving.mangle_type_decl (`Prefix "typestring") type_decl in
+  let type_string     = Ppx_deriving.mangle_type_decl (`Prefix "typestring") type_decl in
+  let args            = Utils.get_params type_decl in
   let typestring_func =
-    let aux param sofar =
-      let param = "poly_"^param.txt
-                  |> Lexing.from_string
-                  |> Parse.longident
-                  |> mknoloc
-                  |> Exp.ident
-      in
-      [%expr [%e sofar]^"("^[%e param]^")"]
-    in
-    Ppx_deriving.fold_right_type_decl aux type_decl
-      (fully_qualified path type_decl.ptype_name.txt |> str2exp)
+    Utils.application_str loc args (fully_qualified path type_decl.ptype_name.txt |> str2exp)
   in
   let typestring_type = typestring_type_of_decl ~options ~path type_decl in
-  let typestring_var = pvar type_string in
+  let typestring_var  = pvar type_string in
   [Vb.mk (Pat.constraint_ typestring_var typestring_type)
      (Ppx_deriving.poly_fun_of_type_decl type_decl typestring_func)]
 
