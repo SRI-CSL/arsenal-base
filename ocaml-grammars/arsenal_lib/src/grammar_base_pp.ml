@@ -76,6 +76,7 @@ let rec conjugate state stem =
         | _ ->
           match String.sub stem (l - 1) 1 with
           | "y" -> String.sub stem 0 (l - 1)^"ied"
+          | "e" -> stem^"d"
           | _ -> stem^"ed"
        in
        !![
