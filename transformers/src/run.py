@@ -13,6 +13,20 @@ from build_dataset import build_dataset
 from generate_predictions import generate_predictions
 from target_model import train_targetmodel
 
+def print_td(t0, t1):
+    delta = round(t1-t0)
+
+    secs_day = 60 * 60 * 24
+    secs_hour = 60 * 60
+    secs_min = 60
+
+    days = delta // secs_day
+    hours = (delta - (days * secs_day)) // secs_hour
+    minutes = (delta - (days * secs_day) - (hours * secs_hour)) // secs_min
+    seconds = delta - (days * secs_day) - (hours * secs_hour) - minutes * secs_min
+
+    return f"{days:02d}d:{hours:02d}h:{minutes:02d}m:{seconds:02d}s"
+
 if __name__ == "__main__":
 
     ########## some preliminary setup ##########
@@ -79,12 +93,13 @@ if __name__ == "__main__":
     print(f"\ntime spent:\n")
 
     timing = {}
-    timing["dataset construction"]       = time.strftime("%Hh:%Mm:%Ss", time.gmtime(t1-t0))
-    timing["target LM model training"]   = time.strftime("%Hh:%Mm:%Ss", time.gmtime(t2-t1))
-    timing["translation model training"] = time.strftime("%Hh:%Mm:%Ss", time.gmtime(t3-t2))
-    timing["prediction generation"]      = time.strftime("%Hh:%Mm:%Ss", time.gmtime(t4-t3))
 
-    print(tabulate(timing.items(), headers={"total", time.strftime("%Hh:%Mm:%Ss", time.gmtime(t4-t0))}))
+    timing["dataset construction"]          = print_td(t0, t1)
+    timing["target LM model training"]      = print_td(t1, t2)
+    timing["translation model training"]    = print_td(t2, t3)
+    timing["prediction generation"]         = print_td(t3, t4)
+
+    print(tabulate(timing.items(), headers=["total", print_td(t0, t4)]))
 
 
 
