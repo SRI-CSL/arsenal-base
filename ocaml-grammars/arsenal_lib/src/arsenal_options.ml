@@ -33,7 +33,7 @@ let options =
     ("-no-nl", Clear print_nl, "\tprint disable natural language output");
     ("-one-entity", Set Entity.one_entity_kind, "\tin natural language, only use 1 kind of entities");
     ("-polish", Set print_polish, "\tprint polish output");
-    ("-pretty", Set pretty, "\tprint S-expressions in human-readable form");
+    ("-pretty", Set pretty, "\tprint JSON and S-expressions in human-readable form");
     ("-raw-json", Set raw_json, "\tProduce raw JSONs (i.e. JSON versions of S-expressions) (default is false)");
     ("-sexp", Set print_sexp, "\tprint S-expression output");
     ("-path-mode", Int(fun i -> qualify_mode := if i < 0 then None else Some i), "\tmode for displaying paths in contructors and entity kinds: -1 for no path, 0 for whole paths, (positive) i for pruning the first i levels of paths (default is 0)");
