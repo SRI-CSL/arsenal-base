@@ -24,44 +24,61 @@ let deriver_name = "typestring"
 
 (* Parse Tree and PPX Helpers *)
 
-let parse_options =
-  List.iter @@
-    fun (name, pexp) ->
+let parse_options loc l =
+  with_path := None;  (* Use runtime option for determining how to qualify paths *)
+  let aux (name, pexp) = 
     match name with
-    | "with_path" -> with_path  := Ppx_deriving.Arg.(get_expr ~deriver:deriver_name bool) pexp
+    | "with_path"  ->
+       let expr =
+         try
+           if
+             Ppx_deriving.Arg.(get_expr ~deriver:deriver_name bool) pexp
+           then
+             [%expr Some 0]
+           else
+             [%expr None]
+         with
+           _ -> pexp
+       in
+       with_path := Some expr
     | _ ->
        raise_errorf ~loc:pexp.pexp_loc
          "The %s deriver takes no option %s." deriver_name name
+  in
+  List.iter aux l
 
 (* Generator Type *)
 
-let typestring_type_of_decl ~options ~path:_path type_decl =
-  parse_options options;
-  let loc = type_decl.ptype_loc in
+let typestring_type_of_decl loc ~options ~path:_path type_decl =
+  parse_options loc options;
   Ppx_deriving.poly_arrow_of_type_decl
-    (fun _var -> [%type: string])
+    (fun _var -> [%type: unit -> string])
     type_decl
-    [%type: string]
+    [%type: unit -> string]
 
 (* Signature and Structure Components *)
 
 let sig_of_type ~options ~path type_decl =
-  parse_options options;
+  let loc = type_decl.ptype_loc in
+  parse_options loc options;
   [Sig.value
      (Val.mk
         (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "typestring") type_decl))
-        (typestring_type_of_decl ~options ~path type_decl))]
+        (typestring_type_of_decl loc ~options ~path type_decl))]
 
 let str_of_type ~options ~path type_decl =
-  parse_options options;
   let loc = type_decl.ptype_loc in
+  parse_options loc options;
   (* let path = Ppx_deriving.path_of_type_decl ~path type_decl in *)
   let type_string     = Ppx_deriving.mangle_type_decl (`Prefix "typestring") type_decl in
-  let args            = Utils.get_params type_decl in
-  let typestring_func =
-    Utils.application_str loc args (fully_qualified path type_decl.ptype_name.txt |> str2exp)
+  let args            = Utils.get_params type_decl
+                        |> List.map (fun a -> [%expr [%e a ] ()])
   in
-  let typestring_type = typestring_type_of_decl ~options ~path type_decl in
+  let typestring_func =
+    Utils.application_str loc args (type_qualify loc path type_decl.ptype_name.txt)
+  in
+  let typestring_func = [%expr fun () -> [%e typestring_func]] in
+  let typestring_type = typestring_type_of_decl loc ~options ~path type_decl in
   let typestring_var  = pvar type_string in
   [Vb.mk (Pat.constraint_ typestring_var typestring_type)
      (Ppx_deriving.poly_fun_of_type_decl type_decl typestring_func)]

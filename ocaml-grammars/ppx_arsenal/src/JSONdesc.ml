@@ -24,11 +24,25 @@ let deriver_name = "json_desc"
 
 let in_grammar = ref true
 
-let parse_options l =
+let parse_options loc l =
+  in_grammar := true; (* Unless otherwise stated, type declaration is in grammar *)
+  with_path := None;  (* Use runtime option for determining how to qualify paths *)
   let aux (name, pexp) = 
     match name with
     | "in_grammar" -> in_grammar := Ppx_deriving.Arg.(get_expr ~deriver:deriver_name bool) pexp
-    | "with_path"  -> with_path  := Ppx_deriving.Arg.(get_expr ~deriver:deriver_name bool) pexp
+    | "with_path"  ->
+       let expr =
+         try
+           if
+             Ppx_deriving.Arg.(get_expr ~deriver:deriver_name bool) pexp
+           then
+             [%expr Some 0]
+           else
+             [%expr None]
+         with
+           _ -> pexp
+       in
+       with_path := Some expr
     | _ ->
        raise_errorf ~loc:pexp.pexp_loc
          "The %s deriver takes no option %s." deriver_name name
@@ -38,13 +52,13 @@ let parse_options l =
 let json_desc_type_of_decl ~options:_ ~path:_path type_decl =
   let loc = type_decl.ptype_loc in
   Ppx_deriving.poly_arrow_of_type_decl
-    (fun _var -> [%type: string])
+    (fun _var -> [%type: unit -> string])
     type_decl
     [%type: unit -> unit]
 
 let key_type_of_decl ~options ~path:_path type_decl =
   let loc = type_decl.ptype_loc in
-  parse_options options;
+  parse_options loc options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let typ =
     match type_decl.ptype_manifest with
@@ -127,7 +141,8 @@ type argument = {
     list : bool
   }
 
-let prefix loc s = [%expr `String ("#/definitions/"^[%e s ]) ]
+let prefix_noapp loc s = [%expr `String ("#/definitions/"^[%e s ]) ]
+let prefix loc s = [%expr `String ("#/definitions/"^[%e s ] ()) ]
 
 let build_alternative loc qcons cons args : expression * expression =
   let req arg    = not arg.optional in
@@ -143,21 +158,21 @@ let build_alternative loc qcons cons args : expression * expression =
     else
       [%expr [%e name arg], [%e common] ]
   in
-  prefix loc qcons,
+  prefix_noapp loc qcons,
   [%expr
       [%e qcons],
    `Assoc [
        "type", `String "object";
        "additionalProperties", `Bool false;
-       "required", `List (`String ":constructor"::[%e required]);
+       "required", `List (`String PPX_Serialise.json_constructor_field::[%e required]);
        "properties",
        `Assoc 
-         ((":constructor", `Assoc [ "type",    `String "string";
+         ((PPX_Serialise.json_constructor_field, `Assoc [ "type",    `String "string";
                                     "pattern", `String [%e cons] ])
           :: [%e List.map format args |> list loc ])  ] ]
 
 (* let build_alternative loc cons args : expression =
- *   [%expr `Assoc [ ":constructor", `String [%e str2exp cons] ;
+ *   [%expr `Assoc [ PPX_Serialise.json_constructor_field, `String [%e str2exp cons] ;
  *                   "arguments", `List [%e list loc args] ] ] *)
 
 
@@ -196,11 +211,11 @@ let expr_of_type_decl ~path poly_args typestring_expr type_decl =
        (* This treats one particular construction C of t1 * ... * tp
             name' is C *)
        (* First, we qualify the constructor's name with the type parameters *)
-       let qname = application_str loc poly_args (fully_qualified path name' |> str2exp) in
+       let qname = application_str loc poly_args (constructor_qualify loc path name') in
        match pcd_args with
 
        | Parsetree.Pcstr_tuple typs -> (* typs is the list t1 ... tp *)
-          (* we build the JSON { ":constructor" : "C"; "arguments" : args } *)
+          (* we build the JSON { PPX_Serialise.json_constructor_field : "C"; "arguments" : args } *)
           let aux i typ =
             let typ, optional, list = expr_of_typ typ in
             { name = argn i; typ; optional; list }
@@ -232,9 +247,10 @@ let expr_of_type_decl in_grammar ~path ~about type_decl : expression * expressio
   let loc = type_decl.ptype_loc in (* location of the type declaration *)
   (* We first build the string "foo(poly_a)...(poly_n)"*)
   let args = Utils.get_params type_decl in
+  let args_applied = args |> List.map (fun a -> [%expr [%e a] ()]) in
   let typestring_expr =
     let name = ident "typestring" (Lident type_decl.ptype_name.txt) in
-    app name args
+    app (app name args) [ [%expr ()] ]
   in
   let key =
     match args with
@@ -259,7 +275,7 @@ let expr_of_type_decl in_grammar ~path ~about type_decl : expression * expressio
        then
          begin
            let mark = JSONindex.mark [%e typestring_expr] in
-           let json_list = [%e expr_of_type_decl ~path args typestring_expr type_decl ] in
+           let json_list = [%e expr_of_type_decl ~path args_applied typestring_expr type_decl ] in
            Format.(fprintf err_formatter) "Registering type %s\n" [%e typestring_expr];
            JSONindex.add mark json_list
          end
@@ -296,8 +312,8 @@ let sig_of_type ~options ~path type_decl =
   ]
 
 let str_of_type ~options ~path type_decl =
-  parse_options options;
   let loc          = type_decl.ptype_loc in (* location of the type declaration *)
+  parse_options loc options;
   let key          = Ppx_deriving.mangle_type_decl (`Prefix "key") type_decl in
   let json_desc    = Ppx_deriving.mangle_type_decl (`Prefix "json_desc") type_decl in
   let serialise    = ident_decl "serialise" type_decl in

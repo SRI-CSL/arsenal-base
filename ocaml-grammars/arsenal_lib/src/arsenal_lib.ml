@@ -40,11 +40,19 @@ module JSON = Yojson.Safe
 exception Conversion of string
 
 let raise_conv a = exc (fun s -> Conversion s) a
-let short = ref false
-let get_short a = 
-  match String.split_on_char '/' a |> List.rev with
-  | hd::_ -> hd
-  | [] -> a
+
+let separator    = ref "."
+let qualify_mode = ref (Some 0)
+
+let read_qualified a =
+  match !qualify_mode with
+  | None ->
+     a |> String.Split.right ~by:!separator |> Option.map snd |> Option.get_or ~default:a
+  | Some i ->
+     a
+     |> String.Split.seq_cpy ~by:!separator
+     |> Seq.drop i
+     |> String.concat_seq ~sep:!separator
                  
 module PPX_Serialise = struct
 
@@ -57,6 +65,15 @@ module PPX_Serialise = struct
       typestring : unit -> string;
     }
 
+  let fully_qualify ?(mode=(!qualify_mode)) ~path str =
+    match mode with
+    | None -> str
+    | Some i -> List.append path [str] |> List.drop i |> String.concat !separator
+
+
+  let constructor_qualify = ref fully_qualify
+  let type_qualify        = ref fully_qualify
+
   let print_null = ref false (* Does not print null values in JSON *)
 
   let json_cons (s,v) tail =
@@ -66,8 +83,10 @@ module PPX_Serialise = struct
 
   let print_types = ref false (* Does not print types in S-expressions *)
 
+  let json_constructor_field = "node_type"
+
   let sexp_constructor cst ty =
-    let cst = if !short then get_short cst else cst in
+    let cst = read_qualified cst in
     if !print_types then Sexp.List [Sexp.Atom ":"; Sexp.Atom cst; Sexp.Atom ty]
     else Sexp.Atom cst
 
@@ -286,8 +305,8 @@ let (++) w1 w2 = 1 - (w1 * w2)
 (* Easy extension of pp function to option type *)
 let (+?) pp1 pp2  = function Some x -> pp1 x | None -> pp2
 let (?+) pp_arg = function Some x -> pp_arg x | None -> noop
-let (??) = function Some _ -> true | None -> false
 
+let (??) = function Some _ -> true | None -> false
 
 (**********************************************************************)
 (* Type Unique ID                                                     *)
@@ -460,10 +479,10 @@ end
 (* Built-in types (bool, int, list and option *)
 (**********************************************)
 
-let typestring_bool = "bool"
-let typestring_int = "int"
-let typestring_list str = "list("^str^")"
-let typestring_option str = "option("^str^")"
+let typestring_bool () = "bool"
+let typestring_int () = "int"
+let typestring_list str () = "list("^str()^")"
+let typestring_option str () = "option("^str()^")"
 
 let json_desc_bool     () = ()
 let json_desc_int      () = ()
@@ -476,7 +495,7 @@ let json_of_bool b : JSON.t = `Bool b
 
 let sexp_of_bool b =
   let c = if b then "true" else "false" in
-  PPX_Serialise.sexp_constructor c typestring_bool
+  PPX_Serialise.sexp_constructor c (typestring_bool ())
 
 let bool_of_sexp = function
   | Sexp.Atom "true" -> true
@@ -493,7 +512,7 @@ let serialise_bool =
       of_sexp = bool_of_sexp;
       hash;
       compare;
-      typestring = fun () -> typestring_bool;
+      typestring = typestring_bool;
   }
   
 (* Serialise for int *)
@@ -502,7 +521,7 @@ let json_of_int i : JSON.t = `Int i
 
 let sexp_of_int i =
   let c = string_of_int i in
-  PPX_Serialise.sexp_constructor c typestring_int
+  PPX_Serialise.sexp_constructor c (typestring_int ())
 
 let int_of_sexp = function
   | Sexp.Atom s -> int_of_string s
@@ -518,19 +537,19 @@ let serialise_int =
       of_sexp = int_of_sexp;
       hash;
       compare;
-      typestring = fun () -> typestring_int;
+      typestring = typestring_int;
   }
 
 (* Serialise for list *)
 
-let liststring c str = PPX_Serialise.sexp_constructor c (typestring_list str)
+let liststring c str = PPX_Serialise.sexp_constructor c (typestring_list str ())
 
 let json_of_list arg l = `List(List.map arg l)
 
 let sexp_of_list arg l =
   let open PPX_Serialise in
-  if List.length l = 0 then liststring "Nil" (arg.typestring())
-  else Sexp.List((liststring "List" (arg.typestring())) :: List.map arg.to_sexp l)
+  if List.length l = 0 then liststring "Nil" arg.typestring
+  else Sexp.List((liststring "List" arg.typestring) :: List.map arg.to_sexp l)
 
 let list_of_sexp arg = function
   | Sexp.Atom "Nil" -> []
@@ -547,12 +566,12 @@ let serialise_list arg =
       of_sexp = list_of_sexp arg.of_sexp;
       hash;
       compare;
-      typestring = fun () -> typestring_list (arg.typestring());
+      typestring = typestring_list arg.typestring;
   }
   
 (* Serialise for option *)
 
-let optstring c str = PPX_Serialise.sexp_constructor c (typestring_option str)
+let optstring c str = PPX_Serialise.sexp_constructor c (typestring_option str ())
 
 let json_of_option arg = function
   | None   -> `Null
@@ -561,8 +580,8 @@ let json_of_option arg = function
 let sexp_of_option arg l =
   let open PPX_Serialise in
   match l with
-  | None   -> optstring "None" (arg.typestring())
-  | Some a -> Sexp.List[optstring "Some" (arg.typestring()); arg.to_sexp a]
+  | None   -> optstring "None" arg.typestring
+  | Some a -> Sexp.List[optstring "Some" arg.typestring; arg.to_sexp a]
 
 let option_of_sexp arg = function
   | Sexp.Atom "None" -> None
@@ -579,7 +598,7 @@ let serialise_option arg =
       of_sexp = option_of_sexp arg.of_sexp;
       hash;
       compare;
-      typestring = fun () -> typestring_option (arg.typestring());
+      typestring = typestring_option arg.typestring;
   }
 
 let rec flatten f t tail = match f t with
@@ -741,11 +760,11 @@ module Entity = struct
       (a.kind, a.counter, a.substitution)
       (b.kind, b.counter, b.substitution)
 
-  let typestring arg = "entity("^arg^")"
+  let typestring arg () = "entity("^arg()^")"
   let json_desc arg () =
-    let mark = JSONindex.mark arg in
+    let mark = JSONindex.mark (arg()) in
     JSONindex.add mark
-      [ typestring arg,
+      [ typestring arg (),
         `Assoc [ "type",       `String "object";
                  "additionalProperties", `Bool false;
                  "required",   `List [`String "counter"]; 
@@ -764,7 +783,6 @@ module Entity = struct
          let
            cst = PPX_Serialise.sexp_get_cst ~who:"Entity.pp" (arg.PPX_Serialise.to_sexp k)
          in
-         (* let cst = if !short then get_short cst else cst in *)
          F "%s" // cst |> print
       | _ -> return "E"
     in
@@ -806,7 +824,7 @@ module Entity = struct
       match e.kind with
       | Some k when not !one_entity_kind ->
          (match arg.PPX_Serialise.to_json k with
-          | `Assoc [":constructor", v] -> ("kind", v)::l
+          | `Assoc [c, v] when String.equal c PPX_Serialise.json_constructor_field -> ("kind", v)::l
           | `String _ as v -> ("kind", v)::l
           | json -> raise_conv "JSON is not good for entity kind: %a"
                       (fun a -> JSON.pretty_print a) json)
@@ -823,7 +841,7 @@ module Entity = struct
     let open PPX_Serialise in
     let ty = 
       match e.kind with
-      | Some _ when not !one_entity_kind -> (typestring (arg.typestring()))
+      | Some _ when not !one_entity_kind -> (typestring arg.typestring ())
       | _ -> "entity"
     in
     let base =
@@ -880,7 +898,7 @@ module Entity = struct
         of_sexp = of_sexp arg;
         hash;
         compare;
-        typestring = fun () -> if !one_entity_kind then "Entity" else typestring (arg.typestring());
+        typestring = fun () -> if !one_entity_kind then "Entity" else typestring arg.typestring ();
     }
 
   let key () = failwith "Can't have key for polymorphic type"

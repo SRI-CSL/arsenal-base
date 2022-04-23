@@ -21,14 +21,6 @@ open Ppx_deriving.Ast_convenience
 let str2exp x = x |> Const.string |> Exp.constant
 let int2exp x = x |> Const.int |> Exp.constant
 
-let with_path = ref true
-let fully_qualified path str =
-  if !with_path then
-    let aux sofar modul = sofar ^ modul ^ "/" in
-    (List.fold_left aux "" path)^str
-  else
-    str
-
 let raise_errorf = Ppx_deriving.raise_errorf
 
 let ident prefix typestr =
@@ -64,9 +56,10 @@ let default_case typestring_expr loc =
 let get_param param =
   "poly_"^param.txt
   |> Lexing.from_string
-  |> Parse.longident
-  |> mknoloc
-  |> Exp.ident
+  (* |> Parse.longident
+   * |> mknoloc
+   * |> Exp.ident *)
+  |> Parse.expression
 
 let get_params type_decl =
   let aux param sofar = get_param param :: sofar in
@@ -75,3 +68,15 @@ let get_params type_decl =
 let application_str loc args =
   let aux param sofar = [%expr [%e sofar]^"("^[%e param]^")"] in
   List.fold_right aux args
+
+let with_path = ref None
+
+let qualify loc exp path str =
+  let path = path |> List.map str2exp |> list loc in
+  let str  = str2exp str in
+  match !with_path with
+  | None      -> [%expr ![%e exp]                 ~path:[%e path] [%e str]]
+  | Some mode -> [%expr ![%e exp] ~mode:[%e mode] ~path:[%e path] [%e str]]
+
+let type_qualify        loc = qualify loc [%expr PPX_Serialise.type_qualify]
+let constructor_qualify loc = qualify loc [%expr PPX_Serialise.constructor_qualify]

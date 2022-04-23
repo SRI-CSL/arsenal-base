@@ -32,20 +32,34 @@ let pattn_named l =
   let aux i x = mkloc (Lident x.pld_name.txt) x.pld_name.loc, pvar (argn i) in
   List.mapi aux l
 
-let parse_options =
-  List.iter @@
-    fun (name, pexp) ->
+let parse_options loc l =
+  with_path := None;  (* Use runtime option for determining how to qualify paths *)
+  let aux (name, pexp) = 
     match name with
-    | "with_path" -> with_path := Ppx_deriving.Arg.(get_expr ~deriver:deriver_name bool) pexp
+    | "with_path"  ->
+       let expr =
+         try
+           if
+             Ppx_deriving.Arg.(get_expr ~deriver:deriver_name bool) pexp
+           then
+             [%expr Some 0]
+           else
+             [%expr None]
+         with
+           _ -> pexp
+       in
+       with_path := Some expr
     | _ ->
        raise_errorf ~loc:pexp.pexp_loc
          "The %s deriver takes no option %s." deriver_name name
+  in
+  List.iter aux l
 
 (* Generator Type *)
 
 let serialise_type_of_decl ~options ~path:_path type_decl =
   let loc = type_decl.ptype_loc in
-  parse_options options;
+  parse_options loc options;
   let typ = Ppx_deriving.core_type_of_type_decl type_decl in
   let typ =
     match type_decl.ptype_manifest with
@@ -69,7 +83,7 @@ let serialise_type_of_decl ~options ~path:_path type_decl =
 (* Generator Function *)
 let atom cnstr typestring_expr =
   let loc = typestring_expr.pexp_loc in
-  [%expr PPX_Serialise.sexp_constructor [%e str2exp cnstr ] [%e typestring_expr ] ]
+  [%expr PPX_Serialise.sexp_constructor [%e cnstr ] [%e typestring_expr ] ]
 
 let expr_of_typ build_cases typestring_expr typ =
   let rec expr_of_typ x =
@@ -97,7 +111,7 @@ let expr_of_typ build_cases typestring_expr typ =
          | Rtag (label, true, []) ->
             Exp.case (variant label None) (int2exp i),
             Exp.case (variant label None) [%expr `String [%e str2exp label.txt]],
-            Exp.case (variant label None) (atom label.txt typestring_expr),
+            Exp.case (variant label None) (atom (str2exp label.txt) typestring_expr),
             Exp.case
               [%pat? p ]
               ~guard:
@@ -117,7 +131,7 @@ let expr_of_typ build_cases typestring_expr typ =
               [%expr `List ([%expr `String [%e str2exp label.txt]] :: [%e args] ) ],
             Exp.case
               (variant label (Some [%pat? x]))
-              [%expr Sexp.List ([%e atom label.txt typestring_expr] :: [%e args] ) ],
+              [%expr Sexp.List ([%e atom (str2exp label.txt) typestring_expr] :: [%e args] ) ],
             failwith ""
             
          | Rinherit({ ptyp_desc = Ptyp_constr (tname, _) ; _ } as typ) ->
@@ -171,7 +185,7 @@ let expr_of_type_decl ~path type_decl =
       [%expr [%e compare]             ([%e param].PPX_Serialise.compare)]
     in
     List.fold_right aux args
-      (fully_qualified path type_decl.ptype_name.txt |> str2exp,
+      (type_qualify loc path type_decl.ptype_name.txt,
        ident_decl "compare" type_decl)
   in
   let build_cases2 = build_cases compare in
@@ -184,7 +198,7 @@ let expr_of_type_decl ~path type_decl =
      let treat_field index { pcd_name = { txt = name' ; _ }; pcd_args ; _ } =
 
        let build_case pat exp_of_sexp typs =
-         let qualifname' = fully_qualified path name' in
+         let qualifname' = constructor_qualify loc path name' in
          let aux_to_hash i (_,typ) =
            [%expr [%e expr_of_typ build_cases2 typestring_expr typ].PPX_Serialise.hash ],
            evar (argn i)
@@ -212,7 +226,7 @@ let expr_of_type_decl ~path type_decl =
          let args_of_sexp = typs |> List.mapi aux_of_sexp in
          Exp.case pat [%expr [%e hash] [%e args] ],
          Exp.case pat
-           [%expr `Assoc((":constructor",`String[%e str2exp qualifname'])::[%e args_to_json])],
+           [%expr `Assoc((PPX_Serialise.json_constructor_field,`String[%e qualifname'])::[%e args_to_json])],
          Exp.case pat
            [%expr Sexp.List ( [%e atom qualifname' typestring_expr] :: [%e args_to_sexp] ) ],
          Exp.case
@@ -220,25 +234,25 @@ let expr_of_type_decl ~path type_decl =
            ~guard:
            [%expr PPX_Serialise.(sexp_is_atom p
                                  && String.equal (sexp_get_cst ~who:"of_sexp" p)
-                                      [%e str2exp qualifname' ]) ]
+                                      [%e qualifname' ]) ]
            (Exp.construct (mknoloc (Lident name')) (exp_of_sexp args_of_sexp))
 
        in
        match pcd_args with
 
        | Parsetree.Pcstr_tuple [] ->
-          let qualifname' = fully_qualified path name' in
+          let qualifname' = constructor_qualify loc path name' in
           Exp.case (pconstr name' [])
             [%expr CCHash.int [%e int2exp index]],
           Exp.case (pconstr name' [])
-            [%expr `Assoc [ ":constructor", `String [%e str2exp qualifname']]],
+            [%expr `Assoc [ PPX_Serialise.json_constructor_field, `String [%e qualifname']]],
           Exp.case (pconstr name' [])
             (atom qualifname' typestring_expr),
           Exp.case
             [%pat? p ]
             ~guard:
             [%expr PPX_Serialise.(sexp_is_atom p && String.equal (sexp_get_cst ~who:"of_sexp" p)
-                                                      [%e str2exp qualifname' ]) ]
+                                                      [%e qualifname' ]) ]
             (Exp.construct (mknoloc (Lident name')) None)
 
        | Parsetree.Pcstr_tuple typs ->
@@ -278,7 +292,8 @@ let expr_of_type_decl ~path type_decl =
 (* Signature and Structure Components *)
 
 let sig_of_type ~options ~path type_decl =
-  parse_options options;
+  let loc = type_decl.ptype_loc in (* location of the type declaration *)
+  parse_options loc options;
   [Sig.value
      (Val.mk
         (mknoloc (Ppx_deriving.mangle_type_decl (`Prefix "serialise") type_decl))
@@ -287,7 +302,8 @@ let sig_of_type ~options ~path type_decl =
   ]
 
 let str_of_type ~options ~path type_decl =
-  parse_options options;
+  let loc = type_decl.ptype_loc in (* location of the type declaration *)
+  parse_options loc options;
   (* let path = Ppx_deriving.path_of_type_decl ~path type_decl in *)
   let serialise_func = expr_of_type_decl ~path type_decl in
   let serialise_type = serialise_type_of_decl ~options ~path type_decl in

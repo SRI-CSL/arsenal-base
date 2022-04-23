@@ -13,7 +13,7 @@ let print_nl   = ref true  (* Output Natural Language by default *)
 let print_json = ref false (* Do not output json by default *)
 let print_sexp = ref false (* Do not output S-expression by default *)
 let print_polish = ref false (* Do not output polish notation by default *)
-let pretty     = ref false  (* prettyfy S-expressions *) 
+let pretty     = ref false  (* prettyfy JSON and S-expressions *) 
 let howmany    = ref 1      (* Default number of example to generate is 1 *)
 let raw_json   = ref false  (* Whether json should just be like Sexp *)
 let injectivity = ref false (* Whether to check that the pretty-printing function is injective -- requires saving in memory all instances produced *)
@@ -34,9 +34,11 @@ let options =
     ("-one-entity", Set Entity.one_entity_kind, "\tin natural language, only use 1 kind of entities");
     ("-polish", Set print_polish, "\tprint polish output");
     ("-pretty", Set pretty, "\tprint S-expressions in human-readable form");
-    ("-raw-json", Set raw_json, "\tmaximal Produce raw JSONs (i.e. JSON versions of S-expressions) (default is false)");
+    ("-raw-json", Set raw_json, "\tProduce raw JSONs (i.e. JSON versions of S-expressions) (default is false)");
     ("-sexp", Set print_sexp, "\tprint S-expression output");
-    ("-short", Set short, "\tcontructors and entity kinds have short strings and are not prefixed by module names");
+    ("-path-mode", Int(fun i -> qualify_mode := if i < 0 then None else Some i), "\tmode for displaying paths in contructors and entity kinds: -1 for no path, 0 for whole paths, (positive) i for pruning the first i levels of paths (default is 0)");
+    ("-short", Unit(fun () -> qualify_mode := None), "\tequivalent to no path (-path-mode \"-1\") in contructors and entity kinds");
+    ("-separator", String(fun s -> separator := s), "\tseparator for module names in constructors and entity kinds (default is \".\")");
     ("-strict-entities", Float(fun f -> Entity.strict := f), "\thow strict entity kinds should be considered (0. : they are ignored; +infty: very strictly enforced)");
     ("-types", Set PPX_Serialise.print_types, "\tdisplay types in generated data");
     ("-verb", Int(fun i -> verb := i), "\tverbosity level (default is 0)");
@@ -55,6 +57,9 @@ let generate (About.About{ key ; serialise = { to_json ; to_sexp; _} ; _ }) n =
   let print_tab s = print_string ("\t"^s) in
   let sofar = ref 0 in
   let duplicates = ref 0 in
+  let pp_json =
+    if !pretty then (fun x -> JSON.pretty_to_string x) else (fun x -> JSON.to_string x)
+  in
   while (!sofar < n) do
     let t = PPX_Random.init() |> !(TUID.get_random key) in
     Entity.init();
@@ -69,9 +74,9 @@ let generate (About.About{ key ; serialise = { to_json ; to_sexp; _} ; _ }) n =
     in
     let go_ahead sexp =
       if !print_nl     then print_string nl;
-      if !print_json   then t |> to_json |> JSON.to_string     |> print_tab;
+      if !print_json   then t    |> to_json        |> pp_json          |> print_tab;
       if !print_polish then sexp |> Polish.of_sexp |> Polish.to_string |> print_tab;
-      if !raw_json     then sexp |> sexp2json |> JSON.to_string        |> print_tab;
+      if !raw_json     then sexp |> sexp2json      |> pp_json          |> print_tab;
       if !print_sexp   then sexp
                             |> Format.sprintf "@,@[<v>%a@]"
                                  Sexp.(if !pretty then pp_hum else pp_mach)

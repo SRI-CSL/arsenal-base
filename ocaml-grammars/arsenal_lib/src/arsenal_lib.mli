@@ -3,9 +3,9 @@ open Format
 
 open Sexplib
 
-(*********************************)
-(* Managing debug and exceptions *)
-(*********************************)
+(**********************************************)
+(* Managing debug, global vars and exceptions *)
+(**********************************************)
 
 type 'a printf = ('a, Format.formatter, unit) format -> 'a
 val verb  : int ref      (* Verbosity level *)
@@ -15,7 +15,15 @@ val exc   : ?stdout:bool
             -> ?margin:int
             -> ('a, Format.formatter, unit, 'b) format4 -> 'a
 
-val short   : bool ref
+(* Separator of fully qualified names (types and constructors); default is "." *)
+val separator : string ref
+
+(* Controls syntax of fully qualified names for types and constructors *)
+(* Some i: prunes the first i levels of the prefix; use i = 0 for the fully qualified name *)
+(* None  : only retains the last part of the fully qualified name, i.e. no prefix *)
+(* Default is Some 0 *)
+val qualify_mode : int option ref
+
 (* Hashtables for strings, used several times *)
 module Stbl : CCHashtbl.S with type key = string
 
@@ -53,9 +61,12 @@ module PPX_Serialise : sig
       compare : 'a Ord.t;
       typestring : unit -> string;
     }
+  val constructor_qualify : (?mode: int option -> path: string list -> string -> string) ref
+  val type_qualify        : (?mode: int option -> path: string list -> string -> string) ref
   val print_null  : bool ref (* Does not print null values in JSON *)
   val json_cons   : (string * JSON.t) -> (string * JSON.t) list -> (string * JSON.t) list
   val print_types : bool ref (* Print types in S-expressions? *)
+  val json_constructor_field : string (* Name of JSON field that contains a grammar constructor *)
   val sexp_constructor : string -> string -> Sexp.t
   val sexp_throw    : who:tag -> Sexp.t -> _
   val sexp_is_atom  : Sexp.t -> bool
@@ -214,10 +225,10 @@ end
 (* Built-in types (bool, int, list and option *)
 (**********************************************)
 
-val typestring_bool: string
-val typestring_int : string
-val typestring_list: string -> string
-val typestring_option: string -> string
+val typestring_bool: unit -> string
+val typestring_int : unit -> string
+val typestring_list: (unit -> string) -> unit -> string
+val typestring_option: (unit -> string) -> unit -> string
 
 val json_desc_bool  : unit -> unit
 val json_desc_int   : unit -> unit
