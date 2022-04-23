@@ -144,7 +144,7 @@ type argument = {
 let prefix_noapp loc s = [%expr `String ("#/definitions/"^[%e s ]) ]
 let prefix loc s = [%expr `String ("#/definitions/"^[%e s ] ()) ]
 
-let build_alternative loc qcons cons args : expression * expression =
+let build_alternative loc is_silent qcons cons args : expression * expression option =
   let req arg    = not arg.optional in
   let name arg   = str2exp arg.name in
   let nameString arg = [%expr `String [%e name arg]] in
@@ -158,19 +158,25 @@ let build_alternative loc qcons cons args : expression * expression =
     else
       [%expr [%e name arg], [%e common] ]
   in
-  prefix_noapp loc qcons,
-  [%expr
-      [%e qcons],
-   `Assoc [
-       "type", `String "object";
-       "additionalProperties", `Bool false;
-       "required", `List (`String PPX_Serialise.json_constructor_field::[%e required]);
-       "properties",
-       `Assoc 
-         ((PPX_Serialise.json_constructor_field, `Assoc [ "type",    `String "string";
-                                    "pattern", `String [%e cons] ])
-          :: [%e List.map format args |> list loc ])  ] ]
-
+  if is_silent
+  then
+    prefix loc (List.hd args).typ, None
+  else
+    prefix_noapp loc qcons,
+    Some (
+        [%expr
+            [%e qcons],
+         `Assoc [
+             "type", `String "object";
+             "additionalProperties", `Bool false;
+             "required", `List (`String PPX_Serialise.json_constructor_field::[%e required]);
+             "properties",
+             `Assoc 
+               ((PPX_Serialise.json_constructor_field,
+                 `Assoc [ "type",    `String "string";
+                          "pattern", `String [%e cons] ])
+                :: [%e List.map format args |> list loc ])  ] ])
+  
 (* let build_alternative loc cons args : expression =
  *   [%expr `Assoc [ PPX_Serialise.json_constructor_field, `String [%e str2exp cons] ;
  *                   "arguments", `List [%e list loc args] ] ] *)
@@ -184,7 +190,9 @@ let build_type loc typ alternatives : expression =
         [ [%e typ],
           `Assoc ["anyOf", `List [%e references ] ] ] ]
   in
-  List.map snd alternatives |> list loc ~init
+  List.map snd alternatives
+  |> List.filter_map (fun x -> x)
+  |> list loc ~init
   
 let build_abbrev loc typ body : expression =
   [%expr
@@ -207,9 +215,12 @@ let expr_of_type_decl ~path poly_args typestring_expr type_decl =
 
   | Ptype_variant cs, _ -> (* foo is a variant type with a series of constructors C1 ... Cm *)
 
-     let treat_field { pcd_name = { txt = name' ; _ }; pcd_args ; _ } =
+     let treat_field { pcd_name = { txt = name' ; _ }; pcd_args ; pcd_attributes; _ } =
        (* This treats one particular construction C of t1 * ... * tp
             name' is C *)
+
+       let is_silent = attribute ~deriver:deriver_name "silent" pcd_attributes in
+
        (* First, we qualify the constructor's name with the type parameters *)
        let qname = application_str loc poly_args (constructor_qualify loc path name') in
        match pcd_args with
@@ -221,7 +232,7 @@ let expr_of_type_decl ~path poly_args typestring_expr type_decl =
             { name = argn i; typ; optional; list }
           in
           let args = typs |> List.mapi aux in
-          build_alternative loc qname (str2exp name') args
+          build_alternative loc is_silent qname (str2exp name') args
 
        | Parsetree.Pcstr_record args ->
           let aux (x : label_declaration) =
@@ -229,7 +240,7 @@ let expr_of_type_decl ~path poly_args typestring_expr type_decl =
             { name = x.pld_name.txt; typ; optional; list }
           in
           let args = args |> List.map aux in
-          build_alternative loc qname (str2exp name') args
+          build_alternative loc is_silent qname (str2exp name') args
      in
      
      cs |> List.map treat_field |> build_type loc typestring_expr

@@ -195,7 +195,9 @@ let expr_of_type_decl ~path type_decl =
 
   | Ptype_variant cs, _ ->
 
-     let treat_field index { pcd_name = { txt = name' ; _ }; pcd_args ; _ } =
+     let treat_field index { pcd_name = { txt = name' ; _ }; pcd_args ; pcd_attributes; _ } =
+
+       let is_silent = attribute ~deriver:deriver_name "silent" pcd_attributes in
 
        let build_case pat exp_of_sexp typs =
          let qualifname' = constructor_qualify loc path name' in
@@ -212,6 +214,9 @@ let expr_of_type_decl ~path type_decl =
                [%e str2exp name],
             [%e expr_of_typ build_cases2 typestring_expr typ].PPX_Serialise.to_json [%e evar (argn i)]]
          in
+         let aux_to_json_silent (_name,typ) =
+           [%expr [%e expr_of_typ build_cases2 typestring_expr typ].PPX_Serialise.to_json [%e evar (argn 0)]]
+         in
          let aux_to_sexp i (_,typ) =
            [%expr [%e expr_of_typ build_cases2 typestring_expr typ].PPX_Serialise.to_sexp [%e evar (argn i)]]
          in
@@ -226,7 +231,11 @@ let expr_of_type_decl ~path type_decl =
          let args_of_sexp = typs |> List.mapi aux_of_sexp in
          Exp.case pat [%expr [%e hash] [%e args] ],
          Exp.case pat
-           [%expr `Assoc((PPX_Serialise.json_constructor_field,`String[%e qualifname'])::[%e args_to_json])],
+           (if is_silent
+            then
+              typs |> List.hd  |> aux_to_json_silent
+            else
+              [%expr `Assoc((PPX_Serialise.json_constructor_field,`String[%e qualifname'])::[%e args_to_json])]),
          Exp.case pat
            [%expr Sexp.List ( [%e atom qualifname' typestring_expr] :: [%e args_to_sexp] ) ],
          Exp.case
@@ -241,6 +250,7 @@ let expr_of_type_decl ~path type_decl =
        match pcd_args with
 
        | Parsetree.Pcstr_tuple [] ->
+          if is_silent then raise_errorf "A silent constructor cannot have 0 arguments, only 1.";
           let qualifname' = constructor_qualify loc path name' in
           Exp.case (pconstr name' [])
             [%expr CCHash.int [%e int2exp index]],
@@ -256,6 +266,10 @@ let expr_of_type_decl ~path type_decl =
             (Exp.construct (mknoloc (Lident name')) None)
 
        | Parsetree.Pcstr_tuple typs ->
+          if is_silent && List.length typs > 1
+          then raise_errorf
+                 "A silent constructor cannot have %i arguments, only 1."
+                 (List.length typs);
           let build_tuple = function
             | [] -> None
             | [a] -> Some a
@@ -265,6 +279,10 @@ let expr_of_type_decl ~path type_decl =
           build_case (pconstr name' (pattn typs)) build_tuple typs
 
        | Parsetree.Pcstr_record l ->
+          if is_silent && List.length l > 1
+          then raise_errorf
+                 "A silent constructor cannot have %i arguments, only 1."
+                 (List.length l);
           let typs = List.map (fun x -> (Some x.pld_name.txt, x.pld_type)) l in
           let pconstr name args =
             let args = Some (Pat.record args Closed) in

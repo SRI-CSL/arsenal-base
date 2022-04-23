@@ -53,6 +53,11 @@ let list_pat loc ?(init=[%pat? []]) elts =
 let default_case typestring_expr loc =
   Exp.case [%pat? sexp ] [%expr PPX_Serialise.sexp_throw ~who:([%e typestring_expr]^".of_sexp") sexp ]
 
+let attribute ~deriver s attrs =
+  attrs
+  |> Ppx_deriving.attr ~deriver s
+  |> Ppx_deriving.Arg.get_flag ~deriver
+
 let get_param param =
   "poly_"^param.txt
   |> Lexing.from_string
