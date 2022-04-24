@@ -109,9 +109,10 @@ let expr_of_typ build_cases typestring_expr typ =
          let variant label popt = Pat.variant label.txt popt in
          match field.prf_desc with
          | Rtag (label, true, []) ->
-            Exp.case (variant label None) (int2exp i),
-            Exp.case (variant label None) [%expr `String [%e str2exp label.txt]],
-            Exp.case (variant label None) (atom (str2exp label.txt) typestring_expr),
+            let case = Exp.case (variant label None) in
+            case (int2exp i),
+            (None, case [%expr `String [%e str2exp label.txt]]),
+            case (atom (str2exp label.txt) typestring_expr),
             Exp.case
               [%pat? p ]
               ~guard:
@@ -123,21 +124,19 @@ let expr_of_typ build_cases typestring_expr typ =
          | Rtag (label, false, typs) ->
             let aux i typ = [%expr [%e expr_of_typ typ] [%e evar (argn i)] ] in
             let args = typs |> List.mapi aux |> list loc in
-            Exp.case
-              (variant label (Some [%pat? x]))
-              (int2exp i),
-            Exp.case
-              (variant label (Some [%pat? x]))
-              [%expr `List ([%expr `String [%e str2exp label.txt]] :: [%e args] ) ],
-            Exp.case
-              (variant label (Some [%pat? x]))
-              [%expr Sexp.List ([%e atom (str2exp label.txt) typestring_expr] :: [%e args] ) ],
+            let case = Exp.case (variant label (Some [%pat? x])) in
+            case (int2exp i),
+            (None,
+             case [%expr `List ([%expr `String [%e str2exp label.txt]] :: [%e args] ) ]),
+            case
+              [%expr Sexp.List ([%e atom (str2exp label.txt) typestring_expr]::[%e args])],
             failwith ""
             
          | Rinherit({ ptyp_desc = Ptyp_constr (tname, _) ; _ } as typ) ->
-            Exp.case [%pat? [%p Pat.type_ tname] as x] (int2exp i),
-            Exp.case [%pat? [%p Pat.type_ tname] as x] (expr_of_typ typ),
-            Exp.case [%pat? [%p Pat.type_ tname] as x] (expr_of_typ typ),
+            let case = Exp.case [%pat? [%p Pat.type_ tname] as x] in
+            case (int2exp i),
+            (None, case (expr_of_typ typ)),
+            case (expr_of_typ typ),
             failwith ""
             
          | _ ->
@@ -161,7 +160,11 @@ let expr_of_typ build_cases typestring_expr typ =
 let build_cases compare loc str build_case l =
   let aux (i, cases0, cases1, cases2, cases3) x =
     let x0, x1, x2, x3 = build_case i x in
-    i+1, (x0::cases0), (x1::cases1), (x2::cases2), (x3::cases3)
+    let cases1 = match x1 with
+      | Some special_case, x1 -> special_case::x1::cases1
+      | None, x1 -> x1::cases1
+    in
+    i+1, (x0::cases0), cases1, (x2::cases2), (x3::cases3)
   in
   let _, cases0, cases1, cases2, cases3 =
     l |> List.rev |> List.fold_left aux (0, [],[],[], [default_case str loc])
@@ -176,6 +179,8 @@ let build_cases compare loc str build_case l =
        typestring = (fun () -> [%e str ]);
   } ]
 
+
+  
 let expr_of_type_decl ~path type_decl =
   let loc  = type_decl.ptype_loc in
   let args = Utils.get_params type_decl in
@@ -190,17 +195,33 @@ let expr_of_type_decl ~path type_decl =
   in
   let build_cases2 = build_cases compare in
   match type_decl.ptype_kind, type_decl.ptype_manifest with
+
   | Ptype_abstract, Some manifest ->
      expr_of_typ build_cases2 typestring_expr manifest
 
   | Ptype_variant cs, _ ->
 
-     let treat_field index { pcd_name = { txt = name' ; _ }; pcd_args ; pcd_attributes; _ } =
+     let treat_field index { pcd_name = { txt = name'; _ }; pcd_args; pcd_attributes; _ } =
 
-       let is_silent = attribute ~deriver:deriver_name "silent" pcd_attributes in
+       (* Qualified constructor name *)
+       let qualifname' = constructor_qualify loc path name' in
+       (* Whether it is declared as silent *)
+       let is_silent   = attribute ~deriver:deriver_name "silent" pcd_attributes in
+       (* Construction of a silent pattern in case is_silent is true *)
+       let silent_pat pconstr aux =
+         if is_silent
+         then
+           begin
+             match aux (0, [], None) with
+             | n, _, _ when n == 1 -> None (* No need for special pattern-matching case *)
+             | _, patterns, Some i -> Some( patterns |> List.rev |> pconstr name', i)
+             | n, _, None ->
+                raise_errorf "Silent constructor %s with %i arguments must have exactly 1 non-optional argument; it has none." name' n
+           end
+         else None
+       in
 
-       let build_case pat exp_of_sexp typs =
-         let qualifname' = constructor_qualify loc path name' in
+       let build_case silent_pat pat exp_of_sexp typs =
          let aux_to_hash i (_,typ) =
            [%expr [%e expr_of_typ build_cases2 typestring_expr typ].PPX_Serialise.hash ],
            evar (argn i)
@@ -214,8 +235,9 @@ let expr_of_type_decl ~path type_decl =
                [%e str2exp name],
             [%e expr_of_typ build_cases2 typestring_expr typ].PPX_Serialise.to_json [%e evar (argn i)]]
          in
-         let aux_to_json_silent (_name,typ) =
-           [%expr [%e expr_of_typ build_cases2 typestring_expr typ].PPX_Serialise.to_json [%e evar (argn 0)]]
+         let aux_to_json_silent i =
+           let _, typ = List.nth typs i in
+           [%expr [%e expr_of_typ build_cases2 typestring_expr typ].PPX_Serialise.to_json [%e evar (argn i)]]
          in
          let aux_to_sexp i (_,typ) =
            [%expr [%e expr_of_typ build_cases2 typestring_expr typ].PPX_Serialise.to_sexp [%e evar (argn i)]]
@@ -229,15 +251,22 @@ let expr_of_type_decl ~path type_decl =
          let args_to_json = typs |> List.mapi aux_to_json |> json_list loc in
          let args_to_sexp = typs |> List.mapi aux_to_sexp |> list loc in
          let args_of_sexp = typs |> List.mapi aux_of_sexp in
+
          Exp.case pat [%expr [%e hash] [%e args] ],
-         Exp.case pat
-           (if is_silent
-            then
-              typs |> List.hd  |> aux_to_json_silent
+
+         (Option.map
+            (fun (silent_pat, i) -> Exp.case silent_pat (aux_to_json_silent i))
+            silent_pat,
+
+          Exp.case pat
+           (if is_silent && List.length typs == 1 then aux_to_json_silent 0
             else
-              [%expr `Assoc((PPX_Serialise.json_constructor_field,`String[%e qualifname'])::[%e args_to_json])]),
+              [%expr `Assoc((PPX_Serialise.json_constructor_field,
+                             `String[%e qualifname'])::[%e args_to_json])])),
+
          Exp.case pat
-           [%expr Sexp.List ( [%e atom qualifname' typestring_expr] :: [%e args_to_sexp] ) ],
+           [%expr Sexp.List ([%e atom qualifname' typestring_expr] :: [%e args_to_sexp]) ],
+         
          Exp.case
            [%pat? Sexp.List ( p :: [%p pattn typs |> list_pat loc ]) ]
            ~guard:
@@ -247,53 +276,83 @@ let expr_of_type_decl ~path type_decl =
            (Exp.construct (mknoloc (Lident name')) (exp_of_sexp args_of_sexp))
 
        in
+
+
        match pcd_args with
 
        | Parsetree.Pcstr_tuple [] ->
-          if is_silent then raise_errorf "A silent constructor cannot have 0 arguments, only 1.";
-          let qualifname' = constructor_qualify loc path name' in
-          Exp.case (pconstr name' [])
-            [%expr CCHash.int [%e int2exp index]],
-          Exp.case (pconstr name' [])
-            [%expr `Assoc [ PPX_Serialise.json_constructor_field, `String [%e qualifname']]],
-          Exp.case (pconstr name' [])
-            (atom qualifname' typestring_expr),
-          Exp.case
-            [%pat? p ]
+          if is_silent
+          then raise_errorf "A silent constructor cannot have 0 arguments, only 1.";
+          let pat = pconstr name' [] in
+          Exp.case pat [%expr CCHash.int [%e int2exp index]],
+          (None,
+           Exp.case pat [%expr `Assoc [ PPX_Serialise.json_constructor_field,
+                                        `String [%e qualifname']]]),
+          Exp.case pat (atom qualifname' typestring_expr),
+          Exp.case [%pat? p ]
             ~guard:
-            [%expr PPX_Serialise.(sexp_is_atom p && String.equal (sexp_get_cst ~who:"of_sexp" p)
-                                                      [%e qualifname' ]) ]
+            [%expr PPX_Serialise.(sexp_is_atom p && String.equal (sexp_get_cst ~who:"of_sexp" p) [%e qualifname' ]) ]
             (Exp.construct (mknoloc (Lident name')) None)
 
        | Parsetree.Pcstr_tuple typs ->
-          if is_silent && List.length typs > 1
-          then raise_errorf
-                 "A silent constructor cannot have %i arguments, only 1."
-                 (List.length typs);
+
+          (* Constructing the pattern in case of a silent constructor *)
+          let aux arg_type (i, patterns, main_arg) =
+            let option = is_option_type arg_type in
+            match main_arg with
+            | Some j when not option ->
+               raise_errorf
+                 "Silent constructor %s must have exactly 1 non-optional argument; arguments %i and %i are both non-optional." name' j i;
+            | _ -> 
+               if option
+               then i+1, [%pat? None ]::patterns, main_arg
+               else i+1, (pvar (argn i))::patterns, Some i
+          in
+          let silent_pat = List.rev typs |> List.fold_right aux |> silent_pat pconstr in
+
+          let pat = pconstr name' (pattn typs) in
+
           let build_tuple = function
             | [] -> None
             | [a] -> Some a
             | l -> Some(Exp.tuple l)
           in
           let typs = List.map (fun x -> (None, x)) typs in
-          build_case (pconstr name' (pattn typs)) build_tuple typs
+          build_case silent_pat pat build_tuple typs
 
        | Parsetree.Pcstr_record l ->
-          if is_silent && List.length l > 1
-          then raise_errorf
-                 "A silent constructor cannot have %i arguments, only 1."
-                 (List.length l);
-          let typs = List.map (fun x -> (Some x.pld_name.txt, x.pld_type)) l in
+
+          (* Constructing a record pattern *)
           let pconstr name args =
             let args = Some (Pat.record args Closed) in
             Pat.construct (mknoloc (Lident name)) args
           in
+
+          (* Constructing the pattern in case of a silent constructor *)
+          let aux x (i, patterns, main_arg) =
+            let field  = mkloc (Lident x.pld_name.txt) x.pld_name.loc in
+            let option = is_option_type x.pld_type in
+            match main_arg with
+            | Some _ when not option ->
+                 raise_errorf
+                   "Silent constructor %s must have exactly 1 non-optional argument; %s is its second one." name' x.pld_name.txt;
+            | _ -> 
+               if option
+               then i+1, (field, [%pat? None ])::patterns, main_arg
+               else i+1, (field, pvar (argn i))::patterns, Some i
+          in
+          let silent_pat = List.rev l |> List.fold_right aux |> silent_pat pconstr in
+
+          let pat = pconstr name' (pattn_named l) in
+
           let aux label_dec arg = mknoloc(Lident label_dec.pld_name.txt), arg in
           let build_record args = match List.map2 aux l args with
             | [] -> None
             | l -> Some(Exp.record l None)
           in
-          build_case (pconstr name' (pattn_named l)) build_record typs
+
+          let typs = List.map (fun x -> (Some x.pld_name.txt, x.pld_type)) l in
+          build_case silent_pat pat build_record typs
 
      in
      build_cases compare loc typestring_expr treat_field cs

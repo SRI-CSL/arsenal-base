@@ -85,3 +85,16 @@ let qualify loc exp path str =
 
 let type_qualify        loc = qualify loc [%expr PPX_Serialise.type_qualify]
 let constructor_qualify loc = qualify loc [%expr PPX_Serialise.constructor_qualify]
+
+let is_option_type core_type =
+  match core_type with
+  | {ptyp_desc = Ptyp_constr ({txt = Lident "option" ; _}, [_]) ; _} -> true
+  | _ -> false
+
+let get_main_arg typs =
+  let rec aux i = function
+    | [] -> None
+    | typ::_ when not(is_option_type typ) -> Some i
+    | _::tail -> aux (i+1) tail
+  in
+  typs |> aux 0

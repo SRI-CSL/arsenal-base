@@ -144,7 +144,7 @@ type argument = {
 let prefix_noapp loc s = [%expr `String ("#/definitions/"^[%e s ]) ]
 let prefix loc s = [%expr `String ("#/definitions/"^[%e s ] ()) ]
 
-let build_alternative loc is_silent qcons cons args : expression * expression option =
+let build_alternative loc is_silent qcons cons args : expression list * expression option =
   let req arg    = not arg.optional in
   let name arg   = str2exp arg.name in
   let nameString arg = [%expr `String [%e name arg]] in
@@ -158,24 +158,28 @@ let build_alternative loc is_silent qcons cons args : expression * expression op
     else
       [%expr [%e name arg], [%e common] ]
   in
-  if is_silent
-  then
-    prefix loc (List.hd args).typ, None
-  else
-    prefix_noapp loc qcons,
-    Some (
-        [%expr
-            [%e qcons],
-         `Assoc [
-             "type", `String "object";
-             "additionalProperties", `Bool false;
-             "required", `List (`String PPX_Serialise.json_constructor_field::[%e required]);
-             "properties",
-             `Assoc 
-               ((PPX_Serialise.json_constructor_field,
-                 `Assoc [ "type",    `String "string";
-                          "pattern", `String [%e cons] ])
-                :: [%e List.map format args |> list loc ])  ] ])
+  let seed = match is_silent with
+    | Some i -> [prefix loc (List.nth args i).typ]
+    | None -> []
+  in
+  match is_silent with
+  | Some _ when List.length args == 1 ->
+     seed, None
+  | _ ->
+     prefix_noapp loc qcons::seed,
+     Some (
+         [%expr
+             [%e qcons],
+          `Assoc [
+              "type", `String "object";
+              "additionalProperties", `Bool false;
+              "required", `List (`String PPX_Serialise.json_constructor_field::[%e required]);
+              "properties",
+              `Assoc 
+                ((PPX_Serialise.json_constructor_field,
+                  `Assoc [ "type",    `String "string";
+                           "pattern", `String [%e cons] ])
+                 :: [%e List.map format args |> list loc ])  ] ])
   
 (* let build_alternative loc cons args : expression =
  *   [%expr `Assoc [ PPX_Serialise.json_constructor_field, `String [%e str2exp cons] ;
@@ -183,8 +187,8 @@ let build_alternative loc is_silent qcons cons args : expression * expression op
 
 
 let build_type loc typ alternatives : expression =
-  let aux (name,_) = [%expr `Assoc [ "$ref", [%e name]]] in
-  let references = List.map aux alternatives |> list loc in
+  let aux (names,_) = List.map (fun name -> [%expr `Assoc [ "$ref", [%e name]]]) names in
+  let references = List.map aux alternatives |> List.flatten |> list loc in
   let init = 
     [%expr
         [ [%e typ],
@@ -231,6 +235,7 @@ let expr_of_type_decl ~path poly_args typestring_expr type_decl =
             let typ, optional, list = expr_of_typ typ in
             { name = argn i; typ; optional; list }
           in
+          let is_silent = if is_silent then typs |> get_main_arg else None in
           let args = typs |> List.mapi aux in
           build_alternative loc is_silent qname (str2exp name') args
 
@@ -238,6 +243,10 @@ let expr_of_type_decl ~path poly_args typestring_expr type_decl =
           let aux (x : label_declaration) =
             let typ, optional, list = expr_of_typ x.pld_type in
             { name = x.pld_name.txt; typ; optional; list }
+          in
+          let is_silent =
+            if is_silent then args |> List.map (fun x -> x.pld_type) |> get_main_arg
+            else None
           in
           let args = args |> List.map aux in
           build_alternative loc is_silent qname (str2exp name') args
