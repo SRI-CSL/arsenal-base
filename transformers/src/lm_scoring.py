@@ -50,7 +50,7 @@ def clean_set(instances, min_len=3):
 
     return cleaned, discarded
 
-parser = argparse.ArgumentParser(description="Building the translation model form NL to AST")
+parser = argparse.ArgumentParser(description="Build LM model from synthetic dataset to score coverage of real sentences")
 parser.add_argument("-data_basedir",   type=str,       default="../../../large_files/datasets/", help="base directory in which data sets are stored")
 parser.add_argument("-dataset",        type=str,                                help="name of the dataset to be used. If none is provided, the latest dataset is used")
 parser.add_argument("-test_file",      type=str,       default="../../../../source-documents/sentence_corpus/spec_sentences.txt", help="location of the test file (real sentences from the specs)")
