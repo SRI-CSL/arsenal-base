@@ -13,6 +13,7 @@ val si_noun : noun (* singular indefinite *)
 val pd_noun : noun (* plural definite *)
 val pi_noun : noun (* plural indefinite *)
 val bchoose : unit -> bool (* Choose a Boolean *)
+val singplu_choose : unit -> singplu (* Choose singular or plural *)
 val verb_mk : unit -> verb (* Make random verb mode *)
 val noun_mk : unit -> noun (* Make random noun mode *)
 val conjugate : verb -> string -> print
