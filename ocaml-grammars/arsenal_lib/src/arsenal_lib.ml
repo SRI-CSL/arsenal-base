@@ -51,10 +51,17 @@ let read_qualified a =
      a |> String.Split.right ~by:!separator |> Option.map snd |> Option.get_or ~default:a
   | Some i ->
      a
-     |> String.Split.seq_cpy ~by:!separator
-     |> Seq.drop i
-     |> String.concat_seq ~sep:!separator
-                 
+     |> String.Split.right ~by:!separator
+     |> Option.map
+          (fun (path, str) ->
+            Seq.append
+              (path
+               |> String.Split.seq_cpy ~by:!separator
+               |> Seq.drop i)
+              (Seq.singleton str)
+            |> String.concat_seq ~sep:!separator)
+     |> Option.get_or ~default:a
+           
 module PPX_Serialise = struct
 
   type 'a t = {
