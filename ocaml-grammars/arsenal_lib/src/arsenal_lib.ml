@@ -42,6 +42,7 @@ exception Conversion of string
 let raise_conv a = exc (fun s -> Conversion s) a
 
 let separator    = ref "."
+let str_arg      = ref ("(",")")
 let qualify_mode = ref (Some 0)
 
 let read_qualified a =
@@ -68,13 +69,13 @@ module PPX_Serialise = struct
   let fully_qualify ?(mode=(!qualify_mode)) ~path str =
     match mode with
     | None -> str
-    | Some i -> List.append path [str] |> List.drop i |> String.concat !separator
+    | Some i -> List.append (List.drop i path) [str] |> String.concat !separator
 
 
   let constructor_qualify = ref fully_qualify
   let type_qualify        = ref fully_qualify
-
-  let print_null = ref false (* Does not print null values in JSON *)
+  let str_apply f arg     = let pre,post = !str_arg in f^pre^arg^post
+  let print_null          = ref false (* false does not print null values in JSON *)
 
   let json_cons (s,v) tail =
     match v with

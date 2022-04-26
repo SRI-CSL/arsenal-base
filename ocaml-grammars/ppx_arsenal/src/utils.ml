@@ -71,7 +71,7 @@ let get_params type_decl =
   Ppx_deriving.fold_right_type_decl aux type_decl [] |> List.rev
 
 let application_str loc args =
-  let aux param sofar = [%expr [%e sofar]^"("^[%e param]^")"] in
+  let aux param sofar = [%expr PPX_Serialise.str_apply [%e sofar] [%e param]] in
   List.fold_right aux args
 
 let with_path = ref None

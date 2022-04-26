@@ -39,6 +39,7 @@ let options =
     ("-path-mode", Int(fun i -> qualify_mode := if i < 0 then None else Some i), "\tmode for displaying paths in contructors and entity kinds: -1 for no path, 0 for whole paths, (positive) i for pruning the first i levels of paths (default is 0)");
     ("-short", Unit(fun () -> qualify_mode := None), "\tequivalent to no path (-path-mode \"-1\") in contructors and entity kinds");
     ("-separator", String(fun s -> separator := s), "\tseparator for module names in constructors and entity kinds (default is \".\")");
+    ("-type-arg", Tuple [String (fun pre -> str_arg := pre, snd !str_arg); String (fun post -> str_arg := fst !str_arg, post)] , "\t pre- and post- delimiters for type arguments (default is \"(\" \")\")");
     ("-strict-entities", Float(fun f -> Entity.strict := f), "\thow strict entity kinds should be considered (0. : they are ignored; +infty: very strictly enforced)");
     ("-types", Set PPX_Serialise.print_types, "\tdisplay types in generated data");
     ("-verb", Int(fun i -> verb := i), "\tverbosity level (default is 0)");

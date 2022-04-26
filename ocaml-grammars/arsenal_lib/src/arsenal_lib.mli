@@ -17,6 +17,7 @@ val exc   : ?stdout:bool
 
 (* Separator of fully qualified names (types and constructors); default is "." *)
 val separator : string ref
+val str_arg   : (string*string) ref
 
 (* Controls syntax of fully qualified names for types and constructors *)
 (* Some i: prunes the first i levels of the prefix; use i = 0 for the fully qualified name *)
@@ -63,6 +64,7 @@ module PPX_Serialise : sig
     }
   val constructor_qualify : (?mode: int option -> path: string list -> string -> string) ref
   val type_qualify        : (?mode: int option -> path: string list -> string -> string) ref
+  val str_apply   : string -> string -> string
   val print_null  : bool ref (* Does not print null values in JSON *)
   val json_cons   : (string * JSON.t) -> (string * JSON.t) list -> (string * JSON.t) list
   val print_types : bool ref (* Print types in S-expressions? *)

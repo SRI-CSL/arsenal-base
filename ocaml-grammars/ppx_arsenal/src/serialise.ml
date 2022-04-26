@@ -186,7 +186,7 @@ let expr_of_type_decl ~path type_decl =
   let args = Utils.get_params type_decl in
   let typestring_expr, compare =
     let aux param (typestring_expr, compare) =
-      [%expr [%e typestring_expr]^"("^([%e param].PPX_Serialise.typestring())^")"],
+      [%expr PPX_Serialise.str_apply [%e typestring_expr] ([%e param].PPX_Serialise.typestring())],
       [%expr [%e compare]             ([%e param].PPX_Serialise.compare)]
     in
     List.fold_right aux args
