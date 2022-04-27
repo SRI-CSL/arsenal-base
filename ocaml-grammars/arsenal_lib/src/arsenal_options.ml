@@ -20,30 +20,34 @@ let injectivity = ref false (* Whether to check that the pretty-printing functio
 let no_duplicates = ref false (* Whether to ensure there are no duplicates -- requires saving in memory all instances produced *)
 let args : string list ref = ref [] (* Where the command-line argument will be stacked *)
 
+let options_base =
+  [
+    ("-hide-entities", Clear Entity.ppkind, "\tif a substitution string is present in entity, just show the string");
+    ("-json", Set print_json, "\tprint json output");
+    ("-no-nl", Clear print_nl, "\tprint disable natural language output");
+    ("-one-entity", Set Entity.one_entity_kind, "\tin natural language, only use 1 kind of entities");
+    ("-path-mode", Int(fun i -> qualify_mode := if i < 0 then None else Some i), "\tmode for displaying paths in contructors and entity kinds: -1 for no path, 0 for whole paths, (positive) i for pruning the first i levels of paths (default is 0)");
+    ("-pretty", Set pretty, "\tprint JSON and S-expressions in human-readable form");
+    ("-separator", String(fun s -> separator := s), "\tseparator for module names in constructors and entity kinds (default is \".\")");
+    ("-sexp", Set print_sexp, "\tprint S-expression output");
+    ("-short", Unit(fun () -> qualify_mode := None), "\tequivalent to no path (-path-mode \"-1\") in contructors and entity kinds");
+    ("-type-arg", Tuple [String (fun pre -> str_arg := pre, snd !str_arg); String (fun post -> str_arg := fst !str_arg, post)] , "\t pre- and post- delimiters for type arguments (default is \"(\" \")\")");
+    ("-verb", Int(fun i -> verb := i), "\tverbosity level (default is 0)");
+  ]
+
 let options =
   [
     ("-arity_sep", String(fun s -> Polish.arity := s), "\tin Polish notation, specify separator between token and its arity (default is '#')");
     (* ("-check", Set check_opt, "\tcheck output"); *)
     ("-check-injectivity", Set injectivity, "\tcheck there are no two ASTs for the same NL (default is false) -- saves generated instances in memory");
     ("-deterministic", Set deterministic, "\tDeterministic NL generation (default is false)");
-    ("-hide-entities", Clear Entity.ppkind, "\tif a substitution string is present in entity, just show the string");
-    ("-json", Set print_json, "\tprint json output");
     ("-n", Int(fun i -> howmany := i), "\thow many instances to generate (default is 1)");
     ("-no-duplicates", Set no_duplicates, "\tensure there are no duplicates (default is false) -- saves generated instances in memory");
-    ("-no-nl", Clear print_nl, "\tprint disable natural language output");
-    ("-one-entity", Set Entity.one_entity_kind, "\tin natural language, only use 1 kind of entities");
     ("-polish", Set print_polish, "\tprint polish output");
-    ("-pretty", Set pretty, "\tprint JSON and S-expressions in human-readable form");
     ("-raw-json", Set raw_json, "\tProduce raw JSONs (i.e. JSON versions of S-expressions) (default is false)");
-    ("-sexp", Set print_sexp, "\tprint S-expression output");
-    ("-path-mode", Int(fun i -> qualify_mode := if i < 0 then None else Some i), "\tmode for displaying paths in contructors and entity kinds: -1 for no path, 0 for whole paths, (positive) i for pruning the first i levels of paths (default is 0)");
-    ("-short", Unit(fun () -> qualify_mode := None), "\tequivalent to no path (-path-mode \"-1\") in contructors and entity kinds");
-    ("-separator", String(fun s -> separator := s), "\tseparator for module names in constructors and entity kinds (default is \".\")");
-    ("-type-arg", Tuple [String (fun pre -> str_arg := pre, snd !str_arg); String (fun post -> str_arg := fst !str_arg, post)] , "\t pre- and post- delimiters for type arguments (default is \"(\" \")\")");
     ("-strict-entities", Float(fun f -> Entity.strict := f), "\thow strict entity kinds should be considered (0. : they are ignored; +infty: very strictly enforced)");
     ("-types", Set PPX_Serialise.print_types, "\tdisplay types in generated data");
-    ("-verb", Int(fun i -> verb := i), "\tverbosity level (default is 0)");
-  ]
+  ] @ options_base
 
 exception NonInjective of { nl      : string;
                             ast_old : Sexp.t ;
