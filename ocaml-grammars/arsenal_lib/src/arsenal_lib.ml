@@ -407,7 +407,8 @@ module About = struct
                    } -> t
 end
 
-(* The register of types is indexed by (fully qualified) type names (strings) *)
+(* The register of types is indexed by fully qualified
+   (with default separator and path-mode) type names (strings) *)
 module Register : sig
   val mem        : string -> bool
   val add        : string -> About.t -> unit
@@ -445,6 +446,12 @@ module JSONindex = struct
     | None -> exc (fun s -> NotRegistered s) "%s" str
 
   let out ~id ~description ~sentence_info ~toptype =
+    let toptype_custom_format =
+      let open Register in
+      match find_opt toptype with
+      | Some(About{ serialise; _ }) -> serialise.typestring()
+      | _ ->  exc (fun s -> NotRegistered s) "%s" toptype
+    in
     let top =
       "NL2CSTResult",
       `Assoc [
@@ -453,7 +460,7 @@ module JSONindex = struct
           "required", `List [ `String "cst"; `String "sentence_id" ];
           "properties",
           `Assoc 
-            (("cst", `Assoc [ "$ref", `String("#/definitions/"^ toptype) ])
+            (("cst", `Assoc [ "$ref", `String("#/definitions/"^ toptype_custom_format) ])
              :: sentence_info)
         ]
     in
