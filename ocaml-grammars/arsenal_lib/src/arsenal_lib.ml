@@ -314,7 +314,7 @@ let (++) w1 w2 = 1 - (w1 * w2)
 let (+?) pp1 pp2  = function Some x -> pp1 x | None -> pp2
 let (?+) pp_arg = function Some x -> pp_arg x | None -> noop
 
-let (??) = function Some _ -> true | None -> false
+(* let (??) = function Some _ -> true | None -> false *)
 
 (**********************************************************************)
 (* Type Unique ID                                                     *)
@@ -424,22 +424,36 @@ end
 
 (* Module to produce a description of types in JSON format *)
 module JSONindex = struct
-            
+
   (* Low-level primitives, for the Arsenal PPX; do not use yourself *)
-  let index = ref []
-  let marked = Stbl.create 100
+
+  (* Type of mutable lists of pairs (type string, JSON type description) *)
   type t = (string * JSON.t) list ref
+
+  let index : t = ref [] (* List of JSON type descriptions to be printed in final JSON *)
+  let marked : t Stbl.t = Stbl.create 100 (* Maps type strings to their dependencies *)
   let mem s  = Stbl.mem marked s
   let find s = !(Stbl.find marked s)
-  let mark s : t = 
-    let result = ref [] in
-    Stbl.add marked s result;
-    result
+  let mark s : t option = 
+    if not(mem s)
+    then
+      begin
+        Format.(fprintf err_formatter) "Computing JSON description of type %s\n" s;
+        let result = ref [] in
+        Stbl.add marked s result;
+        Some(result)
+      end
+    else
+      begin
+        Format.(fprintf err_formatter) "Already got JSON description of type %s\n" s;
+        None
+      end
   let add (mark : t) l =
     mark := l;
     List.iter (fun json -> index := json::!index) l
 
   (* Functions to be used by user *)
+
   let populate str =
     match Register.find_opt str with
     | Some (About{ json_desc ; _}) -> json_desc ()
@@ -495,9 +509,9 @@ end
 (**********************************************)
 
 let typestring_bool () = "bool"
-let typestring_int () = "int"
-let typestring_list str () = "list("^str()^")"
-let typestring_option str () = "option("^str()^")"
+let typestring_int ()  = "int"
+let typestring_list str ()   = PPX_Serialise.str_apply "list" (str())
+let typestring_option str () = PPX_Serialise.str_apply "option" (str())
 
 let json_desc_bool     () = ()
 let json_desc_int      () = ()
@@ -775,22 +789,28 @@ module Entity = struct
       (a.kind, a.counter, a.substitution)
       (b.kind, b.counter, b.substitution)
 
-  let typestring arg () = "entity("^arg()^")"
+  let typestring arg () = PPX_Serialise.str_apply "entity" (arg())
   let json_desc arg () =
-    let mark = JSONindex.mark (arg()) in
-    JSONindex.add mark
-      [ typestring arg (),
-        `Assoc [ "type",       `String "object";
-                 "additionalProperties", `Bool false;
-                 "required",   `List [`String "counter"]; 
-                 "properties", `Assoc [
-                                   "entity",       `Assoc ["type", `String "boolean"];
-                                   "kind",         `Assoc ["type", `String "string"];
-                                   "counter",      `Assoc ["type", `String "integer"];
-                                   "substitution", `Assoc ["type", `String "string"]
-                                 ]
-          ]
-      ]
+    let typestring = typestring arg () in
+    match JSONindex.mark typestring with
+    | Some mark ->
+       Format.(fprintf err_formatter) "Adding JSON description of type %s\n" typestring;
+       JSONindex.add mark
+         [ typestring,
+           `Assoc [ "type",       `String "object";
+                    "additionalProperties", `Bool false;
+                    "required",   `List [`String "counter"]; 
+                    "properties", `Assoc [
+                                      "entity",       `Assoc ["type", `String "boolean"];
+                                      "kind",         `Assoc ["type", `String "string"];
+                                      "counter",      `Assoc ["type", `String "integer"];
+                                      "substitution", `Assoc ["type", `String "string"]
+                                    ]
+             ]
+         ]
+    | None ->
+       Format.(fprintf err_formatter) "NOT adding JSON description of type %s\n" typestring
+
 
   let pp_kindcounter arg kind counter =
     let base = match kind with

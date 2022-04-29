@@ -147,7 +147,7 @@ val ( +? ) : 'a pp -> print -> 'a option pp
 val ( ?+ ) : 'a pp -> 'a option pp (* noop if not present *)
 
 (* has the option? *)
-val ( ?? ) : 'a option -> bool
+(* val ( ?? ) : 'a option -> bool *)
 
 
 (**********************************************************************)
@@ -206,7 +206,7 @@ module JSONindex : sig
   type t
   val mem  : string -> bool
   val find : string -> (string*JSON.t) list
-  val mark : string -> t
+  val mark : string -> t option
   val add  : t -> (string*JSON.t) list -> unit
 
   (* Functions to be used by user *)

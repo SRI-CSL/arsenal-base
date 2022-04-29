@@ -56,7 +56,7 @@ let arsenal,_ = (TypeString.deriver, [])
                   #++ "ord"
                         #+ (Serialise.deriver, [])
                              #++ "random"
-                                   #+ (JSONdesc.deriver, [])
+                                   #+ (JSONdesc.deriver, ["in_grammar"])
 
 let () = Ppx_deriving.register Serialise.deriver;;
 let () = Ppx_deriving.register TypeString.deriver;;

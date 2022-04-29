@@ -288,17 +288,24 @@ let expr_of_type_decl in_grammar ~path ~about type_decl : expression * expressio
            ~name:[%e name] ]
     | _::_ -> [%expr failwith "Can't get key for polymorphic type"]
   in
+
+  (* This ppx adds 2 pieces of code after each type definition: *)
+  (* (1) A function with unit argument, to add the type description to a JSON schema *)
+  (* (2) An instruction that adds the type to the registry of types *)
   if in_grammar then
+    (* In case the type is labelled as "being in the grammar" (default is true),
+       this ppx adds 2 pieces of code after each type definition: *)
+    (* (1) A function with unit argument, to add the type description to a JSON schema *)
     [%expr
      fun () ->
-       if not(JSONindex.mem [%e typestring_expr])
-       then
-         begin
-           let mark = JSONindex.mark [%e typestring_expr] in
-           let json_list = [%e expr_of_type_decl ~path args_applied typestring_expr type_decl ] in
-           Format.(fprintf err_formatter) "Registering type %s\n" [%e typestring_expr];
-           JSONindex.add mark json_list
-         end
+     match JSONindex.mark [%e typestring_expr] with
+     | Some mark ->
+        let json_list =
+          [%e expr_of_type_decl ~path args_applied typestring_expr type_decl ]
+        in
+        Format.(fprintf err_formatter) "Adding JSON description of type %s\n" [%e typestring_expr];
+        JSONindex.add mark json_list
+     | None -> ()
     ],
     begin
       match args with
@@ -308,12 +315,13 @@ let expr_of_type_decl in_grammar ~path ~about type_decl : expression * expressio
              then
                Register.add [%e typestring_expr] [%e about];
          ]
-      | _::_ -> [%expr ()]
+      | _::_ -> [%expr ()] (* Polymorphic types are not added to the registry of types *)
     end,
     key
   else
+    (* In case*)
     [%expr fun () ->
-        Format.(fprintf err_formatter) "Skipping type %s\n" [%e typestring_expr]],
+        Format.(fprintf err_formatter) "Skipping type %s (not in grammar)\n" [%e typestring_expr]],
     [%expr ()],
     key
     
