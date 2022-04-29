@@ -147,7 +147,7 @@ val ( +? ) : 'a pp -> print -> 'a option pp
 val ( ?+ ) : 'a pp -> 'a option pp (* noop if not present *)
 
 (* has the option? *)
-(* val ( ?? ) : 'a option -> bool *)
+val ( ?? ) : 'a option -> bool
 
 
 (**********************************************************************)
@@ -201,6 +201,8 @@ end
 
 (* Module to produce a description of types in JSON format *)
 module JSONindex : sig
+
+  val check_duplicates : bool ref
 
   (* Low-level primitives, for the Arsenal PPX; do not use yourself *)
   type t

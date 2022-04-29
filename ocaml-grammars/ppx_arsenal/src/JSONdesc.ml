@@ -207,8 +207,6 @@ let build_abbrev loc typ body : expression =
        type foo = ...
      possibly
        type ('a,...,'n) foo = ...
-
-     Producing an expression, of type string, describing the type declaration
  *)
   
 let expr_of_type_decl ~path poly_args typestring_expr type_decl =
@@ -292,39 +290,30 @@ let expr_of_type_decl in_grammar ~path ~about type_decl : expression * expressio
   (* This ppx adds 2 pieces of code after each type definition: *)
   (* (1) A function with unit argument, to add the type description to a JSON schema *)
   (* (2) An instruction that adds the type to the registry of types *)
+  (* We also output the type key. *)
   if in_grammar then
-    (* In case the type is labelled as "being in the grammar" (default is true),
-       this ppx adds 2 pieces of code after each type definition: *)
-    (* (1) A function with unit argument, to add the type description to a JSON schema *)
+    (* In case the type is labelled as "being in the grammar" (default is true) *)
     [%expr
      fun () ->
      match JSONindex.mark [%e typestring_expr] with
-     | Some mark ->
-        let json_list =
-          [%e expr_of_type_decl ~path args_applied typestring_expr type_decl ]
+     | Some mark -> (* We get (Some mark) if we haven't seen typestring_expr yet. *)
+        let json_list = [%e expr_of_type_decl ~path args_applied typestring_expr type_decl ]
         in
-        Format.(fprintf err_formatter) "Adding JSON description of type %s\n" [%e typestring_expr];
         JSONindex.add mark json_list
-     | None -> ()
+     | None -> () (* We get None if we have seen typestring_expr before. Nothing to do. *)
     ],
     begin
       match args with
-      | [] ->
-         [%expr
-             if not(Register.mem [%e typestring_expr])
-             then
-               Register.add [%e typestring_expr] [%e about];
-         ]
+      | []   -> [%expr Register.add [%e typestring_expr] [%e about]; ]
       | _::_ -> [%expr ()] (* Polymorphic types are not added to the registry of types *)
     end,
     key
   else
-    (* In case*)
+    (* The type is explicitly labelled as "not being in the grammar"; nothing happens. *)
     [%expr fun () ->
         Format.(fprintf err_formatter) "Skipping type %s (not in grammar)\n" [%e typestring_expr]],
     [%expr ()],
-    key
-    
+    key    
 
 (* Signature and Structure Components *)
 

@@ -314,7 +314,7 @@ let (++) w1 w2 = 1 - (w1 * w2)
 let (+?) pp1 pp2  = function Some x -> pp1 x | None -> pp2
 let (?+) pp_arg = function Some x -> pp_arg x | None -> noop
 
-(* let (??) = function Some _ -> true | None -> false *)
+let (??) = function Some _ -> true | None -> false
 
 (**********************************************************************)
 (* Type Unique ID                                                     *)
@@ -349,7 +349,7 @@ end = struct
                 name : string;
                 hash : 'a Hash.t;
                 compare : 'a Ord.t;
-                cmp  : 'b. 'b u -> ('a, 'b) Order.t;
+                cmp    : 'b. 'b u -> ('a, 'b) Order.t;
                 random : 'a PPX_Random.t ref;
                 pp     : 'a pp ref;
               }
@@ -396,6 +396,7 @@ end
 (*************************************)
 
 exception NotRegistered of string
+exception AlreadyRegistered of string
 
 (* We keep a global mapping from strings (identifying types)
    to a record values containing information about the type *)
@@ -417,7 +418,9 @@ module Register : sig
 end = struct
   let global   = Stbl.create 100
   let mem      = Stbl.mem global
-  let add      = Stbl.add global
+  let add key value =
+    if mem key then exc (fun s -> AlreadyRegistered s) "%s" key;
+    Stbl.add global key value
   let find_opt = Stbl.find_opt global
   let all ()   = global |> Stbl.to_seq_keys |> Seq.to_list |> List.sort String.compare
 end
@@ -427,30 +430,49 @@ module JSONindex = struct
 
   (* Low-level primitives, for the Arsenal PPX; do not use yourself *)
 
-  (* Type of mutable lists of pairs (type string, JSON type description) *)
-  type t = (string * JSON.t) list ref
+  (* Type of mutable lists of pairs (label, JSON entry) *)
+  type json_entries = (string * JSON.t) list ref
 
-  let index : t = ref [] (* List of JSON type descriptions to be printed in final JSON *)
-  let marked : t Stbl.t = Stbl.create 100 (* Maps type strings to their dependencies *)
-  let mem s  = Stbl.mem marked s
-  let find s = !(Stbl.find marked s)
-  let mark s : t option = 
-    if not(mem s)
+  type t = {
+      label : string;
+      json_entries : json_entries
+    }
+
+  let index  : json_entries = ref [] (* List of JSON entries to be printed in final JSON *)
+  let marked : t Stbl.t     = Stbl.create 100 (* Maps type labels to their JSON entries *)
+  let all    : unit Stbl.t  = Stbl.create 100 (* All JSON entries, including constructors *)
+  let mem label  = Stbl.mem marked label
+  let find label = !((Stbl.find marked label).json_entries)
+  let mark label : t option = 
+    if not(mem label)
     then
       begin
-        Format.(fprintf err_formatter) "Computing JSON description of type %s\n" s;
-        let result = ref [] in
-        Stbl.add marked s result;
+        Format.(fprintf err_formatter) "Computing JSON description of type %s\n" label;
+        let result = { label; json_entries = ref [] } in
+        Stbl.add marked label result;
         Some(result)
       end
     else
       begin
-        Format.(fprintf err_formatter) "Already got JSON description of type %s\n" s;
+        Format.(fprintf err_formatter) "Already got JSON description of type %s\n" label;
         None
       end
+
+  let check_duplicates = ref true
+
+  let add2index json =
+    let name = fst json in
+    if !check_duplicates && Stbl.mem all name
+    then exc (fun s -> AlreadyRegistered s)
+           "%s is used several times. Does the grammar feature two constructors with the same name in the same module?"
+           name;
+    Stbl.add all name ();
+    index := json::!index
+
   let add (mark : t) l =
-    mark := l;
-    List.iter (fun json -> index := json::!index) l
+    mark.json_entries := l;
+    Format.(fprintf err_formatter) "Adding JSON description of type %s\n" mark.label;
+    List.iter add2index l
 
   (* Functions to be used by user *)
 
@@ -778,7 +800,7 @@ module Entity = struct
       substitution : string option
     }
 
-  let get_subst t = Option.get_exn t.substitution
+  let get_subst t = Option.get_exn_or "No substitution" t.substitution
 
   let hash arg a =
     Hash.triple (Hash.opt arg) hash_counter (Hash.opt Hash.string)
@@ -794,7 +816,6 @@ module Entity = struct
     let typestring = typestring arg () in
     match JSONindex.mark typestring with
     | Some mark ->
-       Format.(fprintf err_formatter) "Adding JSON description of type %s\n" typestring;
        JSONindex.add mark
          [ typestring,
            `Assoc [ "type",       `String "object";
@@ -808,8 +829,7 @@ module Entity = struct
                                     ]
              ]
          ]
-    | None ->
-       Format.(fprintf err_formatter) "NOT adding JSON description of type %s\n" typestring
+    | None -> ()
 
 
   let pp_kindcounter arg kind counter =
