@@ -823,6 +823,7 @@ module Entity = struct
                     "required",   `List [`String "counter"]; 
                     "properties", `Assoc [
                                       "entity",       `Assoc ["type", `String "boolean"];
+                                      "node_type",    `Assoc ["type", `String "string"];
                                       "kind",         `Assoc ["type", `String "string"];
                                       "counter",      `Assoc ["type", `String "integer"];
                                       "substitution", `Assoc ["type", `String "string"]
@@ -830,7 +831,6 @@ module Entity = struct
              ]
          ]
     | None -> ()
-
 
   let pp_kindcounter arg kind counter =
     let base = match kind with
@@ -878,6 +878,7 @@ module Entity = struct
     let kind l =
       match e.kind with
       | Some k when not !one_entity_kind ->
+        let l = ("node_type", `String "Entity")::l in
          (match arg.PPX_Serialise.to_json k with
           | `Assoc [c, v] when String.equal c PPX_Serialise.json_constructor_field -> ("kind", v)::l
           | `String _ as v -> ("kind", v)::l
