@@ -760,6 +760,17 @@ module Entity = struct
   let counters = Counters.create 100 (* counters for entities *)
   let init () = Counters.clear counters
 
+ (* collect all entity types that we encounter so that we can
+     add them to the schema later. 
+     This is only used as extra information for downstream 
+     querying and not actually required for the schema. 
+  *)
+  module EntityTypes = Set.Make(String)
+  let entity_types = ref EntityTypes.empty
+  
+  let get_types () = EntityTypes.elements !entity_types
+
+
   let one_entity_kind = ref false (* Is there just one entity kind? *)
   let warnings : [`NoSubst of string] list ref = ref [] (* While parsing a json, are we seeing any warning? *)
   let strict = ref 1.5
@@ -814,6 +825,7 @@ module Entity = struct
   let typestring arg () = PPX_Serialise.str_apply "entity" (arg())
   let json_desc arg () =
     let typestring = typestring arg () in
+    entity_types := EntityTypes.add typestring !entity_types;
     match JSONindex.mark typestring with
     | Some mark ->
        JSONindex.add mark
@@ -878,9 +890,13 @@ module Entity = struct
     let kind l =
       match e.kind with
       | Some k when not !one_entity_kind ->
-        let l = ("node_type", `String "Entity")::l in
+
+        let typestring = arg.PPX_Serialise.typestring () in 
+        let typestring = let pre,post = !str_arg in "entity"^pre^typestring^post in
+        let node_type = ("node_type", `String typestring) in 
+
          (match arg.PPX_Serialise.to_json k with
-          | `Assoc [c, v] when String.equal c PPX_Serialise.json_constructor_field -> ("kind", v)::l
+          | `Assoc [c, v] when String.equal c PPX_Serialise.json_constructor_field -> ("kind", v)::(node_type::l)
           | `String _ as v -> ("kind", v)::l
           | json -> raise_conv "JSON is not good for entity kind: %a"
                       (fun a -> JSON.pretty_print a) json)

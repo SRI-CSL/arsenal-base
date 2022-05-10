@@ -304,6 +304,7 @@ sig
     ?counter:int ->
     ?substitution:string option -> unit -> ('a t, 'b) Result.result
   val pick : ('a * float) list -> PPX_Random.state -> 'a
+  val get_types : unit -> tag list
 end
 
 (******************)
