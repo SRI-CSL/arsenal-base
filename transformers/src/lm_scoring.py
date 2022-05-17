@@ -22,6 +22,27 @@ from transformers.trainer_utils import get_last_checkpoint, is_main_process
 
 import tensorboard
 
+'''
+Scores real sentences based on the perplexity of a causal LM trained on synthetic data. This should indicate coverage
+of the grammar which was used to create the synthetic data.
+
+Main argumentss:
+- data_basedir:   The root location in which datasets are stored
+- dataset:        Name of the dataset that is used for training the CLM. If none is provided, the latest from 
+                  data_basedir is used
+
+The trained model is used to score sentences from three different datasets:
+- val_set:        This is the synthetic test set (created together with the synthetic training set used for CLM training).
+                  Scores from this set are used to obtain an (average) reference score for covered examples.
+- test_set:       All (entity-processed) sentences from documents that exist in our corpus. This will contain mostly
+                  uncovered sentences. Comparing with the reference score from the validation set should indicate which
+                  sentences are covered and which are not.
+- example_set:    A much smaller subset of the test_set that we are currently focusing on. Here, the ratio of covered
+                  sentences should be much higher than in the test-set, and so hopefully we'll see better scores in 
+                  in this set.
+
+'''
+
 logger = logging.getLogger(__name__)
 
 
@@ -53,11 +74,11 @@ def clean_set(instances, min_len=3):
 parser = argparse.ArgumentParser(description="Build LM model from synthetic dataset to score coverage of real sentences")
 parser.add_argument("-data_basedir",   type=str,       default="../../../large_files/datasets/", help="base directory in which data sets are stored")
 parser.add_argument("-dataset",        type=str,                                help="name of the dataset to be used. If none is provided, the latest dataset is used")
-parser.add_argument("-test_file",      type=str,       default="../../../../source-documents/sentence_corpus/spec_sentences.txt", help="location of the test file (real sentences from the specs)")
-parser.add_argument("-example_dir",    type=str,       default="../../../../source-documents/entities", help="location of the (entity-processed) example snippets directory")
+parser.add_argument("-test_file",      type=str,       default="../../../eval/lm_scoring/spec_sentences_clean.txt", help="location of the test file (real sentences from the specs)")
+parser.add_argument("-example_dir",    type=str,       default="../../../../generated-files/csts", help="location of the (entity-processed) example snippets directory")
 parser.add_argument("-val_size",       type=int,       default=10000,          help="number of instances to use from the validation set (if none is provided, the entire val set is scored - this might take days!)")
 parser.add_argument("-model_dir",      type=str,                               help="model location; if none is provided, ../arsenal/large_files/models/lm/[data_dir]_[model_type] is used for training")
-parser.add_argument("-out_dir",        type=str,       default="../../../eval/",help="output location")
+parser.add_argument("-out_dir",        type=str,       default="../../../eval/lm_scores/",help="output location")
 parser.add_argument("-epochs",         type=int,       default=1,              help="number of training epochs")
 parser.add_argument("-resume",                         action='store_true',    help="tries to resume training from latest model/checkpoint")
 parser.add_argument("-skiptrain",                      action='store_true',    help="skip model training")
@@ -263,7 +284,7 @@ if eval:
     for example_file in example_files:
         with open(os.path.join(example_dir, example_file), "r") as f:
             instances = json.load(f)
-            example_set.extend([i["new-text"] for i in instances])
+            example_set.extend([i["cleaned-text"] for i in instances])
 
     val_set, _ = clean_set(val_set, min_len)
     test_set, _ = clean_set(test_set, min_len)
