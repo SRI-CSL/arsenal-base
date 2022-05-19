@@ -33,7 +33,7 @@
     "react-ace": "^6.4.0",
     "react-dom": "^16.8.2",
     "react-redux": "^5.1.1",
-    "react-scripts": "^2.1.5",
+    "react-scripts": "^5.0.1",
     "reactstrap": "^6.5.0",
     "redux": "^4.0.1",
     "redux-devtools-extension": "^2.13.8",
