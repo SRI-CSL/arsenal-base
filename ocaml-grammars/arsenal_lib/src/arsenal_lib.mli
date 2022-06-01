@@ -64,6 +64,7 @@ module PPX_Serialise : sig
     }
   val constructor_qualify : (?mode: int option -> path: string list -> string -> string) ref
   val type_qualify        : (?mode: int option -> path: string list -> string -> string) ref
+  val arg_name            : (is_list:bool -> arguments:int -> int -> string) ref
   val str_apply   : string -> string -> string
   val print_null  : bool ref (* Does not print null values in JSON *)
   val json_cons   : (string * JSON.t) -> (string * JSON.t) list -> (string * JSON.t) list

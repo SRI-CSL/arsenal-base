@@ -132,10 +132,8 @@ and expr_of_typ typ : expression*bool*bool =
      raise_errorf ~loc:ptyp_loc "Cannot derive %s for %s."
        deriver_name (Ppx_deriving.string_of_core_type typ)
 
-let argn i = Printf.sprintf "arg%d" i
-
 type argument = {
-    name : string;
+    name : expression; (* of type string *)
     typ  : expression;
     optional : bool;
     list : bool
@@ -146,7 +144,7 @@ let prefix loc s = [%expr `String ("#/definitions/"^[%e s ] ()) ]
 
 let build_alternative loc is_silent qcons cons args : expression list * expression option =
   let req arg    = not arg.optional in
-  let name arg   = str2exp arg.name in
+  let name arg   = arg.name in
   let nameString arg = [%expr `String [%e name arg]] in
   let required   = List.filter req args |> List.map nameString |> list loc in
   let format arg =
@@ -230,8 +228,9 @@ let expr_of_type_decl ~path poly_args typestring_expr type_decl =
        | Parsetree.Pcstr_tuple typs -> (* typs is the list t1 ... tp *)
           (* we build the JSON { PPX_Serialise.json_constructor_field : "C"; "arguments" : args } *)
           let aux i typ =
+            let name = arg_name loc typs typ i in
             let typ, optional, list = expr_of_typ typ in
-            { name = argn i; typ; optional; list }
+            { name; typ; optional; list }
           in
           let is_silent = if is_silent then typs |> get_main_arg else None in
           let args = typs |> List.mapi aux in
@@ -240,7 +239,7 @@ let expr_of_type_decl ~path poly_args typestring_expr type_decl =
        | Parsetree.Pcstr_record args ->
           let aux (x : label_declaration) =
             let typ, optional, list = expr_of_typ x.pld_type in
-            { name = x.pld_name.txt; typ; optional; list }
+            { name = str2exp (x.pld_name.txt); typ; optional; list }
           in
           let is_silent =
             if is_silent then args |> List.map (fun x -> x.pld_type) |> get_main_arg

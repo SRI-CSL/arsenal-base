@@ -86,6 +86,11 @@ let qualify loc exp path str =
 let type_qualify        loc = qualify loc [%expr PPX_Serialise.type_qualify]
 let constructor_qualify loc = qualify loc [%expr PPX_Serialise.constructor_qualify]
 
+let is_list_type core_type =
+  match core_type with
+  | {ptyp_desc = Ptyp_constr ({txt = Lident "list" ; _}, [_]) ; _} -> true
+  | _ -> false
+
 let is_option_type core_type =
   match core_type with
   | {ptyp_desc = Ptyp_constr ({txt = Lident "option" ; _}, [_]) ; _} -> true
@@ -98,3 +103,11 @@ let get_main_arg typs =
     | _::tail -> aux (i+1) tail
   in
   typs |> aux 0
+
+let arg_name loc typs typ i =
+  let is_list = if is_list_type typ then [%expr true ] else [%expr true ] in
+  [%expr
+      !(PPX_Serialise.arg_name)
+      ~is_list:[%e is_list ]
+      ~arguments:[%e int2exp (List.length typs)]
+      [%e int2exp i] ]

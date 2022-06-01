@@ -25,7 +25,6 @@ let deriver_name = "serialise"
 (* Parse Tree and PPX Helpers *)
 
 let argn = Printf.sprintf "a%d"
-let argv = Printf.sprintf "arg%d"
 
 let pattn typs    = List.mapi (fun i _ -> pvar (argn i)) typs
 let pattn_named l =
@@ -228,11 +227,11 @@ let expr_of_type_decl ~path type_decl =
          in
          let aux_to_json i (name,typ) =
            let name = match name with
-             | Some name -> name
-             | None -> argv i
+             | Some name -> str2exp name
+             | None -> arg_name loc typs typ i
            in
            [%expr
-               [%e str2exp name],
+               [%e name],
             [%e expr_of_typ build_cases2 typestring_expr typ].PPX_Serialise.to_json [%e evar (argn i)]]
          in
          let aux_to_json_silent i =

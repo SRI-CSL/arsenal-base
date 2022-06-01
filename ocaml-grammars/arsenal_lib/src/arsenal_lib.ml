@@ -78,12 +78,14 @@ module PPX_Serialise = struct
     | None -> str
     | Some i -> List.append (List.drop i path) [str] |> String.concat !separator
 
+  let arg_name ~is_list:_ ~arguments:_ i = Printf.sprintf "arg%d" i
 
   let constructor_qualify = ref fully_qualify
   let type_qualify        = ref fully_qualify
   let str_apply f arg     = let pre,post = !str_arg in f^pre^arg^post
   let print_null          = ref false (* false does not print null values in JSON *)
-
+  let arg_name            = ref arg_name
+        
   let json_cons (s,v) tail =
     match v with
     | `Null when not !print_null -> tail
