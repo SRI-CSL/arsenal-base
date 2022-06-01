@@ -105,7 +105,7 @@ let get_main_arg typs =
   typs |> aux 0
 
 let arg_name loc typs typ i =
-  let is_list = if is_list_type typ then [%expr true ] else [%expr true ] in
+  let is_list = if is_list_type typ then [%expr true ] else [%expr false ] in
   [%expr
       !(PPX_Serialise.arg_name)
       ~is_list:[%e is_list ]
