@@ -41,8 +41,8 @@ def train_translationmodel(args):
     # use mixed precision training on CUDA devices, otherwise disable it so that code can run on CPUs
     fp16 = True if torch.cuda.is_available() else False
 
-    bert2arsenal = EncoderDecoderModel.from_encoder_decoder_pretrained("bert-base-uncased", target_model)
-    source_tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
+    bert2arsenal = EncoderDecoderModel.from_encoder_decoder_pretrained(args.source_model, target_model)
+    source_tokenizer = BertTokenizerFast.from_pretrained(args.source_model)
     source_tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
 
     # save it for later use s.t. we don't have to download anything for the runtime

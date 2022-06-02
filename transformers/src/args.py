@@ -29,6 +29,8 @@ def parse_arguments(input_args):
     # settings for dataset preparation
     parser.add_argument("-max_source_len",          type=int,   default=75,                 help="maximum number of words in the English sentences (all instances above this threshold will be discarded")
 
+    parser.add_argument("-source_model",            type=str,    default="bert-base-uncased",help="The pretrained language model for the source language (from https://huggingface.co/models)")
+
     # model configuration for target LM model
     # note: the source LM model uses a pretrained BERT model and thus can't be configured separately
     parser.add_argument("-hidden_size",             type=int,   default=768,                help="size of single token embedding in target LM model")

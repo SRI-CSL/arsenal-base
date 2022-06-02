@@ -79,6 +79,7 @@ parser.add_argument("-example_dir",    type=str,       default="../../../../gene
 parser.add_argument("-val_size",       type=int,       default=10000,          help="number of instances to use from the validation set (if none is provided, the entire val set is scored - this might take days!)")
 parser.add_argument("-model_dir",      type=str,                               help="model location; if none is provided, ../arsenal/large_files/models/lm/[data_dir]_[model_type] is used for training")
 parser.add_argument("-out_dir",        type=str,       default="../../../eval/lm_scores/",help="output location")
+parser.add_argument("-source_model",   type=str,       default="bert-base-uncased",help="The pretrained language model for the source language (from https://huggingface.co/models)")
 parser.add_argument("-epochs",         type=int,       default=1,              help="number of training epochs")
 parser.add_argument("-resume",                         action='store_true',    help="tries to resume training from latest model/checkpoint")
 parser.add_argument("-skiptrain",                      action='store_true',    help="skip model training")
@@ -156,7 +157,7 @@ if model_type == "gpt2":
 elif model_type == "bert":
     dataset_properties = json.load(open(os.path.join(data_dir, "dataset_properties.json")))
     special_tokens = dataset_properties["special_tokens"]
-    tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
+    tokenizer = BertTokenizerFast.from_pretrained(args.source_model)
     tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
 
     config = BertConfig()

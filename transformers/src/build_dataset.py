@@ -140,7 +140,7 @@ def build_dataset(args):
     if to_remove != []:
         print(f"found {len(to_remove)} overlapping instances in train and validation set, removed those from validation set. New size of validation set: {len(val_dataset)}")
 
-    source_tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
+    source_tokenizer = BertTokenizerFast.from_pretrained(args.source_model)
     source_tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
     target_tokenizer = PreTrainedArsenalTokenizer(target_vocab=target_vocab)
 
