@@ -2,7 +2,7 @@
 
 echo "Computing version number"
 GRAMMAR=`md5 -q _build/default/src/generate.exe`
-GRAMMARDATE=`date "+%Y-%m-%dT%H%M%:::z" -r _build/default/src/generate.exe`
+GRAMMARDATE=`date -r _build/default/src/generate.exe  "+%Y-%m-%dT%H%M%z"`
 VERSION="${GRAMMARDATE}_${GRAMMAR:0:7}"
 echo "Version is $VERSION"
 echo "Checking if git work tree is clean"
