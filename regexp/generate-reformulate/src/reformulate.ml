@@ -12,6 +12,12 @@ let () = Grammar.REgrammar_pp.load
 
 let () = deterministic := true
 
+let json_separator = ref !separator
+let json_str_arg   = ref !str_arg
+let json_qualify_mode = ref !qualify_mode
+
+let swap_ref a b = let c = !a in a := !b; b :=c
+
 let rec regexp fmt =
   let open Format in
   function
@@ -37,9 +43,14 @@ let rec regexp fmt =
      | NotSpace   -> fprintf fmt "\\S"
 
   
-let cst_process serialise pp ?global_options ?options ?original ?ep ?cleaned ~id ~to_sexp cst =
+let cst_process serialise pp ?global_options ?options ?original ?ep ?cleaned ~id ~to_sexp csts =
 
-  let cst = cst |> to_sexp |> serialise.PPX_Serialise.of_sexp in
+  let cst = match csts with
+    | `List((`String _)::_) -> csts
+    | `List(((`List _) as cst)::_) -> cst
+    | json -> raise (Conversion("Not a good json for csts; this should be a JSON array: "^(JSON.to_string json)))
+  in
+  let cst = cst |> to_sexp |> serialise.PPX_Serialise.of_sexp in 
 
   (* now we construct the json dictionary for the output *)
   let dico = [] in
@@ -74,9 +85,15 @@ let cst_process serialise pp ?global_options ?options ?original ?ep ?cleaned ~id
     | Some o -> ("orig-text", `String o) :: dico
   in
   (* outputting the json and number of outputs skipped *)
+  swap_ref json_separator separator;
+  swap_ref json_str_arg str_arg;
+  swap_ref json_qualify_mode qualify_mode;
   let dico =
     ("cst", serialise.PPX_Serialise.to_json cst) :: dico
   in
+  swap_ref json_separator separator;
+  swap_ref json_str_arg str_arg;
+  swap_ref json_qualify_mode qualify_mode;
   let dico =
     let id = match id with
       | `String s -> s
@@ -93,11 +110,8 @@ let cst_process serialise pp ?global_options ?options ?original ?ep ?cleaned ~id
   in
   `Assoc dico
 
-let top = ref "REgrammar/re"
-
 let options =
-  [
-    ("-top", Arg.String(fun s -> top := s), "n\ttop-level type (default is \"REgrammar/re\")");
+  Arg.[
     ("-nondeterministic", Clear deterministic, "\tDeterministic NL generation (default is false)");
     ("-hide-entities", Clear Entity.ppkind, "\tif a substitution string is present in entity, just show the string");
     ("-json", Set print_json, "\tprint json output");

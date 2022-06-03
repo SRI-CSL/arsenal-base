@@ -23,7 +23,7 @@ type terminal =
   | Word | Any | Digit | Space | NotWord | NotDigit | NotSpace
 [@@deriving arsenal]
 
-type re = Terminal of terminal [@weight fun state -> 2. *. depth state ]
+type re = Terminal of terminal [@weight fun state -> 2. *. depth state ][@silent]
         | StartOfLine of re
         | EndOfLine of re
         | Plus of re
