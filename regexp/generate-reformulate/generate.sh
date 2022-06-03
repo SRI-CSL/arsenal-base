@@ -4,7 +4,7 @@ shift
 echo "Checking if we have an up-to-date version number"
 ./record_grammar.sh || exit
 GRAMMAR=`cat version`
-DATE=`date "+%Y-%m-%dT%H%M%:::z"`
+DATE=`date "+%Y-%m-%dT%H%M%z"`
 TOPNAME=`echo "$TOP" | sed -e "s=/=-=g"`
 DATASET="${GRAMMAR}_${TOPNAME}_${DATE}"
 echo "Recording grammar.json"
