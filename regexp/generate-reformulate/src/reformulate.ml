@@ -37,7 +37,7 @@ let rec regexp fmt =
      | NotSpace   -> fprintf fmt "\\S"
 
   
-let cst_process serialise pp ?global_options ?options ?original ~id ~to_sexp cst =
+let cst_process serialise pp ?global_options ?options ?original ?ep ?cleaned ~id ~to_sexp cst =
 
   let cst = cst |> to_sexp |> serialise.PPX_Serialise.of_sexp in
 
@@ -105,7 +105,7 @@ let options =
     ("-one-entity", Set Entity.one_entity_kind, "\tin natural language, only use 1 kind of entities");
     ("-pretty", Set pretty, "\tprint S-expressions in human-readable form");
     ("-sexp", Set print_sexp, "\tprint S-expression output");
-    ("-short", Set short, "\tcontructors and entity kinds have short strings and are not prefixed by module names");
+    ("-json-path-mode", Int(fun i -> json_qualify_mode := if i < 0 then None else Some i), "\tmode for displaying paths in contructors and entity kinds in JSON export: -1 for no path, 0 for whole paths, (positive) i for pruning the first i levels of paths (default is 0)");
     ("-verb", Int(fun i -> verb := i), "\tverbosity level (default is 0)");
 
   ]
