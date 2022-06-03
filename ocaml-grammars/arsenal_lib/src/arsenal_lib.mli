@@ -237,8 +237,8 @@ val typestring_option: (unit -> string) -> unit -> string
 
 val json_desc_bool  : unit -> unit
 val json_desc_int   : unit -> unit
-val json_desc_list  : string -> unit -> unit
-val json_desc_option: string -> unit -> unit
+val json_desc_list  : (unit -> string) -> unit -> unit
+val json_desc_option: (unit -> string) -> unit -> unit
 
 val serialise_bool   : bool PPX_Serialise.t
 val serialise_int    : int PPX_Serialise.t
