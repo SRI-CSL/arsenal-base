@@ -6,7 +6,6 @@ from flask import request
 import os, sys
 
 from transformers import EncoderDecoderModel, BertTokenizerFast
-from transformers.trainer_utils import get_last_checkpoint
 
 from arsenal_tokenizer import PreTrainedArsenalTokenizer
 
@@ -41,7 +40,7 @@ target_vocab = dataset_properties["target_vocab"]
 special_tokens = dataset_properties["special_tokens"]
 max_input_length = dataset_properties["encoder_max_len"]
 
-bert2arsenal = EncoderDecoderModel.from_pretrained(get_last_checkpoint(MODEL_ROOT))
+bert2arsenal = EncoderDecoderModel.from_pretrained(MODEL_ROOT)
 
 tokenizer_path = os.path.join(MODEL_ROOT, "source_tokenizer")
 
