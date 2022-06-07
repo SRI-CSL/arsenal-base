@@ -9,14 +9,19 @@ services:
     ports:
       - 8060:8080
   nl2cst:
-    build: ../seq2seq
-    image: arsenal-docker.cse.sri.com/arsenal-nl2cst:latest
+    build: ../transformers
+    image: arsenal-docker.cse.sri.com/arsenal-nl2cst-transformers:latest
     volumes:
-      - ./models:/opt/models:ro
+      - ./models/:/opt/models:ro
     environment:
       NL2CST_HOST: nl2cst
       NL2CST_PORT: 8080
-      MODEL_ROOT: /opt/models/2021-06-24T1637-07_41c4757_REgrammar-re_2021-06-24T1816-07
+      MODEL_ROOT: /opt/models/transformers/06-03-2022/translation_model
+      NUM_BEAMS: 1
+      NUM_OUTPUTS: 1
+      TYPE_FORCING: 0
+      BATCH_SIZE: 10
+      CLEAN_INPUT: 0
     ports:
       - 8070:8080
   ui:
@@ -29,9 +34,6 @@ services:
     ports:
       - 8080:8080
   reformulate:
-    build:
-      context: ../
-      dockerfile: regexp/generate-reformulate/Dockerfile
-    image: arsenal-docker.cse.sri.com/regexp-reformulate:latest
+    image: sricsl/effigy-reformulate:latest
     ports:
       - 8090:8080
