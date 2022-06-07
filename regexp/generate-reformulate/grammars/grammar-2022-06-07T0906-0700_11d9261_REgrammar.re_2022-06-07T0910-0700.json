@@ -1,0 +1,207 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "$id": "arsenal4RE.json",
+  "description": "Schema representing Arsenal grammar for RE.",
+  "$ref": "#/definitions/NL2CSTResult",
+  "definitions": {
+    "NL2CSTResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "cst", "sentence_id" ],
+      "properties": {
+        "cst": { "$ref": "#/definitions/REgrammar.re" },
+        "sentence_id": { "type": "string", "format": "uri-reference" },
+        "s-exp": { "type": "string" },
+        "reformulation": { "type": "string" },
+        "orig-text": { "type": "string" },
+        "regexp": { "type": "string" }
+      }
+    },
+    "entity(REgrammar.kchar)": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "counter" ],
+      "properties": {
+        "entity": { "type": "boolean" },
+        "node_type": { "type": "string" },
+        "kind": { "type": "string" },
+        "counter": { "type": "integer" },
+        "substitution": { "type": "string" }
+      }
+    },
+    "REgrammar.tchar": {
+      "anyOf": [ { "$ref": "#/definitions/entity(REgrammar.kchar)" } ]
+    },
+    "entity(REgrammar.kstring)": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "counter" ],
+      "properties": {
+        "entity": { "type": "boolean" },
+        "node_type": { "type": "string" },
+        "kind": { "type": "string" },
+        "counter": { "type": "integer" },
+        "substitution": { "type": "string" }
+      }
+    },
+    "REgrammar.tstring": {
+      "anyOf": [ { "$ref": "#/definitions/entity(REgrammar.kstring)" } ]
+    },
+    "REgrammar.Specific": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "node_type", "arg0" ],
+      "properties": {
+        "node_type": { "type": "string", "pattern": "Specific" },
+        "arg0": { "$ref": "#/definitions/REgrammar.tstring" }
+      }
+    },
+    "REgrammar.Empty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "node_type" ],
+      "properties": { "node_type": { "type": "string", "pattern": "Empty" } }
+    },
+    "REgrammar.CharacterRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "node_type", "arg0", "arg1" ],
+      "properties": {
+        "node_type": { "type": "string", "pattern": "CharacterRange" },
+        "arg0": { "$ref": "#/definitions/REgrammar.tchar" },
+        "arg1": { "$ref": "#/definitions/REgrammar.tchar" }
+      }
+    },
+    "REgrammar.Word": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "node_type" ],
+      "properties": { "node_type": { "type": "string", "pattern": "Word" } }
+    },
+    "REgrammar.Any": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "node_type" ],
+      "properties": { "node_type": { "type": "string", "pattern": "Any" } }
+    },
+    "REgrammar.Digit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "node_type" ],
+      "properties": { "node_type": { "type": "string", "pattern": "Digit" } }
+    },
+    "REgrammar.Space": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "node_type" ],
+      "properties": { "node_type": { "type": "string", "pattern": "Space" } }
+    },
+    "REgrammar.NotWord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "node_type" ],
+      "properties": {
+        "node_type": { "type": "string", "pattern": "NotWord" }
+      }
+    },
+    "REgrammar.NotDigit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "node_type" ],
+      "properties": {
+        "node_type": { "type": "string", "pattern": "NotDigit" }
+      }
+    },
+    "REgrammar.NotSpace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "node_type" ],
+      "properties": {
+        "node_type": { "type": "string", "pattern": "NotSpace" }
+      }
+    },
+    "REgrammar.terminal": {
+      "anyOf": [
+        { "$ref": "#/definitions/REgrammar.Specific" },
+        { "$ref": "#/definitions/REgrammar.Empty" },
+        { "$ref": "#/definitions/REgrammar.CharacterRange" },
+        { "$ref": "#/definitions/REgrammar.Word" },
+        { "$ref": "#/definitions/REgrammar.Any" },
+        { "$ref": "#/definitions/REgrammar.Digit" },
+        { "$ref": "#/definitions/REgrammar.Space" },
+        { "$ref": "#/definitions/REgrammar.NotWord" },
+        { "$ref": "#/definitions/REgrammar.NotDigit" },
+        { "$ref": "#/definitions/REgrammar.NotSpace" }
+      ]
+    },
+    "REgrammar.StartOfLine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "node_type", "arg0" ],
+      "properties": {
+        "node_type": { "type": "string", "pattern": "StartOfLine" },
+        "arg0": { "$ref": "#/definitions/REgrammar.re" }
+      }
+    },
+    "REgrammar.EndOfLine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "node_type", "arg0" ],
+      "properties": {
+        "node_type": { "type": "string", "pattern": "EndOfLine" },
+        "arg0": { "$ref": "#/definitions/REgrammar.re" }
+      }
+    },
+    "REgrammar.Plus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "node_type", "arg0" ],
+      "properties": {
+        "node_type": { "type": "string", "pattern": "Plus" },
+        "arg0": { "$ref": "#/definitions/REgrammar.re" }
+      }
+    },
+    "REgrammar.Star": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "node_type", "arg0" ],
+      "properties": {
+        "node_type": { "type": "string", "pattern": "Star" },
+        "arg0": { "$ref": "#/definitions/REgrammar.re" }
+      }
+    },
+    "REgrammar.Or": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "node_type", "arg0", "arg1" ],
+      "properties": {
+        "node_type": { "type": "string", "pattern": "Or" },
+        "arg0": { "$ref": "#/definitions/REgrammar.re" },
+        "arg1": { "$ref": "#/definitions/REgrammar.re" }
+      }
+    },
+    "REgrammar.Concat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "node_type", "arg0" ],
+      "properties": {
+        "node_type": { "type": "string", "pattern": "Concat" },
+        "arg0": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/REgrammar.re" }
+        }
+      }
+    },
+    "REgrammar.re": {
+      "anyOf": [
+        { "$ref": "#/definitions/REgrammar.terminal" },
+        { "$ref": "#/definitions/REgrammar.StartOfLine" },
+        { "$ref": "#/definitions/REgrammar.EndOfLine" },
+        { "$ref": "#/definitions/REgrammar.Plus" },
+        { "$ref": "#/definitions/REgrammar.Star" },
+        { "$ref": "#/definitions/REgrammar.Or" },
+        { "$ref": "#/definitions/REgrammar.Concat" }
+      ]
+    }
+  }
+}
