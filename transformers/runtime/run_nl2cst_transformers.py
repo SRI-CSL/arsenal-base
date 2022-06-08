@@ -90,7 +90,6 @@ def process():
         sentence_dicts = as_dict['sentences']
 
     output = process_data(sentence_dicts)
-    print(f'Length of output: {len(output)}')
     results = {"sentences": output}
     results = json.dumps(results, indent=3)
     return str(results)
@@ -238,14 +237,12 @@ def process_data(data_list):
         inQ.put((idx,chunk))
         
     result = [None] * len(data_list)
-    print(f'Length of data list {len(data_list)}')
 
     # process results from workers
     for _ in tqdm(range(num_chunks)):
         idx,ret = outQ.get()
         result[idx*BATCH_SIZE:(idx+1)*BATCH_SIZE] = ret
     
-    print(f'Length of result {len(result)}')
     return result
 
 #allow a command line argument to set the port (precedence over environment variable)
