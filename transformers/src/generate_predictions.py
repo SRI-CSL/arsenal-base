@@ -44,7 +44,7 @@ def generate_predictions(args):
     model_dir = os.path.join(args.model_root_dir, args.run_id, args.translation_model_name)
     print(f"model dir: {model_dir}")
     val_data_path = os.path.join(args.data_out_dir, args.val_dataset_name)
-    print(f"using model from {get_last_checkpoint(model_dir)} and test data from {val_data_path} to generate predictions")
+    print(f"using model from {model_dir} and test data from {val_data_path} to generate predictions")
 
     dataset_properties = json.load(open(os.path.join(model_dir, "dataset_properties.json")))
     special_tokens = dataset_properties["special_tokens"]
@@ -54,7 +54,7 @@ def generate_predictions(args):
     source_tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
     target_tokenizer = PreTrainedArsenalTokenizer(target_vocab=target_vocab)
 
-    bert2arsenal = EncoderDecoderModel.from_pretrained(get_last_checkpoint(model_dir))
+    bert2arsenal = EncoderDecoderModel.from_pretrained(model_dir)
 
     val_data = datasets.load_from_disk(val_data_path)
 
