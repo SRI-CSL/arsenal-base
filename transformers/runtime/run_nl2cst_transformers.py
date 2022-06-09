@@ -123,7 +123,7 @@ def process_batch(sentence_dicts):
     if CLEAN_INPUT:
         nl_inputs = [clean_input(line) for line in nl_inputs]
 
-    input_tokens = source_tokenizer(nl_inputs, padding="max_length", truncation=True, return_tensors="pt",
+    input_tokens = source_tokenizer(nl_inputs, padding=True, truncation=True, return_tensors="pt",
                             max_length=max_input_length)
     generated = bert2arsenal.generate(
         input_ids=input_tokens.input_ids,
