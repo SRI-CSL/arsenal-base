@@ -50,7 +50,7 @@ def generate_predictions(args):
     special_tokens = dataset_properties["special_tokens"]
     target_vocab = dataset_properties["target_vocab"]
 
-    source_tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
+    source_tokenizer = BertTokenizerFast.from_pretrained(args.source_model)
     source_tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
     target_tokenizer = PreTrainedArsenalTokenizer(target_vocab=target_vocab)
 
@@ -58,7 +58,7 @@ def generate_predictions(args):
 
     val_data = datasets.load_from_disk(val_data_path)
 
-    runid, _, checkpoint = get_last_checkpoint((model_dir)).split("/")[-3:]
+    runid, _, checkpoint = model_dir.split("/")[-3:]
     outfile = open(os.path.join(Path(model_dir).parent, f"predictions_{runid}_{checkpoint}.txt"), "w")
 
     torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
