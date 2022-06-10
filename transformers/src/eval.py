@@ -1,5 +1,6 @@
 import argparse
 import collections
+from inspect import ArgSpec
 import sys
 from difflib import SequenceMatcher
 import json
@@ -15,13 +16,15 @@ from arsenal_tokenizer import PreTrainedArsenalTokenizer
 
 parser = argparse.ArgumentParser(description="Evaluate generated predictions")
 parser.add_argument("-model_dir",       type=str,       default="../../../large_files/models/transformers/09-30-2021/translation_model",  help="location of the trained translation model")
-parser.add_argument("-out_dir",         type=str,       default="../../../eval",  help="location of the trained translation model")
-parser.add_argument("-prediction_file", type=str,       help="file with generated predictions (if none provided, the model dir is searched for a suitable file")
+parser.add_argument("-out_dir",         type=str,       default="../../../eval",    help="location of the trained translation model")
+parser.add_argument("-prediction_file", type=str,                                   help="file with generated predictions (if none provided, the model dir is searched for a suitable file")
+parser.add_argument("-source_model",    type=str,       default="bert-base-uncased",help="The pretrained language model for the source language (from https://huggingface.co/models)")
 
 args = parser.parse_args()
 model_dir = args.model_dir
 prediction_file = args.prediction_file
 out_dir = args.out_dir
+source_model = args.source_model
 
 if prediction_file is None:
     for (_, _, files) in os.walk(Path(model_dir).parent):
@@ -41,7 +44,7 @@ target_vocab = dataset_properties["target_vocab"]
 special_tokens = dataset_properties["special_tokens"]
 
 tokenizer = PreTrainedArsenalTokenizer(target_vocab=target_vocab)
-source_tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
+source_tokenizer = BertTokenizerFast.from_pretrained(source_model)
 source_tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
 
 # collect per sentence length:
