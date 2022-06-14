@@ -25,11 +25,14 @@ def parse_arguments(input_args):
     parser.add_argument("-target_model_name",       type=str,   default="target_model",     help="folder base name where the target LM will be stored")
     parser.add_argument("-translation_model_name",  type=str,   default="translation_model",help="folder base name where the translation model will be stored")
     parser.add_argument("-cuda_devices",            type=str, default="6,7",                help="GPUs to use (as a list of comma-separated numbers)")
+    parser.add_argument("-y",                       action='store_true',                    help="answer 'yes' to questions without prompting (e.g., to overwrite existing output folder)")
 
     # settings for dataset preparation
     parser.add_argument("-max_source_len",          type=int,   default=75,                 help="maximum number of words in the English sentences (all instances above this threshold will be discarded")
-
     parser.add_argument("-source_model",            type=str,    default="bert-base-uncased",help="The pretrained language model for the source language (from https://huggingface.co/models)")
+    parser.add_argument("-strip_suffix_chars",      type=str,   default="²",                help="suffix characters to be stripped from special tokens, as a white-space separated list")
+    parser.add_argument("-strip_prefix_chars",      type=str,   default="∠ ∡",              help="prefix characters to be stripped from special tokens, as a white-space separated list")
+    parser.add_argument("-check_balance",           action='store_true',                    help="whether to check for balanced expressions when stripping away enclosing brackets in special tokens")
 
     # model configuration for target LM model
     # note: the source LM model uses a pretrained BERT model and thus can't be configured separately

@@ -39,7 +39,7 @@ if __name__ == "__main__":
     if os.path.exists(out_dir):
         choice = None
         while True:
-            choice = input(f"output dir {out_dir} already exists. Delete? (y/n)")
+            choice = "y" if args.y else input(f"output dir {out_dir} already exists. Delete? (y/n)")
             if choice.lower() == "y":
                 shutil.rmtree(out_dir)
                 break

@@ -10,7 +10,7 @@ from transformers import BertTokenizerFast, GPT2TokenizerFast
 from args import parse_arguments
 from arsenal_tokenizer import PreTrainedArsenalTokenizer
 
-def process_input(data_dir, out_dir, filename, max_word_len):
+def process_input(data_dir, out_dir, filename, max_word_len, ignore_prefixes, ignore_suffixes, check_balance):
 
     print(f"processing file {filename}...")
     with open(os.path.join(data_dir, filename), "r") as f:
@@ -20,6 +20,7 @@ def process_input(data_dir, out_dir, filename, max_word_len):
     source_vocab = []
     target_vocab = []
     special_tokens = [] # all words containing '_' are treated as special tokens and added to the tokenizer
+
 
     # read input file, create:
     # - dataset: dict of source/target sentences
@@ -42,15 +43,107 @@ def process_input(data_dir, out_dir, filename, max_word_len):
                 dataset[source].append(target)
             target_vocab.extend(target.split(" "))
 
-    # clean up set of special tokens and target vocab
-    special_tokens = [x.replace(",", "") for x in special_tokens]
-    special_tokens = list(set(special_tokens))
+    #  clean special tokens according to ignore special prefix/suffix chars, trailing periods, split on parentheses etc
+    cleaned_special_tokens = []
+    for t in special_tokens:
+
+        t = t.replace(",", "")
+
+        modified = True
+        skip = False
+        while(modified):
+            if t == "":
+                skip = True
+                break
+
+            modified = False
+            # remove trailing periods
+            if t.endswith("."):
+                t = t[:-1]
+                modified = True
+                continue
+
+            if check_balance:
+                # remove balanced enclosing brackets and parentheses
+                if t.startswith("(") and t.endswith(")"):
+                    t = t[1:-1]
+                    modified = True
+                    continue
+                if t.startswith("[") and t.endswith("]"):
+                    t = t[1:-1]
+                    modified = True
+                    continue
+            else:
+                # remove all enclosing brackets and parentheses, even if unbalanced
+                if t[0] in ["(", "["]:
+                    t = t[1:]
+                    modified = True
+                    continue
+                if t[-1] in [")", "]"]:
+                    t = t[1:]
+                    modified = True
+                    continue
+
+            # remove special ignore prefix/suffix characters
+            if t[-1] in ignore_suffixes:
+                t = t[:-1]
+                modified = True
+                continue
+            if t[0] in ignore_prefixes:
+                t = t[1:]
+                modified = True
+                continue
+
+            # if we have parentheses and brackets inside of special tokens (e.g., for function applications)
+            # split across opening parentheses and treat 'inner' and 'outer' part as separate tokens
+            # (by appending them to the end of the queue and skipping the compound token)
+            # - only split after all enclosing parentheses have been removed
+            if not t.startswith("(") and "(" in t:
+                outer, inner = t.split("(", 1)
+                skip = True
+                special_tokens.append(inner)
+                special_tokens.append(outer)
+
+            if not t.startswith("[") and "[" in t:
+                outer, inner = t.split("[", 1)
+                skip = True
+                special_tokens.append(inner)
+                special_tokens.append(outer)
+
+        if not skip:
+            cleaned_special_tokens.append(t)
+
+    special_tokens = list(set(cleaned_special_tokens))
     special_tokens.sort()
     source_vocab = [x.replace(",", "") for x in source_vocab]
     source_vocab = list(set(source_vocab))
     source_vocab.sort()
     target_vocab = list(set(target_vocab))
     target_vocab.sort()
+
+    #  sanity check: look for special tokens that appear in the source, but not in the target
+    # (can't directly check for equality, because special tokens in the source language start
+    # with an underscore and have additional type information)
+    both = []
+    source_only = []
+    for t1 in special_tokens:
+
+        tmp = t1[1:] # strip away leading underscore
+        found = False
+        for t2 in target_vocab:
+            if tmp in t2:
+                both.append(t1)
+                found = True
+                break
+
+        if not found:
+            source_only.append(t1)
+
+    if len(source_only) > 0:
+        print(f"The source sentences contain {len(source_only)}/{len(special_tokens)} special tokens that don't appear in the target sentences:")
+        for t in source_only:
+            print(t)
+
 
     total_instances = 0
     unique_instances = 0
@@ -102,11 +195,15 @@ def build_dataset(args):
     val_file = args.val_file
     max_word_len = args.max_source_len
     batch_size = args.batch_size
+    ignore_suffixes = args.strip_suffix_chars.split()
+    ignore_prefixes = args.strip_prefix_chars.split()
+    check_balance = args.check_balance
+
 
     print(f"discarding all instances with more than {max_word_len} words in the source sentences")
 
-    train_dataset, special_tokens, source_vocab, target_vocab = process_input(data_dir, out_dir, train_file, max_word_len)
-    val_dataset, val_special_tokens, val_source_vocab, val_target_vocab = process_input(data_dir, out_dir, val_file, max_word_len)
+    train_dataset, special_tokens, source_vocab, target_vocab = process_input(data_dir, out_dir, train_file, max_word_len, ignore_prefixes, ignore_suffixes, check_balance)
+    val_dataset, val_special_tokens, val_source_vocab, val_target_vocab = process_input(data_dir, out_dir, val_file, max_word_len, ignore_prefixes, ignore_suffixes, check_balance)
 
     diffs = {}
 
