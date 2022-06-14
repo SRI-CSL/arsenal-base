@@ -58,8 +58,7 @@ def generate_predictions(args):
 
     val_data = datasets.load_from_disk(val_data_path)
 
-    runid, _, checkpoint = model_dir.split("/")[-3:]
-    outfile = open(os.path.join(Path(model_dir).parent, f"predictions_{runid}_{checkpoint}.txt"), "w")
+    outfile = open(os.path.join(Path(model_dir).parent, f"predictions_{args.run_id}.txt"), "w")
 
     torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
     bert2arsenal.to(torch_device)
