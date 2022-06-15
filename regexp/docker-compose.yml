@@ -16,7 +16,7 @@ services:
     environment:
       NL2CST_HOST: nl2cst
       NL2CST_PORT: 8080
-      MODEL_ROOT: /opt/models/transformers/06-03-2022/translation_model
+      MODEL_ROOT: /opt/models/transformers/06-07-2022/translation_model
       NUM_BEAMS: 1
       NUM_OUTPUTS: 1
       TYPE_FORCING: 0
