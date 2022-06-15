@@ -10,6 +10,7 @@ from tabulate import tabulate
 from args import parse_arguments
 from bert2arsenal import train_translationmodel
 from build_dataset import build_dataset
+from eval import evaluate_predictions
 from generate_predictions import generate_predictions
 from target_model import train_targetmodel
 
@@ -86,6 +87,13 @@ if __name__ == "__main__":
 
     t4 = time.time()
 
+    ########## evaluation of generated predictions ##########
+
+    print(f"\n\n*** {datetime.now()}: evaluating predictions ***\n")
+    evaluate_predictions(args)
+
+    t5 = time.time()
+
     ########## done - output timing information ##########
 
     print(f"\n\n*** {datetime.now()}: done ***\n")
@@ -98,8 +106,9 @@ if __name__ == "__main__":
     timing["target LM model training"]      = print_td(t1, t2)
     timing["translation model training"]    = print_td(t2, t3)
     timing["prediction generation"]         = print_td(t3, t4)
+    timing["prediction generation"]         = print_td(t4, t5)
 
-    print(tabulate(timing.items(), headers=["total", print_td(t0, t4)]))
+    print(tabulate(timing.items(), headers=["total", print_td(t0, t5)]))
 
 
 
