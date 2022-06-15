@@ -1,11 +1,10 @@
-# Effigy-grammar docker files
+# Regex-grammar docker files
 
 This directory contains three subdirectories, containing files
 necessary to build the following module:
 
 - `builder` A shared builder image, that compiles the OCaml binaries
-- `generator` Training data generator
-- `service` Grammar service
+- `reformulator` Grammar service
 
 To build and deploy the builder image, use the scripts in the `builder` directory.
 This needs to be rebuilt whenever the dependencies have changed.

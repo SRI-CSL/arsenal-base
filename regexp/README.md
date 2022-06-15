@@ -1,6 +1,7 @@
 # Arsenal Regular Expression Demo
 
 - [Overview](#overview)
+- [Transformer-related changes](#prerequisiteschanges-to-get-the-transformers-based-nl2cst-component-running)
 - [Run from Docker Images](#run-from-docker-images)
 - [Running the Demo](#running-the-demo)
 - [Creating Local Docker Images](#creating-local-docker-images)
@@ -35,6 +36,12 @@ The domain generic Arsenal components of this demo are:
 - the underlying Arsenal base grammar and pretty-printer, found in `../ocaml-grammars/arsenal_lib`;
 - an NL to CST (natural language to syntax tree) engine that reads and runs any trained model, found in `../seq2seq`.
 
+## Prerequisites/changes to get the transformers-based nl2cst component running
+- Get the trained model archive file (from...?) and extract into `./models/transformers/`. This should create a new subfolder `06-07-2022` with the trained model. `docker-compose.yml` is set up to use that model.
+- Building the dockerized reformulator (cf. `generate-reformulate/docker/README.md` for more details):
+  1. in `generate-reformulate/docker/builder`: run `./build.sh`
+  2. in `generate-reformulate/docker/reformulator`: run `./build.sh`
+- After this, the other docker images can be build and started as described below.
 
 ## Building the Docker Images
 
