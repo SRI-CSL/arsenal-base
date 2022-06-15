@@ -33,6 +33,7 @@ def parse_arguments(input_args):
     parser.add_argument("-strip_suffix_chars",      type=str,   default="²",                help="suffix characters to be stripped from special tokens, as a white-space separated list")
     parser.add_argument("-strip_prefix_chars",      type=str,   default="∠ ∡",              help="prefix characters to be stripped from special tokens, as a white-space separated list")
     parser.add_argument("-check_balance",           action='store_true',                    help="whether to check for balanced expressions when stripping away enclosing brackets in special tokens")
+    parser.add_argument("-grammar_name",            type=str,                               help="name of the entity placeholders ex: REgrammar")
 
     # model configuration for target LM model
     # note: the source LM model uses a pretrained BERT model and thus can't be configured separately
@@ -85,5 +86,7 @@ def parse_arguments(input_args):
     if args.data_out_dir is None:
         args.data_out_dir = args.data_dir
 
+    if args.grammar_name is None:
+        raise Exception("a grammar name is needed")
 
     return args
