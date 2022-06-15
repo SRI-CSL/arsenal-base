@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import re
 import sys
 
 from datasets import Dataset, tqdm
@@ -42,6 +43,9 @@ def process_input(data_dir, out_dir, filename, max_word_len, ignore_prefixes, ig
             else:
                 dataset[source].append(target)
             target_vocab.extend(target.split(" "))
+
+    # the prefix used for entity placeholders - use this to split compound tokens below
+    grammar_prefix = re.match(".*?(_\w*)", special_tokens[0]).group(1)
 
     #  clean special tokens according to ignore special prefix/suffix chars, trailing periods, split on parentheses etc
     cleaned_special_tokens = []
@@ -109,6 +113,13 @@ def process_input(data_dir, out_dir, filename, max_word_len, ignore_prefixes, ig
                 skip = True
                 special_tokens.append(inner)
                 special_tokens.append(outer)
+
+            # we separate all the different entities in the same string
+            if len(t.split(grammar_prefix)) > 2:
+                compound_terms = t.split(grammar_prefix)[1:]
+                compound_tokens = [grammar_prefix + term for term in compound_terms]
+                special_tokens.extend(compound_tokens)
+                skip = True
 
         if not skip:
             cleaned_special_tokens.append(t)
