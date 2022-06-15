@@ -121,8 +121,7 @@ let options =
     ("-sexp", Set print_sexp, "\tprint S-expression output");
     ("-json-path-mode", Int(fun i -> json_qualify_mode := if i < 0 then None else Some i), "\tmode for displaying paths in contructors and entity kinds in JSON export: -1 for no path, 0 for whole paths, (positive) i for pruning the first i levels of paths (default is 0)");
     ("-verb", Int(fun i -> verb := i), "\tverbosity level (default is 0)");
-
-  ]
+  ] @ options
 
 let () = Arg.parse options (fun arg -> port := int_of_string arg) (description "RE grammar")
 
