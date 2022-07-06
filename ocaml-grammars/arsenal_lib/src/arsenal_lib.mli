@@ -293,6 +293,7 @@ sig
   val warnings : [ `NoSubst of string ] list ref
   val strict   : float ref
   val ppkind   : bool ref
+  val show_substitutions : bool ref
   val init : unit -> unit
 
   type 'a t [@@deriving arsenal]

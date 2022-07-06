@@ -23,6 +23,7 @@ let args : string list ref = ref [] (* Where the command-line argument will be s
 let options_base =
   [
     ("-hide-entities", Clear Entity.ppkind, "\tif a substitution string is present in entity, just show the string");
+    ("-hide-substitutions", Clear Entity.show_substitutions, "\tdo not show substitution strings in entities");
     ("-json", Set print_json, "\tprint json output");
     ("-no-nl", Clear print_nl, "\tprint disable natural language output");
     ("-one-entity", Set Entity.one_entity_kind, "\tin natural language, only use 1 kind of entities");

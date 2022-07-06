@@ -766,6 +766,7 @@ module Entity = struct
   let warnings : [`NoSubst of string] list ref = ref [] (* While parsing a json, are we seeing any warning? *)
   let strict = ref 1.5
   let ppkind = ref true
+  let show_substitutions = ref true (* Show substitution in pp and S-exp *)
 
   let get_kind_counter key kind =
     let key =
@@ -862,12 +863,12 @@ module Entity = struct
       | Fixed i -> i
     in
     match e.substitution with
-    | Some nl ->
+    | Some nl when !show_substitutions ->
        if !ppkind then
          (F "_%t{%s}" // pp_kindcounter key e.kind counter // nl |> print) fmt
        else
          (F "%s" // nl |> print) fmt
-    | None    -> (F "_%t" // pp_kindcounter key e.kind counter |> print) fmt
+    | _ -> (F "_%t" // pp_kindcounter key e.kind counter |> print) fmt
 
   let random random_arg s =
     let kind = Some(random_arg s) in
@@ -890,8 +891,8 @@ module Entity = struct
     in
     let sub l =
       match e.substitution with
-      | Some entity -> ("substitution", `String entity)::l
-      | None -> l
+      | Some entity when !show_substitutions -> ("substitution", `String entity)::l
+      | _ -> l
     in
     `Assoc(["counter", `Int (get_counter e.counter)] |> sub |> kind)
 
@@ -907,8 +908,8 @@ module Entity = struct
         (Format.sprintf "%t" (pp_kindcounter arg e.kind (get_counter e.counter))) ty
     in
     match e.substitution with
-    | Some entity -> Sexp.List[base;Sexp.Atom entity]
-    | None -> base 
+    | Some entity when !show_substitutions -> Sexp.List[base;Sexp.Atom entity]
+    | _ -> base 
 
   let to_id s =
     (* Splits string s on '_' character c1_c2_c3... *)
