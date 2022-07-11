@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import json
 import shutil
 import sys
 import time
@@ -109,6 +109,28 @@ if __name__ == "__main__":
     timing["prediction generation"]         = print_td(t4, t5)
 
     print(tabulate(timing.items(), headers=["total", print_td(t0, t5)]))
+
+
+    dataset_properties = json.load(open(os.path.join(args.data_dir, "dataset_properties.json")))
+
+    ########## write a summary to file ##########
+
+    summary = {}
+    summary["dataset"] = os.path.split(vars(args)["data_dir"])[1]
+    summary["training_size"] = dataset_properties["training_size"]
+
+    for k in ["max_source_len", "run_id", "hidden_size", "intermediate_size",
+              "num_hidden_layers", "num_attention_heads", "target_epochs", "translation_epochs"]:
+        summary[k] = vars(args)[k]
+
+    summary["num_cuda_devices"] = len(vars(args)["cuda_devices"].split(","))
+    summary.update(timing)
+
+    with open(os.path.join(Path(out_dir), "translation_model", "training_summary.txt"), "w") as f:
+        print(tabulate(summary.items()), file=f)
+
+
+
 
 
 

@@ -343,6 +343,8 @@ def build_dataset(args):
     dataset_properties["decoder_max_len"] = decoder_max_length
     dataset_properties["encoder_min_len"] = encoder_min_length
     dataset_properties["decoder_min_len"] = decoder_min_length
+    dataset_properties["training_size"] = len(train_dataset.keys())
+    dataset_properties["validation_size"] = len(val_dataset.keys())
 
     with open(os.path.join(out_dir, "dataset_properties.json"), "w") as f:
         json.dump(dataset_properties, f, indent=3)
