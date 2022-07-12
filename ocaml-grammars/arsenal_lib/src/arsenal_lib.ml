@@ -961,9 +961,14 @@ module Entity = struct
 
   let key () = failwith "Can't have key for polymorphic type"
 
-  let entity_mk s ?(kind=None) ?(counter=0) ?(substitution=None) () =
+  let entity_mk s ?(kind=None) ?counter ?(substitution=None) () =
     (match substitution with None -> warnings := (`NoSubst s)::!warnings | Some _ -> ());
-    Result.Ok { kind; counter = Fixed counter; substitution }
+    let counter =
+      match counter with
+      | None -> Ref (ref 0)
+      | Some counter -> Fixed counter
+    in
+    Result.Ok { kind; counter; substitution }
 
   let pick l _ = pick(List.map (fun (x,i) -> x, Stdlib.Float.(to_int(pow i !strict))) l)
 
