@@ -213,8 +213,19 @@ def build_dataset(args):
 
     print(f"discarding all instances with more than {max_word_len} words in the source sentences")
 
+    build_val = os.path.exists(os.path.join(data_dir, val_file))
+
     train_dataset, special_tokens, source_vocab, target_vocab = process_input(data_dir, out_dir, train_file, max_word_len, ignore_prefixes, ignore_suffixes, check_balance)
-    val_dataset, val_special_tokens, val_source_vocab, val_target_vocab = process_input(data_dir, out_dir, val_file, max_word_len, ignore_prefixes, ignore_suffixes, check_balance)
+
+    if build_val:
+        val_dataset, val_special_tokens, val_source_vocab, val_target_vocab = process_input(data_dir, out_dir, val_file, max_word_len, ignore_prefixes, ignore_suffixes, check_balance)
+    else:
+        val_dataset = {}
+        val_special_tokens = []
+        val_source_vocab = []
+        val_target_vocab = []
+
+
 
     diffs = {}
 
@@ -255,7 +266,10 @@ def build_dataset(args):
     # source_tokenizer.save_pretrained(os.path.join(out_dir, "source_tokenizer"))
     # target_tokenizer.save_pretrained((os.path.join(out_dir, "target_tokenizer")))
 
-    splits = {"train": train_dataset, "val": val_dataset}
+    if build_val:
+        splits = {"train": train_dataset, "val": val_dataset}
+    else:
+        splits = {"train": train_dataset}
 
     # this is highly inefficient because all data is tokenized twice:
     # - first to determine max token sequence length
@@ -274,12 +288,17 @@ def build_dataset(args):
     if determine_max_len:
         print("finding max token sequence length for input and output...")
         train_input_lengths = list(map(lambda x: len(source_tokenizer(x).input_ids), tqdm(train_dataset.keys())))
-        val_input_lengths = list(map(lambda x: len(source_tokenizer(x).input_ids), tqdm(val_dataset.keys())))
         train_output_lengths = list(map(lambda x: len(target_tokenizer(x).input_ids), tqdm(train_dataset.values())))
-        val_output_lengths = list(map(lambda x: len(target_tokenizer(x).input_ids), tqdm(val_dataset.values())))
 
-        print(f"max train input: {max(train_input_lengths)}, max val input: {max(val_input_lengths)}")
-        print(f"max train output: {max(train_output_lengths)}, max val output: {max(val_output_lengths)}")
+        if build_val:
+            val_input_lengths = list(map(lambda x: len(source_tokenizer(x).input_ids), tqdm(val_dataset.keys())))
+            val_output_lengths = list(map(lambda x: len(target_tokenizer(x).input_ids), tqdm(val_dataset.values())))
+        else:
+            val_input_lengths = []
+            val_output_lengths = []
+
+        # print(f"max train input: {max(train_input_lengths)}, max val input: {max(val_input_lengths)}")
+        # print(f"max train output: {max(train_output_lengths)}, max val output: {max(val_output_lengths)}")
         encoder_max_length = max(train_input_lengths + val_input_lengths)
         decoder_max_length = max(train_output_lengths + val_output_lengths)
         encoder_min_length = min(train_input_lengths + val_input_lengths)
@@ -344,7 +363,8 @@ def build_dataset(args):
     dataset_properties["encoder_min_len"] = encoder_min_length
     dataset_properties["decoder_min_len"] = decoder_min_length
     dataset_properties["training_size"] = len(train_dataset.keys())
-    dataset_properties["validation_size"] = len(val_dataset.keys())
+    if build_val:
+        dataset_properties["validation_size"] = len(val_dataset.keys())
 
     with open(os.path.join(out_dir, "dataset_properties.json"), "w") as f:
         json.dump(dataset_properties, f, indent=3)

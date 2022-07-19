@@ -82,15 +82,21 @@ if __name__ == "__main__":
 
     ########## generating translations with trained model ##########
 
-    print(f"\n\n*** {datetime.now()}: generating predictions ***\n")
-    generate_predictions(args)
+    if not os.path.exists(os.path.join(args.data_out_dir, args.val_dataset_name)) and not args.skip_eval:
+        print("did not find validation data set - skipping evaluation")
+        args.skip_eval = True
+
+
+    if not args.skip_eval:
+        print(f"\n\n*** {datetime.now()}: generating predictions ***\n")
+        generate_predictions(args)
 
     t4 = time.time()
 
     ########## evaluation of generated predictions ##########
-
-    print(f"\n\n*** {datetime.now()}: evaluating predictions ***\n")
-    evaluate_predictions(args)
+    if not args.skip_eval:
+        print(f"\n\n*** {datetime.now()}: evaluating predictions ***\n")
+        evaluate_predictions(args)
 
     t5 = time.time()
 
@@ -106,7 +112,7 @@ if __name__ == "__main__":
     timing["target LM model training"]      = print_td(t1, t2)
     timing["translation model training"]    = print_td(t2, t3)
     timing["prediction generation"]         = print_td(t3, t4)
-    timing["prediction generation"]         = print_td(t4, t5)
+    timing["prediction evaluation"]         = print_td(t4, t5)
 
     print(tabulate(timing.items(), headers=["total", print_td(t0, t5)]))
 

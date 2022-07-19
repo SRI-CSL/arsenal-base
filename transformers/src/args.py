@@ -52,6 +52,8 @@ def parse_arguments(input_args):
     parser.add_argument("-translation_epochs",      type=int,   default=2,                  help="number of training epochs for translation model")
     parser.add_argument("-skip_databuild",                      action='store_true',        help="skip the dataset building step")
     parser.add_argument("-resume",                              action='store_true',        help="resume training of the translation model  from last checkpoint (automatically skips data build and target LM training)")
+    parser.add_argument("-skip_eval",                           action='store_true',        help="skip the automatic evaluation on synthetic data")
+
 
     # translation generation configuration (can be changed without changing anything to trained models)
     parser.add_argument("-num_beams",               type=int,   default=1,                  help="number of beams to use in beam search when generating predictions")
