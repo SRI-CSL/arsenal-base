@@ -152,3 +152,9 @@ node_modules
 # ocamlbuild directory and executable files
 _build
 *.native
+
+# executable files from regex example
+regexp/generate-reformulate/*.exe
+
+# trained regexp transformers models
+regexp/models/transformers
