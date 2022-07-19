@@ -51,8 +51,6 @@ target_vocab = dataset_properties["target_vocab"]
 special_tokens = dataset_properties["special_tokens"]
 max_input_length = dataset_properties["encoder_max_len"]
 
-bert2arsenal = EncoderDecoderModel.from_pretrained(MODEL_ROOT)
-
 tokenizer_path = os.path.join(MODEL_ROOT, "source_tokenizer")
 
 # Try to use saved source tokenizer from file to prevent any downloads.
@@ -89,25 +87,42 @@ def process():
         # New format
         sentence_dicts = as_dict['sentences']
 
+    global bert2arsenal
+    if 'checkpoint_id' in as_dict:
+        ckpt_id = as_dict['checkpoint_id']
+        print(f"using {ckpt_id} to generate translations")
+        bert2arsenal = EncoderDecoderModel.from_pretrained(os.path.join(MODEL_ROOT, ckpt_id))
+    else:
+        bert2arsenal = EncoderDecoderModel.from_pretrained(MODEL_ROOT)
+
+    print(f'Initializing {N_WORKERS} workers with chunksize {BATCH_SIZE}')
+
+    # Instantiate queues and worker processes
+    for i in range(N_WORKERS):
+        p = mp.Process(target=work, args=(i, inQ, outQ))
+        p.Daemon = True
+        workers.append(p)
+        p.start()
+
     output = process_data(sentence_dicts)
+
+    # send a kill signal to the worker processes
+    for _ in range(N_WORKERS):
+        inQ.put((-1, None))
+
+    # wait for the workers to finish
+    for worker in workers:
+        worker.join()
+
     results = {"sentences": output}
     results = json.dumps(results, indent=3)
     return str(results)
 
 @app.before_first_request
 def initialize():
-    print(f'Initializing {N_WORKERS} workers with chunksize {BATCH_SIZE}')
-
     # Don't let pytorch use multiple CPU threads. Parallelization works better at this level.
     # This only saves about 2s in processing one entire document.
     torch.set_num_threads(1)
-    
-    # Instantiate queues and worker processes
-    for i in range(N_WORKERS):
-        p = mp.Process(target=work, args=(i,inQ,outQ))
-        p.Daemon = True
-        workers.append(p)
-        p.start()
 
 
 ### Internal implementation code 
@@ -210,9 +225,13 @@ def process_batch(sentence_dicts):
 def work(i,inQ,outQ):
     #print(f'Starting worker {i}')
     while True:
+
         try:
             # get a new message
             idx,data = inQ.get()
+
+            if idx == -1:
+                break
 
             #print(f'Worker {i} processing chunk {idx} with {len(data)} sentences')
 
