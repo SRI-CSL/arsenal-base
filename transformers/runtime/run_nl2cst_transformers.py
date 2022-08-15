@@ -206,9 +206,9 @@ def process_batch(sentence_dicts):
                     min_logit_score = min(logit_scores)
                     min_softmax_score = min(softmax_scores)
 
-                    scores.append({"logit_scores": logit_scores, "softmax_scores": softmax_scores,
-                                    "min_logit_score": min_logit_score, "min_softmax_score": min_softmax_score,
-                                    "logit_scores": logit_scores, "softmax_scores": softmax_scores, "tokens": tokens })
+                    scores.append({"min_logit_score": min_logit_score, "min_softmax_score": min_softmax_score,
+                                    #  "logit_scores": logit_scores, "softmax_scores": softmax_scores,
+                                     "tokens": tokens })
                 csts.append(target_tokenizer.runtime_decode(generated["sequences"][k].tolist()))
 
             result = {"id": id, "nl": nl, "cst": csts}
