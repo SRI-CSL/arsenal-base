@@ -37,7 +37,16 @@ def process_input(data_dir, out_dir, filename, max_word_len, ignore_prefixes, ig
 
             for word in source_words:
                 if "_" in word:
-                    special_tokens.append(word)
+
+                    # the dataset might have some compound words separated by "-" (e.g., "the DATA_000-encoding")
+                    # we split on "-" to make sure that we don't generate special tokens for these subwords
+                    # we need to be careful that "-" is not used in the internal arsenal representation anywhere
+                    subwords = word.split("-")
+                    if len(subwords) > 1:
+                    for s in subwords:
+                        if "_" in s:
+                            special_tokens.append(s)
+
             if source not in dataset:
                 dataset[source] = [target]
             else:
