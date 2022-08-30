@@ -42,7 +42,6 @@ def process_input(data_dir, out_dir, filename, max_word_len, ignore_prefixes, ig
                     # we split on "-" to make sure that we don't generate special tokens for these subwords
                     # we need to be careful that "-" is not used in the internal arsenal representation anywhere
                     subwords = word.split("-")
-                    if len(subwords) > 1:
                     for s in subwords:
                         if "_" in s:
                             special_tokens.append(s)
