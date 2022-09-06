@@ -116,10 +116,11 @@ if __name__ == "__main__":
 
     print(tabulate(timing.items(), headers=["total", print_td(t0, t5)]))
 
-
-    dataset_properties = json.load(open(os.path.join(args.data_dir, "dataset_properties.json")))
+    print(f"model: {args.run_id}")
 
     ########## write a summary to file ##########
+
+    dataset_properties = json.load(open(os.path.join(args.data_dir, "dataset_properties.json")))
 
     summary = {}
     summary["dataset"] = os.path.split(vars(args)["data_dir"])[1]
