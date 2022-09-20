@@ -1,5 +1,5 @@
 # Stage 1. Build the uberjar using Leiningen
-FROM clojure AS noop-entity-builder
+FROM clojure:temurin-8-lein-alpine AS noop-entity-builder
 ADD /project.clj /opt/
 ADD /src /opt/src
 WORKDIR /opt
@@ -7,7 +7,7 @@ RUN lein ring uberjar
 
 
 # Stage 2. Run the uberjar in a fresh Java image
-FROM openjdk:8-alpine
+FROM eclipse-temurin:8-alpine
 RUN apk --no-cache add shadow
 
 ENV \
