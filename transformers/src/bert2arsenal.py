@@ -90,7 +90,7 @@ def train_translationmodel(args):
         output_dir=output_dir,
         logging_dir=logging_dir,
         logging_steps=args.logging_steps,
-        save_steps=args.save_steps,
+        save_strategy="epoch",
         save_total_limit=args.save_total_limit,
         warmup_steps=args.warmup_steps,  # number of warmup steps for learning rate scheduler
         weight_decay=args.weight_decay,  # strength of weight decay

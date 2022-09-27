@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     out_dir = os.path.join(args.model_root_dir, args.run_id)
 
-    if os.path.exists(out_dir):
+    if os.path.exists(out_dir) and not args.resume:
         choice = None
         while True:
             choice = "y" if args.y else input(f"output dir {out_dir} already exists. Delete? (y/n)")
@@ -48,7 +48,9 @@ if __name__ == "__main__":
                 sys.exit(0)
             else:
                 print("unrecognized input")
-    os.mkdir(out_dir)
+
+    if not args.resume:
+        os.mkdir(out_dir)
 
     print(tabulate(vars(args).items(), headers={"parameter", "value"}))
     with open(os.path.join(Path(out_dir), "args.txt"), "w") as f:

@@ -44,7 +44,6 @@ def train_targetmodel(args):
         per_device_eval_batch_size=args.batch_size,  # batch size for evaluation
         warmup_steps=args.warmup_steps,  # number of warmup steps for learning rate scheduler
         weight_decay=args.weight_decay,  # strength of weight decay
-        save_steps=args.save_steps,
         logging_steps=args.logging_steps,
         save_total_limit=args.save_total_limit,
     )
