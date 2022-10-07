@@ -835,7 +835,7 @@ module Entity = struct
          [ typestring,
            `Assoc [ "type",       `String "object";
                     "additionalProperties", `Bool false;
-                    "required",   `List [`String "counter"]; 
+                    "required",   `List [`String "counter"; `String "node_type"]; 
                     "properties", `Assoc [
                                       "entity",       `Assoc ["type", `String "boolean"];
                                       "node_type",    `Assoc ["type", `String "string"];
