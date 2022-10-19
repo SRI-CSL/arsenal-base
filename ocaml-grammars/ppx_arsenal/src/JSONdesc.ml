@@ -138,25 +138,9 @@ type argument = {
     optional : bool;
     list : bool
   }
-    
-(* make sure that built-in boolean type gets the correct json serialization (and not '#definitions/bool') *)
-let prefix_noapp loc s = 
-  [%expr 
-    let ts = [%e s ] in 
-    let ts = match ts with 
-      | "bool" -> "boolean"
-      | _ ->  "#/definitions/"^ts in
-    `String (ts) 
-]
-
-let prefix loc s = 
-  [%expr 
-    let ts = [%e s ] () in 
-    let ts = match ts with 
-      | "bool" -> "boolean"
-      | _ ->  "#/definitions/"^ts in
-    `String (ts) 
-]
+  
+let prefix_noapp loc s = [%expr `String ("#/definitions/"^[%e s ]) ]
+let prefix loc s = [%expr `String ("#/definitions/"^[%e s ] ()) ]
 
 let build_alternative loc is_silent qcons cons args : expression list * expression option =
   let req arg    = not arg.optional in
@@ -164,7 +148,13 @@ let build_alternative loc is_silent qcons cons args : expression list * expressi
   let nameString arg = [%expr `String [%e name arg]] in
   let required   = List.filter req args |> List.map nameString |> list loc in
   let format arg =
-    let common = [%expr `Assoc ["$ref", [%e prefix loc arg.typ ] ] ] in
+    let common = [%expr 
+      let v = [%e arg.typ] () in
+      (* make sure that built-in boolean type matches built-in json type *)
+      match v with 
+      | "bool" -> `Assoc ["type", `String("boolean") ] 
+      | _ -> `Assoc ["$ref", [%e prefix loc arg.typ ] ] 
+    ] in
     if arg.list then
       [%expr [%e name arg],
        `Assoc ["type", `String "array" ;
