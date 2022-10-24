@@ -11,8 +11,8 @@ def parse_arguments(input_args):
 
     # environment settings (paths, file/folder names, CUDA devices, etc.)
     parser.add_argument("-data_root_dir", type=str, default="../../../large_files/datasets",help="root location of datasets")
-    parser.add_argument("-data_dir",                type=str,                               help="location of the input data. If none is provided, the latest set (based on dir name) in data_root_dir is used")
-    parser.add_argument("-data_out_dir",            type=str,                               help="location for the generated datasets (if none is provided, data_dir is used")
+    parser.add_argument("-data_dir",                type=str,                               help="location of the input data (relative to data_root_dir). If none is provided, the latest set (based on dir name) in data_root_dir is used")
+    parser.add_argument("-data_out_dir",            type=str,                               help="location for the generated datasets (relative to data_root_dir, if none is provided, data_dir is used")
     parser.add_argument("-train_file",              type=str,   default="eng-pn.train.txt", help="name of iput training data file")
     parser.add_argument("-val_file",                type=str,   default="eng-pn.val.txt",   help="name of input validation data file")
     parser.add_argument("-train_dataset_name",      type=str,   default="arsenal_train",    help="name of the generated training dataset")
@@ -83,8 +83,13 @@ def parse_arguments(input_args):
         else:
             raise Exception(f"couldn't find a valid dataset dir in {args.data_root_dir}")
 
+    else:
+        args.data_dir = os.path.join(args.data_root_dir, args.data_dir)
+
     if args.data_out_dir is None:
         args.data_out_dir = args.data_dir
+    else:
+        args.data_out_dir = os.path.join(args.data_root_dir, data_out_dir)
 
 
     return args
