@@ -32,33 +32,34 @@ def process_input(data_dir, out_dir, filename, max_word_len, ignore_prefixes, ig
         [source, target] = inst.split("\t")
         source_words = source.split(" ")
 
+         # collect statistics for this sentence (before deciding whether to discard it b/c of length)
+        for word in source_words:
+            m = re.match(".*/([A-Za-z]+)_(\d+).*", word)
+            if m:
+                typ = m.group(1)
+                idx = m.group(2)
+
+                # statistics for the original dataset
+                if typ not in ent_freqs["original"]:
+                    ent_freqs["original"][typ] = {}
+                if idx not in ent_freqs["original"][typ]:
+                    ent_freqs["original"][typ][idx] = 0
+
+                ent_freqs["original"][typ][idx] += 1
+
+                # statistics for the filtered dataset
+                if len(source_words) < max_word_len:
+                    if typ not in ent_freqs["filtered"]:
+                        ent_freqs["filtered"][typ] = {}
+                    if idx not in ent_freqs["filtered"][typ]:
+                        ent_freqs["filtered"][typ][idx] = 0
+
+                    ent_freqs["filtered"][typ][idx] += 1
+
+
         if len(source_words) < max_word_len:
             source_vocab.extend(source_words)
-
-            # collect statistics for this sentence (before deciding whether to discard it b/c of length)
-            for word in source_words:
-                m = re.match(".*/([A-Za-z]+)_(\d+).*", word)
-                if m:
-                    typ = m.group(1)
-                    idx = m.group(2)
-
-                    # statistics for the original dataset
-                    if typ not in ent_freqs:
-                        ent_freqs["original"][typ] = {}
-                    if idx not in ent_freqs["original"][typ]:
-                        ent_freqs["original"][typ][idx] = 0
-
-                    ent_freqs["original"][typ][idx] += 1
-
-                    # statistics for the filtered dataset
-                    if len(source_words) < max_word_len:
-                        if typ not in ent_freqs:
-                            ent_freqs["filtered"][typ] = {}
-                        if idx not in ent_freqs["filtered"][typ]:
-                            ent_freqs["filtered"][typ][idx] = 0
-
-                        ent_freqs["filtered"][typ][idx] += 1
-
+           
             for word in source_words:
                 if "_" in word:
 
@@ -249,6 +250,11 @@ def build_dataset(args):
 
     train_dataset, special_tokens, source_vocab, target_vocab, train_ent_freqs = process_input(data_dir, out_dir, train_file, max_word_len, ignore_prefixes, ignore_suffixes, check_balance)
 
+    # we don't really need to dump this information here, because later it will be included in dataset_properties later
+    # this is done here only to get these results quickly without having to wait for the lengthy process of tokenization
+    with open(os.path.join(out_dir, "training_entity_frequencies.json"), "w") as f:
+        json.dump(train_ent_freqs, f, indent=3)
+
     if build_val:
         val_dataset, val_special_tokens, val_source_vocab, val_target_vocab, val_ent_freqs = process_input(data_dir, out_dir, val_file, max_word_len, ignore_prefixes, ignore_suffixes, check_balance)
     else:
@@ -256,8 +262,6 @@ def build_dataset(args):
         val_special_tokens = []
         val_source_vocab = []
         val_target_vocab = []
-
-
 
     diffs = {}
 
