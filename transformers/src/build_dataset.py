@@ -21,7 +21,7 @@ def process_input(data_dir, out_dir, filename, max_word_len, ignore_prefixes, ig
     source_vocab = []
     target_vocab = []
     special_tokens = [] # all words containing '_' are treated as special tokens and added to the tokenizer
-
+    ent_freqs = {} # collect statistics about the occurrences of each entity placeholder (for each type and count)
 
     # read input file, create:
     # - dataset: dict of source/target sentences
@@ -45,6 +45,17 @@ def process_input(data_dir, out_dir, filename, max_word_len, ignore_prefixes, ig
                     for s in subwords:
                         if "_" in s:
                             special_tokens.append(s)
+                            m = re.match(".*/([A-Za-z]+)_(\d+).*", s)
+                            if m:
+                                typ = m.group(1)
+                                idx = m.group(2)
+                                if typ not in ent_freqs:
+                                    ent_freqs[typ] = {}
+                                if idx not in ent_freqs[typ]:
+                                    ent_freqs[typ][idx] = 0
+
+                                ent_freqs[typ][idx] += 1
+                                
 
             if source not in dataset:
                 dataset[source] = [target]
@@ -203,12 +214,12 @@ def process_input(data_dir, out_dir, filename, max_word_len, ignore_prefixes, ig
     print(f" -unique number of outputs: {unique_instances}")
     print(f" -non-unique number of inputs: {len(non_unique_inputs)}")
 
-    return dataset, special_tokens, source_vocab, target_vocab
+    return dataset, special_tokens, source_vocab, target_vocab, ent_freqs
 
 
 def build_dataset(args):
 
-    data_dir = args.data_dir
+    data_dir = os.path.join(args.data_root_dir, args.data_dir)
     out_dir = args.data_out_dir
     train_file = args.train_file
     val_file = args.val_file
@@ -223,10 +234,10 @@ def build_dataset(args):
 
     build_val = os.path.exists(os.path.join(data_dir, val_file))
 
-    train_dataset, special_tokens, source_vocab, target_vocab = process_input(data_dir, out_dir, train_file, max_word_len, ignore_prefixes, ignore_suffixes, check_balance)
+    train_dataset, special_tokens, source_vocab, target_vocab, train_ent_freqs = process_input(data_dir, out_dir, train_file, max_word_len, ignore_prefixes, ignore_suffixes, check_balance)
 
     if build_val:
-        val_dataset, val_special_tokens, val_source_vocab, val_target_vocab = process_input(data_dir, out_dir, val_file, max_word_len, ignore_prefixes, ignore_suffixes, check_balance)
+        val_dataset, val_special_tokens, val_source_vocab, val_target_vocab, val_ent_freqs = process_input(data_dir, out_dir, val_file, max_word_len, ignore_prefixes, ignore_suffixes, check_balance)
     else:
         val_dataset = {}
         val_special_tokens = []
@@ -371,8 +382,10 @@ def build_dataset(args):
     dataset_properties["encoder_min_len"] = encoder_min_length
     dataset_properties["decoder_min_len"] = decoder_min_length
     dataset_properties["training_size"] = len(train_dataset.keys())
+    dataset_properties["training_entity_frequencies"] = train_ent_freqs
     if build_val:
         dataset_properties["validation_size"] = len(val_dataset.keys())
+        dataset_properties["validation_entity_frequencies"] = val_ent_freqs
 
     with open(os.path.join(out_dir, "dataset_properties.json"), "w") as f:
         json.dump(dataset_properties, f, indent=3)
