@@ -21,7 +21,7 @@ def process_input(data_dir, out_dir, filename, max_word_len, ignore_prefixes, ig
     source_vocab = []
     target_vocab = []
     special_tokens = [] # all words containing '_' are treated as special tokens and added to the tokenizer
-    ent_freqs = {} # collect statistics about the occurrences of each entity placeholder (for each type and count)
+    ent_freqs = {"original": {}, "filtered": {}} # collect statistics about the occurrences of each entity placeholder (for each type and count)
 
     # read input file, create:
     # - dataset: dict of source/target sentences
@@ -35,6 +35,30 @@ def process_input(data_dir, out_dir, filename, max_word_len, ignore_prefixes, ig
         if len(source_words) < max_word_len:
             source_vocab.extend(source_words)
 
+            # collect statistics for this sentence (before deciding whether to discard it b/c of length)
+            for word in source_words:
+                m = re.match(".*/([A-Za-z]+)_(\d+).*", word)
+                if m:
+                    typ = m.group(1)
+                    idx = m.group(2)
+
+                    # statistics for the original dataset
+                    if typ not in ent_freqs:
+                        ent_freqs["original"][typ] = {}
+                    if idx not in ent_freqs["original"][typ]:
+                        ent_freqs["original"][typ][idx] = 0
+
+                    ent_freqs["original"][typ][idx] += 1
+
+                    # statistics for the filtered dataset
+                    if len(source_words) < max_word_len:
+                        if typ not in ent_freqs:
+                            ent_freqs["filtered"][typ] = {}
+                        if idx not in ent_freqs["filtered"][typ]:
+                            ent_freqs["filtered"][typ][idx] = 0
+
+                        ent_freqs["filtered"][typ][idx] += 1
+
             for word in source_words:
                 if "_" in word:
 
@@ -45,17 +69,6 @@ def process_input(data_dir, out_dir, filename, max_word_len, ignore_prefixes, ig
                     for s in subwords:
                         if "_" in s:
                             special_tokens.append(s)
-                            m = re.match(".*/([A-Za-z]+)_(\d+).*", s)
-                            if m:
-                                typ = m.group(1)
-                                idx = m.group(2)
-                                if typ not in ent_freqs:
-                                    ent_freqs[typ] = {}
-                                if idx not in ent_freqs[typ]:
-                                    ent_freqs[typ][idx] = 0
-
-                                ent_freqs[typ][idx] += 1
-                                
 
             if source not in dataset:
                 dataset[source] = [target]
@@ -219,7 +232,7 @@ def process_input(data_dir, out_dir, filename, max_word_len, ignore_prefixes, ig
 
 def build_dataset(args):
 
-    data_dir = os.path.join(args.data_root_dir, args.data_dir)
+    data_dir = args.data_dir
     out_dir = args.data_out_dir
     train_file = args.train_file
     val_file = args.val_file
