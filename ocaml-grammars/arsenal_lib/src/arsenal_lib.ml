@@ -506,7 +506,8 @@ module JSONindex = struct
         "$schema", `String "http://json-schema.org/schema#";
         "$id",     `String id;
         "description", `String description;
-        "$ref",     `String("#/definitions/NL2CSTResult");
+        "type",     `String "array";
+        "items",    `Assoc ["$ref",     `String("#/definitions/NL2CSTResult")];
         "definitions", `Assoc (top::(!index |> List.rev) )
       ]
 end
