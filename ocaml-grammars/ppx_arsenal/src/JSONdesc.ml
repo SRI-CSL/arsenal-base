@@ -142,6 +142,9 @@ type argument = {
 let prefix_noapp loc s = [%expr `String ("#/definitions/"^[%e s ]) ]
 let prefix loc s = [%expr `String ("#/definitions/"^[%e s ] ()) ]
 
+let prefix_list loc s = [%expr `Assoc ["type", `String "array"; "items", `Assoc ["$ref", `String ("#/definitions/"^[%e s ] ()) ]]]
+
+
 let build_alternative loc is_silent qcons cons args : expression list * expression option =
   let req arg    = not arg.optional in
   let name arg   = arg.name in
@@ -163,7 +166,12 @@ let build_alternative loc is_silent qcons cons args : expression list * expressi
       [%expr [%e name arg], [%e common] ]
   in
   let seed = match is_silent with
-    | Some i -> [prefix loc (List.nth args i).typ]
+    | Some i -> 
+      let seed_arg = List.nth args i in 
+      if seed_arg.list then 
+        [prefix_list loc seed_arg.typ]  
+      else
+        [prefix loc seed_arg.typ]
     | None -> []
   in
   match is_silent with
@@ -191,7 +199,17 @@ let build_alternative loc is_silent qcons cons args : expression list * expressi
 
 
 let build_type loc typ alternatives : expression =
-  let aux (names,_) = List.map (fun name -> [%expr `Assoc [ "$ref", [%e name]]]) names in
+  let aux (names,_) = List.map (fun name -> 
+    [%expr 
+      let name = [%e name] in 
+      match name with 
+      | `String _ -> `Assoc [ "$ref", name] (* reference to the actual definition *)
+      | `Assoc _ -> name (* an array of references to the actual definition (originates from silenced arrays) *)
+    ]
+    (* let n = [%e name] in 
+    [%expr `Assoc [ "$ref", [%e name]]] *)
+    
+    ) names in
   let references = List.map aux alternatives |> List.flatten |> list loc in
   let init = 
     [%expr
@@ -240,7 +258,8 @@ let expr_of_type_decl ~path poly_args typestring_expr type_decl =
           in
           let is_silent = if is_silent then typs |> get_main_arg else None in
           let args = typs |> List.mapi aux in
-          build_alternative loc is_silent qname (str2exp name') args
+          let alt = build_alternative loc is_silent qname (str2exp name') args in
+          alt
 
        | Parsetree.Pcstr_record args ->
           let aux (x : label_declaration) =
@@ -252,7 +271,9 @@ let expr_of_type_decl ~path poly_args typestring_expr type_decl =
             else None
           in
           let args = args |> List.map aux in
-          build_alternative loc is_silent qname (str2exp name') args
+          let alt = build_alternative loc is_silent qname (str2exp name') args in 
+          alt
+
      in
      
      cs |> List.map treat_field |> build_type loc typestring_expr
