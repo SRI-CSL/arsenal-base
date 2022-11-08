@@ -839,7 +839,7 @@ module Entity = struct
                     "required",   `List [`String "counter"; `String "node_type"]; 
                     "properties", `Assoc [
                                       "entity",       `Assoc ["type", `String "boolean"];
-                                      "node_type",    `Assoc ["type", `String "string"];
+                                      "node_type",    `Assoc ["type", `String "string"; "pattern", `String typestring];
                                       "kind",         `Assoc ["type", `String "string"];
                                       "counter",      `Assoc ["type", `String "integer"];
                                       "substitution", `Assoc ["type", `String "string"]
