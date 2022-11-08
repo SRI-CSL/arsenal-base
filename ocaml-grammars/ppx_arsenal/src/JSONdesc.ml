@@ -190,7 +190,7 @@ let build_alternative loc is_silent qcons cons args : expression list * expressi
               `Assoc 
                 ((PPX_Serialise.json_constructor_field,
                   `Assoc [ "type",    `String "string";
-                           "pattern", `String [%e cons] ])
+                           "pattern", `String [%e qcons] ])
                  :: [%e List.map format args |> list loc ])  ] ])
   
 (* let build_alternative loc cons args : expression =

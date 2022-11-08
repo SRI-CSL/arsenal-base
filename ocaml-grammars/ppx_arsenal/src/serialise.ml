@@ -202,8 +202,15 @@ let expr_of_type_decl ~path type_decl =
 
      let treat_field index { pcd_name = { txt = name'; _ }; pcd_args; pcd_attributes; _ } =
 
-       (* Qualified constructor name *)
        let qualifname' = constructor_qualify loc path name' in
+
+        (* qualify the constructor's name with type parameters *)
+        let qname = 
+          let aux param qname = 
+            [%expr PPX_Serialise.str_apply [%e qualifname'] ([%e param].PPX_Serialise.typestring())]
+          in
+          List.fold_right aux args (qualifname') in 
+       
        (* Whether it is declared as silent *)
        let is_silent   = attribute ~deriver:deriver_name "silent" pcd_attributes in
        (* Construction of a silent pattern in case is_silent is true *)
@@ -260,8 +267,9 @@ let expr_of_type_decl ~path type_decl =
           Exp.case pat
            (if is_silent && List.length typs == 1 then aux_to_json_silent 0
             else
-              [%expr `Assoc((PPX_Serialise.json_constructor_field,
-                             `String[%e qualifname'])::[%e args_to_json])])),
+              [%expr 
+              `Assoc((PPX_Serialise.json_constructor_field,
+                             `String ([%e qname]))::[%e args_to_json])])),
 
          Exp.case pat
            [%expr Sexp.List ([%e atom qualifname' typestring_expr] :: [%e args_to_sexp]) ],
