@@ -213,8 +213,13 @@ let build_type loc typ alternatives : expression =
   let references = List.map aux alternatives |> List.flatten |> list loc in
   let init = 
     [%expr
+      let refs = [%e references] in 
+      let refs = match refs with 
+      | [e] -> e  (* don't create "anyOf" choices if we only have a single element *)
+      | _ -> `Assoc ["anyOf", `List refs ] 
+      in
         [ [%e typ],
-          `Assoc ["anyOf", `List [%e references ] ] ] ]
+          refs ] ]
   in
   List.map snd alternatives
   |> List.filter_map (fun x -> x)
@@ -223,7 +228,7 @@ let build_type loc typ alternatives : expression =
 let build_abbrev loc typ body : expression =
   [%expr
       [ [%e typ],
-        `Assoc ["anyOf", `List [ `Assoc [ "$ref", [%e body]] ] ] ] ]
+         `Assoc [ "$ref", [%e body]] ] ]
   
 (* Treating a type declaration 
        type foo = ...
