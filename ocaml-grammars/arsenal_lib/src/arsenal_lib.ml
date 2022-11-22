@@ -826,7 +826,7 @@ module Entity = struct
       (a.kind, a.counter, a.substitution)
       (b.kind, b.counter, b.substitution)
 
-  let typestring arg () = PPX_Serialise.str_apply "entity" (arg())
+  let typestring arg () = PPX_Serialise.str_apply "Entity" (arg())
   let json_desc arg () =
     let typestring = typestring arg () in
     entity_types := EntityTypes.add typestring !entity_types;
