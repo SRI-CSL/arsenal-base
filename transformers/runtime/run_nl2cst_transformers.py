@@ -43,6 +43,8 @@ TYPE_FORCING = int(get_env("TYPE_FORCING"))
 BATCH_SIZE = int(get_env("BATCH_SIZE"))
 CLEAN_INPUT = int(get_env("CLEAN_INPUT"))
 INCLUDE_SCORES = get_bool_opt("INCLUDE_SCORES")
+INCLUDE_FULL_SCORES = get_bool_opt("INCLUDE_FULL_SCORES")
+
 
 app = Flask(__name__)
 
@@ -206,9 +208,13 @@ def process_batch(sentence_dicts):
                     min_logit_score = min(logit_scores)
                     min_softmax_score = min(softmax_scores)
 
-                    scores.append({"min_logit_score": min_logit_score, "min_softmax_score": min_softmax_score,
-                                    #  "logit_scores": logit_scores, "softmax_scores": softmax_scores,
-                                     "tokens": tokens })
+                    score_entry = {"min_logit_score": min_logit_score, "min_softmax_score": min_softmax_score,
+                                     "tokens": tokens }
+                    if INCLUDE_FULL_SCORES:
+                        score_entry["logit_scores"] = logit_scores
+                        score_entry["softmax_scores"] = softmax_scores
+
+                    scores.append(score_entry)
                 csts.append(target_tokenizer.runtime_decode(generated["sequences"][k].tolist()))
 
             result = {"id": id, "nl": nl, "cst": csts}
