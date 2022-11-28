@@ -896,7 +896,7 @@ module Entity = struct
       | Some k when not !one_entity_kind ->
 
         let typestring = arg.PPX_Serialise.typestring () in 
-        let typestring = let pre,post = !str_arg in "entity"^pre^typestring^post in
+        let typestring = let pre,post = !str_arg in "Entity"^pre^typestring^post in
         let node_type = ("node_type", `String typestring) in 
 
          (match arg.PPX_Serialise.to_json k with
@@ -918,7 +918,7 @@ module Entity = struct
     let ty = 
       match e.kind with
       | Some _ when not !one_entity_kind -> (typestring arg.typestring ())
-      | _ -> "entity"
+      | _ -> "Entity"
     in
     let base =
       sexp_constructor
