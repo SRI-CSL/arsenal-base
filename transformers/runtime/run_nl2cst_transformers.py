@@ -42,9 +42,6 @@ NUM_OUTPUTS = int(get_env("NUM_OUTPUTS"))
 TYPE_FORCING = int(get_env("TYPE_FORCING"))
 BATCH_SIZE = int(get_env("BATCH_SIZE"))
 CLEAN_INPUT = int(get_env("CLEAN_INPUT"))
-INCLUDE_SCORES = get_bool_opt("INCLUDE_SCORES")
-INCLUDE_FULL_SCORES = get_bool_opt("INCLUDE_FULL_SCORES")
-
 
 app = Flask(__name__)
 
@@ -77,21 +74,17 @@ def hello():
 
 @app.route('/generateir', methods=['POST'])
 def process():
-    as_dict = request.get_json(force=True)
+    data = request.get_json(force=True)
 
-    # this returns a list of dicts of the form
-    # {"id":"S1","sentence":"The parameter of the ENT_1 is a string."}
-    #
-    if 'msg' in as_dict:
+    # streamline legacy keys
+    if "msg" in data:
         # Old format
-        sentence_dicts = as_dict['msg']
-    elif 'sentences' in as_dict:
-        # New format
-        sentence_dicts = as_dict['sentences']
+        data["sentences"] = data.pop("msg")
+
 
     global bert2arsenal
-    if 'checkpoint_id' in as_dict:
-        ckpt_id = as_dict['checkpoint_id']
+    if 'checkpoint_id' in data:
+        ckpt_id = data['checkpoint_id']
         print(f"using {ckpt_id} to generate translations")
         bert2arsenal = EncoderDecoderModel.from_pretrained(os.path.join(MODEL_ROOT, ckpt_id))
     else:
@@ -106,7 +99,7 @@ def process():
         workers.append(p)
         p.start()
 
-    output = process_data(sentence_dicts)
+    output = process_data(data)
 
     # send a kill signal to the worker processes
     for _ in range(N_WORKERS):
@@ -129,8 +122,13 @@ def initialize():
 
 ### Internal implementation code 
 
-def process_batch(sentence_dicts):
-    if 'sentence' in sentence_dicts[0]:  
+def process_batch(data):
+
+    sentence_dicts = data["sentences"]
+    include_scores = True if "include_scores" in data and data["include_scores"] else False
+    include_full_scores = True if "include_full_scores" in data and data["include_full_scores"] else False
+
+    if 'sentence' in sentence_dicts[0]:
         # New format
         nl_inputs = [x["sentence"] for x in sentence_dicts]
     else:
@@ -179,7 +177,7 @@ def process_batch(sentence_dicts):
                 to iterate over the list of scores and then get the kth element of each
                 list entry 
                 '''
-                if INCLUDE_SCORES:
+                if include_scores:
 
 
                     score_values = generated["scores"]
@@ -210,7 +208,7 @@ def process_batch(sentence_dicts):
 
                     score_entry = {"min_logit_score": min_logit_score, "min_softmax_score": min_softmax_score,
                                      "tokens": tokens }
-                    if INCLUDE_FULL_SCORES:
+                    if include_full_scores:
                         score_entry["logit_scores"] = logit_scores
                         score_entry["softmax_scores"] = softmax_scores
 
@@ -218,7 +216,7 @@ def process_batch(sentence_dicts):
                 csts.append(target_tokenizer.runtime_decode(generated["sequences"][k].tolist()))
 
             result = {"id": id, "nl": nl, "cst": csts}
-            if INCLUDE_SCORES:
+            if include_scores:
                 result["scores"] = scores
             results.append(result)
         except Exception as e:
@@ -254,14 +252,19 @@ def work(i,inQ,outQ):
             traceback.print_exc()
 
 # Distribute workload to workers and collect the results
-def process_data(data_list):
+def process_data(data):
     # Send off chunks to the workers
-    num_chunks = math.ceil(len(data_list) / BATCH_SIZE)
+    num_chunks = math.ceil(len(data["sentences"]) / BATCH_SIZE)
     for idx in range(num_chunks):
-        chunk = data_list[idx*BATCH_SIZE:(idx+1)*BATCH_SIZE]        
+        chunk = {"sentences": data["sentences"][idx*BATCH_SIZE:(idx+1)*BATCH_SIZE]}
+
+        # copy over other (configuration) data that is not chunk-specific
+        for k in data.keys():
+            if k != "sentences":
+                chunk[k] = data[k]
         inQ.put((idx,chunk))
         
-    result = [None] * len(data_list)
+    result = [None] * len(data["sentences"])
 
     # process results from workers
     for _ in tqdm(range(num_chunks)):
