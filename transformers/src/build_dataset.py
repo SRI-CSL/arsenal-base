@@ -6,7 +6,7 @@ import re
 import sys
 
 from datasets import Dataset, tqdm
-from transformers import BertTokenizerFast, GPT2TokenizerFast
+from transformers import BertTokenizerFast, GPT2TokenizerFast, RobertaTokenizerFast
 
 from args import parse_arguments
 from arsenal_tokenizer import PreTrainedArsenalTokenizer
@@ -295,7 +295,14 @@ def build_dataset(args):
     if to_remove != []:
         print(f"found {len(to_remove)} overlapping instances in train and validation set, removed those from validation set. New size of validation set: {len(val_dataset)}")
 
-    source_tokenizer = BertTokenizerFast.from_pretrained(args.source_model)
+    if args.source_model == "roberta-base":
+        source_tokenizer = RobertaTokenizerFast.from_pretrained(args.source_model)
+    elif args.source_model == "bert-base-uncased":
+        source_tokenizer = BertTokenizerFast.from_pretrained(args.source_model)
+    else:
+        print("WARNING: Unknown model name, using BertTokenizerFast as source tokenizer. Make sure that this matches the used source LM.")
+        source_tokenizer = BertTokenizerFast.from_pretrained(args.source_model)
+
     source_tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
     target_tokenizer = PreTrainedArsenalTokenizer(target_vocab=target_vocab)
 
