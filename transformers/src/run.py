@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 from tabulate import tabulate
 from args import parse_arguments
-from bert2arsenal import train_translationmodel
+from nl2cst import train_translationmodel
 from build_dataset import build_dataset
 from eval import evaluate_predictions
 from generate_predictions import generate_predictions

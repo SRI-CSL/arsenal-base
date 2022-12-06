@@ -54,14 +54,14 @@ def generate_predictions(args):
     source_tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
     target_tokenizer = PreTrainedArsenalTokenizer(target_vocab=target_vocab)
 
-    bert2arsenal = EncoderDecoderModel.from_pretrained(model_dir)
+    nl2cst = EncoderDecoderModel.from_pretrained(model_dir)
 
     val_data = datasets.load_from_disk(val_data_path)
 
     outfile = open(os.path.join(Path(model_dir).parent, f"predictions_{args.run_id}.txt"), "w")
 
     torch_device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    bert2arsenal.to(torch_device)
+    nl2cst.to(torch_device)
 
     batch_size = args.batch_size
     num_batches = int(val_data.num_rows / batch_size)
@@ -91,7 +91,7 @@ def generate_predictions(args):
         if args.type_forcing:
             generate_args["type_forcing_vocab"] = type_forcing_vocab
 
-        outputs = bert2arsenal.generate(**generate_args)
+        outputs = nl2cst.generate(**generate_args)
 
         # apparently batch instances and return sequences per instance are stacked along a single dimension
         for j in range(batch_size):

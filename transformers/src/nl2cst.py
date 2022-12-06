@@ -41,7 +41,7 @@ def train_translationmodel(args):
     # use mixed precision training on CUDA devices, otherwise disable it so that code can run on CPUs
     fp16 = True if torch.cuda.is_available() else False
 
-    bert2arsenal = EncoderDecoderModel.from_encoder_decoder_pretrained(args.source_model, target_model)
+    nl2cst = EncoderDecoderModel.from_encoder_decoder_pretrained(args.source_model, target_model)
     source_tokenizer = BertTokenizerFast.from_pretrained(args.source_model)
     source_tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
 
@@ -53,34 +53,34 @@ def train_translationmodel(args):
 
     # Due to the additional special tokens, encoder token embeddings need to be resized.
     # The target model has been created specifically for the "Effigy Arsenal Language" so has already correct dims
-    bert2arsenal.encoder.resize_token_embeddings(len(source_tokenizer))
-    bert2arsenal.config.decoder_start_token_id = source_tokenizer.cls_token_id
-    bert2arsenal.config.eos_token_id = target_tokenizer.sep_token_id
+    nl2cst.encoder.resize_token_embeddings(len(source_tokenizer))
+    nl2cst.config.decoder_start_token_id = source_tokenizer.cls_token_id
+    nl2cst.config.eos_token_id = target_tokenizer.sep_token_id
 
     # not sure whether these settings are relevant? (At least they shouldn't be harmful)
-    bert2arsenal.config.encoder.eos_token_id = source_tokenizer.sep_token_id
-    bert2arsenal.config.decoder.eos_token_id = target_tokenizer.sep_token_id
+    nl2cst.config.encoder.eos_token_id = source_tokenizer.sep_token_id
+    nl2cst.config.decoder.eos_token_id = target_tokenizer.sep_token_id
 
-    bert2arsenal.config.pad_token_id = source_tokenizer.pad_token_id
-    bert2arsenal.config.vocab_size = bert2arsenal.encoder.vocab_size
-    bert2arsenal.config.encoder.vocab_size = bert2arsenal.encoder.vocab_size
+    nl2cst.config.pad_token_id = source_tokenizer.pad_token_id
+    nl2cst.config.vocab_size = nl2cst.encoder.vocab_size
+    nl2cst.config.encoder.vocab_size = nl2cst.encoder.vocab_size
 
     # the model has min/max length settings in three places: for the main moder (EncoderDecoder) and both encoder
     # and decoder as submodels. Settings in the latter two parts seem to be completely irrelevant (unless one would
     # try to use the trained encoder or decoder parts from the translation model in isolation).
-    bert2arsenal.config.max_length = dataset_properties["decoder_max_len"]
-    bert2arsenal.config.min_length = dataset_properties["decoder_min_len"]
+    nl2cst.config.max_length = dataset_properties["decoder_max_len"]
+    nl2cst.config.min_length = dataset_properties["decoder_min_len"]
 
     # Don't prevent any n-gram repetitions! This would have a significant negative influence on
     # the translations (especially for longer sentences), because the correct CSTs may contain n-gram repetitions
-    bert2arsenal.config.no_repeat_ngram_size = 0
-    bert2arsenal.config.early_stopping = True
-    bert2arsenal.config.length_penalty = 2.0
-    bert2arsenal.config.num_beams = 4
-    # bert2arsenal.config.add_cross_attention
-    # bert2arsenal.config.num_return_sequences = 5 # this can be used to set the number of return sequences
+    nl2cst.config.no_repeat_ngram_size = 0
+    nl2cst.config.early_stopping = True
+    nl2cst.config.length_penalty = 2.0
+    nl2cst.config.num_beams = 4
+    # nl2cst.config.add_cross_attention
+    # nl2cst.config.num_return_sequences = 5 # this can be used to set the number of return sequences
 
-    print(f"model config:\n{bert2arsenal.config}")
+    print(f"model config:\n{nl2cst.config}")
 
     training_args = Seq2SeqTrainingArguments(
         predict_with_generate=True,
@@ -97,7 +97,7 @@ def train_translationmodel(args):
         num_train_epochs=args.translation_epochs,
     )
 
-    bert2arsenal.config.to_json_file(os.path.join(output_dir, "model_config.json"))
+    nl2cst.config.to_json_file(os.path.join(output_dir, "model_config.json"))
     with open(os.path.join(output_dir, "training_args.json"), "w") as f:
         f.write(str(training_args.to_json_string()))
 
@@ -108,7 +108,7 @@ def train_translationmodel(args):
     )
 
     trainer = Seq2SeqTrainer(
-        model=bert2arsenal,
+        model=nl2cst,
         args=training_args,
         train_dataset=train_data,
         tokenizer=source_tokenizer
