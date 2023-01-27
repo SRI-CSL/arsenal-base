@@ -3,6 +3,7 @@ RUN pip install --upgrade pip
 RUN pip install torch datasets flask tqdm
 
 # begin custom transformers installation
+# (adds typeforcing functionality and fixes a dependency specification)
 ARG tr_version="4.4.2"
 RUN wget https://github.com/huggingface/transformers/archive/v$tr_version.tar.gz
 RUN tar -xf v$tr_version.tar.gz -C /opt
