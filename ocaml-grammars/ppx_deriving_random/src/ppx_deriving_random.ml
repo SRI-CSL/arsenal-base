@@ -107,7 +107,7 @@ let get_weight attrs =
   | None -> true
   | Some set_l -> 
     match curr_level with 
-    | Some `Int(_, curr_l) when curr_l != set_l -> false
+    | Some `Int(_, curr_l) when curr_l > set_l -> false
     | _ -> true
 
   in   let conv x = match active with 
