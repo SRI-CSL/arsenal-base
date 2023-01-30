@@ -101,21 +101,30 @@ def train_translationmodel(args):
     with open(os.path.join(output_dir, "training_args.json"), "w") as f:
         f.write(str(training_args.to_json_string()))
 
-    train_data = datasets.Dataset.load_from_disk(os.path.join(args.data_dir, args.train_dataset_name))
 
-    train_data.set_format(
-        type="torch", columns=["input_ids", "attention_mask", "decoder_input_ids", "decoder_attention_mask", "labels"],
-    )
+    # if we have multiple training datasets (for curriculum learning), train the target LM 
+    # on the one with the highest index (i.e., the most comprehensive one, representing the entire grammar)
+    for (_, train_dataset_names, _) in os.walk(args.data_dir):
+        break
+    train_dataset_names = [s for s in train_dataset_names if args.train_dataset_name in s]
+    train_dataset_names.sort(reverse=False)
 
-    trainer = Seq2SeqTrainer(
-        model=bert2arsenal,
-        args=training_args,
-        train_dataset=train_data,
-        tokenizer=source_tokenizer
-    )
-    print(f"start training at {datetime.now().strftime('%b%d_%H-%M-%S')}")
-    trainer.train(resume_from_checkpoint=checkpoint)
-    trainer.save_model()
+    for train_dataset_name in train_dataset_names:
+        train_data = datasets.Dataset.load_from_disk(os.path.join(args.data_dir, train_dataset_name))
+
+        train_data.set_format(
+            type="torch", columns=["input_ids", "attention_mask", "decoder_input_ids", "decoder_attention_mask", "labels"],
+        )
+
+        trainer = Seq2SeqTrainer(
+            model=bert2arsenal,
+            args=training_args,
+            train_dataset=train_data,
+            tokenizer=source_tokenizer
+        )
+        print(f"start training on {train_dataset_name} at {datetime.now().strftime('%b%d_%H-%M-%S')}")
+        trainer.train(resume_from_checkpoint=checkpoint)
+        trainer.save_model()
 
 
 if __name__ == "__main__":

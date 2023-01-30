@@ -32,7 +32,16 @@ def prepare_dataset(file):
 def train_targetmodel(args):
     dataset_properties = json.load(open(os.path.join(args.data_dir, "dataset_properties.json")))
     target_vocab = dataset_properties["target_vocab"]
-    train_dataset = prepare_dataset(os.path.join(args.data_dir, args.train_dataset_name))
+
+    # if we have multiple training datasets (for curriculum learning), train the target LM 
+    # on the one with the highest index (i.e., the most comprehensive one, representing the entire grammar)
+    for (_, train_dataset_names, _) in os.walk(args.data_dir):
+        break
+    train_dataset_names = [s for s in train_dataset_names if args.train_dataset_name in s]
+    train_dataset_names.sort(reverse=True)
+    train_dataset_name = train_dataset_names[0]
+
+    train_dataset = prepare_dataset(os.path.join(args.data_dir, train_dataset_name))
 
     tokenizer = PreTrainedArsenalTokenizer(target_vocab=target_vocab)
 

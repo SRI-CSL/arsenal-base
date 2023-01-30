@@ -89,7 +89,7 @@ def parse_arguments(input_args):
     if args.data_out_dir is None:
         args.data_out_dir = args.data_dir
     else:
-        args.data_out_dir = os.path.join(args.data_root_dir, data_out_dir)
+        args.data_out_dir = os.path.join(args.data_root_dir, args.data_out_dir)
 
 
     return args

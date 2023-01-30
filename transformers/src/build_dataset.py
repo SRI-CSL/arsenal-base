@@ -243,12 +243,32 @@ def build_dataset(args):
     ignore_prefixes = args.strip_prefix_chars.split()
     check_balance = args.check_balance
 
+    print(f"train file: {train_file}")
+    print(f"data_dir: {data_dir}")
 
+    # if we use curriculum learning, we'll have multiple files with training data
+    # with different suffixes (e.g., "eng-pn.train_1.txt", "eng-pn.train_2.txt", etc.).
+    # We identify all these files and sort them in ascending order so that we get the 
+    # most comprehensive set (representing the entire grammar) last.
+    for (_, _, train_files) in os.walk(data_dir):
+        break
+    train_file_stub = os.path.splitext(train_file)[0]
+    train_files = [f for f in train_files if train_file_stub in f]
+    train_files.sort(reverse=False)
+    
     print(f"discarding all instances with more than {max_word_len} words in the source sentences")
 
     build_val = os.path.exists(os.path.join(data_dir, val_file))
 
-    train_dataset, special_tokens, source_vocab, target_vocab, train_ent_freqs = process_input(data_dir, out_dir, train_file, max_word_len, ignore_prefixes, ignore_suffixes, check_balance)
+    train_datasets = [] 
+
+    # note: we keep all resulting 'train_dataset's, so that we can use them for curriculum learning
+    # all other information from process_input is overwritten in each iteration, b/c. we only care about the 
+    # information from the last (most comprehensive) set
+    for train_file in train_files:
+        print(f"processing {train_file}")
+        train_dataset, special_tokens, source_vocab, target_vocab, train_ent_freqs = process_input(data_dir, out_dir, train_file, max_word_len, ignore_prefixes, ignore_suffixes, check_balance)
+        train_datasets.append(train_dataset)
 
     # we don't really need to dump this information here, because later it will be included in dataset_properties later
     # this is done here only to get these results quickly without having to wait for the lengthy process of tokenization
@@ -302,10 +322,13 @@ def build_dataset(args):
     # source_tokenizer.save_pretrained(os.path.join(out_dir, "source_tokenizer"))
     # target_tokenizer.save_pretrained((os.path.join(out_dir, "target_tokenizer")))
 
+    splits = {}
+
+    for i, s in enumerate(train_datasets):
+        splits[f"train_{i}"] = s
+
     if build_val:
-        splits = {"train": train_dataset, "val": val_dataset}
-    else:
-        splits = {"train": train_dataset}
+        splits["val"] = val_dataset
 
     # this is highly inefficient because all data is tokenized twice:
     # - first to determine max token sequence length
