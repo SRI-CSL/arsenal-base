@@ -1,0 +1,26 @@
+opam-version: "2.0"
+name: "ppx_deriving_random"
+maintainer: "Stephane Graham-Lengrand <stephane.graham-lengrand@csl.sri.com>"
+authors: "Petter A. Urkedal <paurkedal@gmail.com> and Stephane Graham-Lengrand <stephane.graham-lengrand@csl.sri.com>"
+homepage: "https://github.com/disteph/ppx_deriving_random"
+bug-reports: "https://github.com/disteph/ppx_deriving_random/issues"
+license: "LGPL-3.0 with OCaml linking exception"
+build: [
+  ["dune" "build"]
+]
+install: [
+  ["dune" "install"]
+]
+remove: [
+  ["ocamlfind" "remove" "ppx_deriving_random"]
+]
+depends: [
+  "ocaml" {>= "4.11.0"}
+  "dune" {>= "2.8.2"}
+  "ocamlfind" {build}
+  "ppx_deriving"
+  "ppx_tools"
+  "ppxlib"
+]
+synopsis: "Syntax extension to generate random instances of types"
+flags: light-uninstall

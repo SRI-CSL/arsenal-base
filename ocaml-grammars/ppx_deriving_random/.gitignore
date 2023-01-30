@@ -1,0 +1,13 @@
+*.byte
+*.docdir
+*.native
+/META
+/Makefile
+/_build
+/configure
+/setup.data
+/setup.log
+/setup.ml
+*~
+.zprofile.log
+.DS_Store

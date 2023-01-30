@@ -1,0 +1,4 @@
+(executable
+ (name free_magma)
+ (preprocess (pps ppx_deriving_random ppx_deriving.std))
+)
