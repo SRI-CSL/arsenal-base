@@ -52,6 +52,7 @@ def parse_arguments(input_args):
     parser.add_argument("-skip_databuild",                      action='store_true',        help="skip the dataset building step")
     parser.add_argument("-resume",                              action='store_true',        help="resume training of the translation model  from last checkpoint (automatically skips data build and target LM training)")
     parser.add_argument("-skip_eval",                           action='store_true',        help="skip the automatic evaluation on synthetic data")
+    parser.add_argument("-separate_curriculum_models",          action='store_true',        help="save dedicated models and logs for each curriculum phase")
 
 
     # translation generation configuration (can be changed without changing anything to trained models)

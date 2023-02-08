@@ -10,6 +10,7 @@ from pathlib import Path
 import datasets
 import torch
 from tabulate import tabulate
+import shutil
 from transformers import EncoderDecoderModel, BertTokenizerFast, Seq2SeqTrainingArguments, Seq2SeqTrainer
 from transformers.trainer_utils import get_last_checkpoint
 
@@ -109,12 +110,19 @@ def train_translationmodel(args):
     train_dataset_names = [s for s in train_dataset_names if args.train_dataset_name in s]
     train_dataset_names.sort(reverse=False)
 
-    for train_dataset_name in train_dataset_names:
+    for course, train_dataset_name in enumerate(train_dataset_names):
         train_data = datasets.Dataset.load_from_disk(os.path.join(args.data_dir, train_dataset_name))
 
         train_data.set_format(
             type="torch", columns=["input_ids", "attention_mask", "decoder_input_ids", "decoder_attention_mask", "labels"],
         )
+
+        # save dedicated models/logs for each step of curriculum learning
+        if args.separate_curriculum_models:
+            c_output_dir = os.path.join(output_dir, f"course_{course}")
+            c_logging_dir = os.path.join(c_output_dir, "logs")
+            training_args.output_dir = c_output_dir
+            training_args.logging_dir = c_logging_dir
 
         trainer = Seq2SeqTrainer(
             model=bert2arsenal,
@@ -126,6 +134,11 @@ def train_translationmodel(args):
         trainer.train(resume_from_checkpoint=checkpoint)
         trainer.save_model()
 
+    # copy the last trained model files over to the output directory 
+    # (s.t. they can be found by automatic model upload scripts)
+    if args.separate_curriculum_models:
+        shutil.copy(os.path.join(c_output_dir, "config.json"), os.path.join(output_dir, "config.json"))
+        shutil.copy(os.path.join(c_output_dir, "pytorch_model.bin"), os.path.join(output_dir, "pytorch_model.bin"))
 
 if __name__ == "__main__":
 
