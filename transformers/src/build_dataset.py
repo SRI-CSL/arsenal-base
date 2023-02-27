@@ -4,8 +4,8 @@ import json
 import os
 import re
 import sys
-
-from datasets import Dataset, tqdm
+import tqdm
+from datasets import Dataset
 from transformers import BertTokenizerFast, GPT2TokenizerFast
 
 from args import parse_arguments
@@ -346,12 +346,12 @@ def build_dataset(args):
     determine_max_len = True
     if determine_max_len:
         print("finding max token sequence length for input and output...")
-        train_input_lengths = list(map(lambda x: len(source_tokenizer(x).input_ids), tqdm(train_dataset.keys())))
-        train_output_lengths = list(map(lambda x: len(target_tokenizer(x).input_ids), tqdm(train_dataset.values())))
+        train_input_lengths = list(map(lambda x: len(source_tokenizer(x).input_ids), train_dataset.keys()))
+        train_output_lengths = list(map(lambda x: len(target_tokenizer(x).input_ids), train_dataset.values()))
 
         if build_val:
-            val_input_lengths = list(map(lambda x: len(source_tokenizer(x).input_ids), tqdm(val_dataset.keys())))
-            val_output_lengths = list(map(lambda x: len(target_tokenizer(x).input_ids), tqdm(val_dataset.values())))
+            val_input_lengths = list(map(lambda x: len(source_tokenizer(x).input_ids), val_dataset.keys()))
+            val_output_lengths = list(map(lambda x: len(target_tokenizer(x).input_ids), val_dataset.values()))
         else:
             val_input_lengths = []
             val_output_lengths = []

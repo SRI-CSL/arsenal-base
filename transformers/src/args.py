@@ -53,6 +53,7 @@ def parse_arguments(input_args):
     parser.add_argument("-resume",                              action='store_true',        help="resume training of the translation model  from last checkpoint (automatically skips data build and target LM training)")
     parser.add_argument("-skip_eval",                           action='store_true',        help="skip the automatic evaluation on synthetic data")
     parser.add_argument("-separate_curriculum_models",          action='store_true',        help="save dedicated models and logs for each curriculum phase")
+    parser.add_argument("-cl_strategy",             type=str,   default="linear_sequence",  help="curriculum learning strategy: 'linear_sequence' successively trains on each course for set number of epochs, 'repeat_full_sequences' successively trains on each course for one epoch and repeats training the entire curriculum for the set number of epochs, 'interleaved' is a combination of both approaches: each course is trained for the set number of epochs, but before continuing with the next course, all courses so far are trained for another epoch.")
 
 
     # translation generation configuration (can be changed without changing anything to trained models)
