@@ -6,6 +6,7 @@ import re
 import sys
 import tqdm
 from datasets import Dataset
+import random
 from transformers import BertTokenizerFast, GPT2TokenizerFast
 
 from args import parse_arguments
@@ -230,6 +231,71 @@ def process_input(data_dir, out_dir, filename, max_word_len, ignore_prefixes, ig
 
     return dataset, special_tokens, source_vocab, target_vocab, ent_freqs
 
+def add_noise(datasets, source_vocab, tokenizer_vocab, ratio, max_noise_length=3, max_noise_instances=3):
+    r"""
+        Injects noise into the given dataset. Noise is in the form of any additional words that appear in the tokenizer
+        vocab (e.g., any English word) and not in the source vocab.
+
+        Args:
+            datasets:            a list of datasets to be noised
+            source_vocab:        the list of words appearing on the source side of the training data sets (i.e., any words 
+                                 supported by the grammar)
+            tokenizer_vocab:     the entire language vocab from the respective tokenizer; any words from tokenizer_vocab
+                                 that are not in source_vocab can be used as noise
+            ratio:               the ratio by which to extend the original dataset with noise instances (e.g., for a ratio 
+                                 of 0.2 and a dataset size of 100, 20 noise instances will be added to the dataset)
+            max_noise_length:    the maximum length (in words) of any injected noise instance
+            max_noise instances: the maximum number of noise instances to insert in any sentence
+    """
+    noise_vocab = [v for v in tokenizer_vocab if v not in source_vocab]
+
+    for ds_idx, ds in enumerate(datasets):
+        source_sentences = list(ds.keys())
+        ds_size = len(ds)
+        num_noisy_sents = int(ds_size*ratio)
+        noisy_sent_idxs = random.sample(range(ds_size), num_noisy_sents)
+        noisy_sents = []
+
+        for idx in noisy_sent_idxs:
+            sent = source_sentences[idx].split()
+            # generate a random number of noise instances of random lengths to add to this sentence
+            num_noise_insts = random.randint(1,max_noise_instances) 
+            num_noise_insts = min(len(sent)+1, num_noise_insts)
+            noise_insts = []
+            for _ in range(num_noise_insts):
+                noise_inst = []
+                len_noise = random.randint(1,max_noise_length)
+                for _ in range(len_noise):
+                    noise_inst.append(noise_vocab[random.randint(0, len(noise_vocab)-1)])
+                noise_insts.append(noise_inst)
+                
+            # pick random positions in the original sentence for noise injection
+            try:
+                noise_positions = random.sample(range(len(sent)+1), num_noise_insts)
+            
+            except :
+                print(f"idx: {idx}, len dataset: {len(ds)}, len sent: {len(sent)}")
+                raise
+            noise_positions.sort()
+
+            # create a new sentence from the original sentence by injecting the generated noise
+            # at the chosen positions
+            noisy_sent = []
+            prev_pos = 0
+            for noise, pos in zip(noise_insts, noise_positions):
+                noisy_sent.extend(sent[prev_pos:pos])
+                noisy_sent.extend(noise)
+                prev_pos = pos
+            if prev_pos < len(sent):
+                noisy_sent.extend(sent[prev_pos:])
+
+            noisy_sents.append(" ".join(noisy_sent))
+
+        for s in noisy_sents:
+            ds[s] = "UNSUPPORTED"
+        datasets[ds_idx] = ds
+    return datasets
+
 
 def build_dataset(args):
 
@@ -242,6 +308,8 @@ def build_dataset(args):
     ignore_suffixes = args.strip_suffix_chars.split()
     ignore_prefixes = args.strip_prefix_chars.split()
     check_balance = args.check_balance
+    inject_noise = args.inject_noise
+    noise_ratio = args.noise_ratio
 
     print(f"train file: {train_file}")
     print(f"data_dir: {data_dir}")
@@ -318,6 +386,23 @@ def build_dataset(args):
     source_tokenizer = BertTokenizerFast.from_pretrained(args.source_model)
     source_tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
     target_tokenizer = PreTrainedArsenalTokenizer(target_vocab=target_vocab)
+
+    if inject_noise:
+        tokenizer_vocab = source_tokenizer.get_vocab().keys()
+        tokenizer_vocab = [v for v in tokenizer_vocab if v[0] not in ["#", "[]"]] #skip special tokens (e.g., subwords)
+        train_datasets = add_noise(train_datasets, source_vocab, tokenizer_vocab, noise_ratio)
+        
+        # not required, but we'll write the clear-text versions of the noisy datasets to file for debugging
+        noise_output_dir = os.path.join(data_dir, "noisy")
+        if not os.path.exists(noise_output_dir):
+            os.mkdir(noise_output_dir)
+        
+        for train_file, train_dataset in zip(train_files, train_datasets):
+            with open(os.path.join(noise_output_dir, train_file.replace(".txt", "_noisy.txt")), "w") as f:
+                for s, t in train_dataset.items():
+                    f.write(f"{s}\t{t}\n")
+
+
 
     # source_tokenizer.save_pretrained(os.path.join(out_dir, "source_tokenizer"))
     # target_tokenizer.save_pretrained((os.path.join(out_dir, "target_tokenizer")))
@@ -421,7 +506,7 @@ def build_dataset(args):
     dataset_properties["decoder_max_len"] = decoder_max_length
     dataset_properties["encoder_min_len"] = encoder_min_length
     dataset_properties["decoder_min_len"] = decoder_min_length
-    dataset_properties["training_size"] = len(train_dataset.keys())
+    dataset_properties["training_size"] = [len(ds.keys()) for ds in train_datasets]
     dataset_properties["training_entity_frequencies"] = train_ent_freqs
     if build_val:
         dataset_properties["validation_size"] = len(val_dataset.keys())

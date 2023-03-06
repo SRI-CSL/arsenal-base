@@ -33,6 +33,8 @@ def parse_arguments(input_args):
     parser.add_argument("-strip_suffix_chars",      type=str,   default="²",                help="suffix characters to be stripped from special tokens, as a white-space separated list")
     parser.add_argument("-strip_prefix_chars",      type=str,   default="∠ ∡",              help="prefix characters to be stripped from special tokens, as a white-space separated list")
     parser.add_argument("-check_balance",           action='store_true',                    help="whether to check for balanced expressions when stripping away enclosing brackets in special tokens")
+    parser.add_argument("-inject_noise",            action='store_true',                    help="injects noise (random out-of-vocab words) into source sentences of training data")
+    parser.add_argument("-noise_ratio",             type=float, default=0.2,                help="the amount of noisy instances to add (as a ratio of the original dataset)")
 
     # model configuration for target LM model
     # note: the source LM model uses a pretrained BERT model and thus can't be configured separately
