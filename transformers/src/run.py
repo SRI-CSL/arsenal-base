@@ -129,8 +129,12 @@ if __name__ == "__main__":
     summary["training_size"] = dataset_properties["training_size"]
 
     for k in ["max_source_len", "run_id", "hidden_size", "intermediate_size",
-              "num_hidden_layers", "num_attention_heads", "target_epochs", "translation_epochs"]:
+              "num_hidden_layers", "num_attention_heads", "target_epochs", 
+              "translation_epochs", "cl_strategy", "inject_noise"]:
         summary[k] = vars(args)[k]
+
+    if summary["inject_noise"]:
+        summary["noise_ratio"] = vars(args)["noise_ratio"]
 
     summary["num_cuda_devices"] = len(vars(args)["cuda_devices"].split(","))
     summary.update(timing)
