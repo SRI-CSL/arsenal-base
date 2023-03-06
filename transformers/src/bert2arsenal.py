@@ -149,14 +149,13 @@ def train_translationmodel(args):
             # save dedicated models/logs for each step of curriculum learning
             if args.separate_curriculum_models:
                 e_output_dir = os.path.join(output_dir, f"epoch_{epoch}")
-                e_logging_dir = os.path.join(e_output_dir, "logs")
                 training_args.output_dir = e_output_dir
-                training_args.logging_dir = e_logging_dir
 
             training_args.num_train_epochs = 1  # reset this setting b/c we control the number of epochs outside of the training loop here
             for course, train_dataset_name in enumerate(train_dataset_names):
                 train_data = datasets.Dataset.load_from_disk(os.path.join(args.data_dir, train_dataset_name))
-
+                e_logging_dir = os.path.join(logging_dir, f"e{epoch}c{course}")
+                training_args.logging_dir = e_logging_dir
                 train_data.set_format(
                     type="torch", columns=["input_ids", "attention_mask", "decoder_input_ids", "decoder_attention_mask", "labels"],
                 )
@@ -167,7 +166,7 @@ def train_translationmodel(args):
                     train_dataset=train_data,
                     tokenizer=source_tokenizer
                 )
-                print(f"start training on {train_dataset_name} at {datetime.now().strftime('%b%d_%H-%M-%S')}")
+                print(f"(epoch {epoch+1}/{args.translation_epochs}) start training on {train_dataset_name} at {datetime.now().strftime('%b%d_%H-%M-%S')}")
                 trainer.train(resume_from_checkpoint=checkpoint)
                 trainer.save_model()
 
