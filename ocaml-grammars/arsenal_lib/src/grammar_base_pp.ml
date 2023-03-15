@@ -73,10 +73,17 @@ let rec conjugate state stem =
         | "get" -> "got"
         | "run" -> "ran"
         | "begin" -> "began"
+        | "send" -> "sent"
         | _ ->
           match String.sub stem (l - 1) 1 with
           | "y" -> String.sub stem 0 (l - 1)^"ied"
           | "e" -> stem^"d"
+          | "t" -> 
+            begin
+              match String.sub stem (l - 2) 1 with
+              | "a" | "e" | "i" | "o" | "u" -> stem^"ted"
+              | _ -> stem^"ed"
+            end
           | _ -> stem^"ed"
        in
        !![
