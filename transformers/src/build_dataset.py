@@ -4,8 +4,9 @@ import json
 import os
 import re
 import sys
+from tqdm import tqdm
 
-from datasets import Dataset, tqdm
+from datasets import Dataset
 from transformers import BertTokenizerFast, GPT2TokenizerFast
 
 from args import parse_arguments
