@@ -425,6 +425,6 @@ def build_dataset(args):
 
 if __name__ == "__main__":
 
-    args = parse_arguments(sys.argv)
+    args = parse_arguments(sys.argv[1:])
     build_dataset(args)
 
