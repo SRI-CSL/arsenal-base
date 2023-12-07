@@ -1,6 +1,5 @@
 import argparse
 import collections
-from inspect import ArgSpec
 import sys
 from difflib import SequenceMatcher
 import json
