@@ -113,12 +113,6 @@ def process():
     results = json.dumps(results, indent=3)
     return str(results)
 
-@app.before_first_request
-def initialize():
-    # Don't let pytorch use multiple CPU threads. Parallelization works better at this level.
-    # This only saves about 2s in processing one entire document.
-    torch.set_num_threads(1)
-
 
 ### Internal implementation code 
 
@@ -280,4 +274,9 @@ if __name__ == "__main__":
         arg_port = int(sys.argv[1],0)
         if arg_port > 0:
             setport=arg_port
+
+    with app.app_context():
+         # Don't let pytorch use multiple CPU threads. Parallelization works better at this level.
+        # This only saves about 2s in processing one entire document.
+        torch.set_num_threads(1)
     app.run(host=NL2CST_HOST, port=setport)

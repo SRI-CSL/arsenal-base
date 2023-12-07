@@ -1,15 +1,6 @@
-FROM continuumio/miniconda3:4.7.12
+FROM continuumio/miniconda3:22.11.1
 RUN pip install --upgrade pip
-RUN pip install torch datasets flask tqdm
-
-# begin custom transformers installation
-# (adds typeforcing functionality and fixes a dependency specification)
-ARG tr_version="4.4.2"
-RUN wget https://github.com/huggingface/transformers/archive/v$tr_version.tar.gz
-RUN tar -xf v$tr_version.tar.gz -C /opt
-COPY typeforcing_patch/* /opt/transformers-$tr_version/src/transformers/
-RUN pip install -e /opt/transformers-$tr_version
-# end custom transformers installation
+RUN pip install torch==2.1.1 datasets==2.15.0 transformers==4.35.2 flask==3.0.0 tqdm==4.64.1
 
 RUN mkdir -p /opt/models && \
   mkdir -p /opt/src
