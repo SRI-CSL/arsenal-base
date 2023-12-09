@@ -33,7 +33,8 @@ if __name__ == "__main__":
     ########## some preliminary setup ##########
 
     args = parse_arguments(sys.argv[1:])
-    os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda_devices
+    if args.cuda_devices:
+        os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda_devices
 
     out_dir = os.path.join(args.model_root_dir, args.run_id)
 

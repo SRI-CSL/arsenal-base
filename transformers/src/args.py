@@ -24,7 +24,7 @@ def parse_arguments(input_args):
                                                                  "MM-DD-YYYY based on the current date is used")
     parser.add_argument("-target_model_name",       type=str,   default="target_model",     help="folder base name where the target LM will be stored")
     parser.add_argument("-translation_model_name",  type=str,   default="translation_model",help="folder base name where the translation model will be stored")
-    parser.add_argument("-cuda_devices",            type=str, default="6,7",                help="GPUs to use (as a list of comma-separated numbers)")
+    parser.add_argument("-cuda_devices",            type=str,                               help="GPUs to use (as a list of comma-separated numbers)")
     parser.add_argument("-y",                       action='store_true',                    help="answer 'yes' to questions without prompting (e.g., to overwrite existing output folder)")
 
     # settings for dataset preparation

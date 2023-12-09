@@ -122,7 +122,8 @@ if __name__ == "__main__":
 
     args = parse_arguments(sys.argv[1:])
     print(tabulate(vars(args).items(), headers={"parameter", "value"}))
-    os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda_devices
+    if args.cuda_devices:
+        os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda_devices
     train_translationmodel(args)
 
 
