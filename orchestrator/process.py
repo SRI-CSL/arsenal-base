@@ -28,9 +28,6 @@ PORT = int(get_env("PORT", 8080))
 HOST_EP = get_env("HOST_EP", "entity")
 PORT_EP = int(get_env("PORT_EP", 8080))
 
-HOST_NOOP_EP = get_env("HOST_NOOP_EP", "noop_entity")
-PORT_NOOP_EP = int(get_env("PORT_NOOP_EP", 8080))
-
 HOST_NL = get_env("HOST_NL", "nl2cst")
 PORT_NL = int(get_env("PORT_NL", 8080))
 
@@ -65,9 +62,13 @@ def SentenceDataFromList(sentences):
 # Call to the Arsenal Entity Process API
 def callEntityProcessor(sentence_data, noop_ep):
     if noop_ep:
-        ep_url = EP_URL_TEMPLATE.format(HOST_NOOP_EP,PORT_NOOP_EP)
-    else:
-        ep_url = EP_URL_TEMPLATE.format(HOST_EP,PORT_EP)
+        for sent in sentence_data["sentences"]:
+            sent["new-text"] = sent["text"]
+            sent["orig-text"] = sent.pop("text")
+            sent["substitutions"] = {}
+        return sentence_data["sentences"]
+
+    ep_url = EP_URL_TEMPLATE.format(HOST_EP,PORT_EP)
     
     ep_input = json.dumps(sentence_data)
     response = requests.post(ep_url,data=ep_input,headers={"Content-Type": "application/json"})
