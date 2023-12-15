@@ -237,12 +237,12 @@ let pp_proportion q =
   | Many   -> !?[ F "many%t " // s; F "numerous%t " // s]
   | Several-> F "several " |> print
   | Range p   -> F "%t " // pp_range pp_integer p |> print
-  | Percent p -> F "%t percent of %t" // pp_range pp_integer p // the |> print
-  | Fraction p -> F "%t of %t" // pp_range pp_fraction p // the |> print
+  | Percent p -> F "%t percent of %t " // pp_range pp_integer p // the |> print
+  | Fraction p -> F "%t of %t " // pp_range pp_fraction p // the |> print
     
 
 let pp_proportion_option = function
-  | None    -> F "the" |> print
+  | None    -> F "the " |> print
   | Some pe -> F "%t" // pp_proportion pe |> print
 
 let pp_time_unit state = function
