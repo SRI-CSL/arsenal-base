@@ -70,18 +70,8 @@ def parse_arguments(input_args):
         for (_, dirs, _) in os.walk(args.data_root_dir):
             break
 
-        for dir in dirs:
-            try:
-                dt = datetime.strptime(dir, '%Y-%m-%dT%H%M')
-                if dt > latest:
-                    latest = dt
-            except:
-                continue
-
-        if latest > datetime.min:
-            args.data_dir = os.path.join(args.data_root_dir,latest.strftime('%Y-%m-%dT%H%M'))
-        else:
-            raise Exception(f"couldn't find a valid dataset dir in {args.data_root_dir}")
+        dirs.sort()
+        args.data_dir = os.path.join(args.data_root_dir, dirs[-1])
 
     else:
         args.data_dir = os.path.join(args.data_root_dir, args.data_dir)
