@@ -62,10 +62,9 @@ def parse_arguments(input_args):
 
     args = parser.parse_args(input_args)
     if args.run_id is None:
-        args.run_id = datetime.now().strftime("%m-%d-%Y")
+        args.run_id = datetime.now().strftime("%Y-%m-%d")
 
     if args.data_dir is None:
-        latest = datetime.min
 
         for (_, dirs, _) in os.walk(args.data_root_dir):
             break
