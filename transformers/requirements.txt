@@ -2,9 +2,11 @@
 transformers==4.35.2
 datasets==2.15.0
 tokenizers==0.15.0
+accelerate==0.20.3
 # other
 torch==2.1.1
 tabulate
 numpy
 tensorboard
+matplotlib
 
