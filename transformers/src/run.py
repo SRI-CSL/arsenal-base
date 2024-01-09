@@ -133,7 +133,10 @@ if __name__ == "__main__":
               "num_hidden_layers", "num_attention_heads", "target_epochs", "translation_epochs"]:
         summary[k] = vars(args)[k]
 
-    summary["num_cuda_devices"] = len(vars(args)["cuda_devices"].split(","))
+    if "cuda_devices" in vars(args):
+        summary["num_cuda_devices"] = len(vars(args)["cuda_devices"].split(","))
+    else:
+        summary["num_cuda_devices"] = "all"
     summary.update(timing)
 
     with open(os.path.join(Path(out_dir), "translation_model", "training_summary.txt"), "w") as f:
