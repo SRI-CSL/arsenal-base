@@ -85,8 +85,8 @@ if __name__ == "__main__":
 
     ########## generating translations with trained model ##########
 
-    if not os.path.exists(os.path.join(args.data_out_dir, args.val_dataset_name)) and not args.skip_eval:
-        print("did not find validation data set - skipping evaluation")
+    if not os.path.exists(os.path.join(args.data_out_dir, args.test_dataset_name)) and not args.skip_eval:
+        print("did not find test data set - skipping evaluation")
         args.skip_eval = True
 
 
@@ -133,7 +133,7 @@ if __name__ == "__main__":
               "num_hidden_layers", "num_attention_heads", "target_epochs", "translation_epochs"]:
         summary[k] = vars(args)[k]
 
-    if "cuda_devices" in vars(args):
+    if "cuda_devices" in vars(args) and vars(args)["cuda_devices"] is not None:
         summary["num_cuda_devices"] = len(vars(args)["cuda_devices"].split(","))
     else:
         summary["num_cuda_devices"] = "all"

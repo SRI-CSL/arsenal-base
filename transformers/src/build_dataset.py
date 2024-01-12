@@ -238,6 +238,7 @@ def build_dataset(args):
     out_dir = args.data_out_dir
     train_file = args.train_file
     val_file = args.val_file
+    test_file = args.test_file
     max_word_len = args.max_source_len
     batch_size = args.batch_size
     ignore_suffixes = args.strip_suffix_chars.split()
@@ -248,6 +249,7 @@ def build_dataset(args):
     print(f"discarding all instances with more than {max_word_len} words in the source sentences")
 
     build_val = os.path.exists(os.path.join(data_dir, val_file))
+    build_test = os.path.exists(os.path.join(data_dir, test_file))
 
     train_dataset, special_tokens, source_vocab, target_vocab, train_ent_freqs = process_input(data_dir, out_dir, train_file, max_word_len, ignore_prefixes, ignore_suffixes, check_balance)
 
@@ -263,6 +265,15 @@ def build_dataset(args):
         val_special_tokens = []
         val_source_vocab = []
         val_target_vocab = []
+
+    if build_test:
+        test_dataset, test_special_tokens, test_source_vocab, test_target_vocab, test_ent_freqs = process_input(data_dir, out_dir, test_file, max_word_len, ignore_prefixes, ignore_suffixes, check_balance)
+    else:
+        test_dataset = {}
+        test_special_tokens = []
+        test_source_vocab = []
+        test_target_vocab = []
+
 
     diffs = {}
 
@@ -285,7 +296,6 @@ def build_dataset(args):
         print(f"the training set contains target words that don't appear in the validation set")
 
     to_remove = []
-
     for i in val_dataset:
         if i in train_dataset:
             to_remove.append(i)
@@ -296,6 +306,18 @@ def build_dataset(args):
     if to_remove != []:
         print(f"found {len(to_remove)} overlapping instances in train and validation set, removed those from validation set. New size of validation set: {len(val_dataset)}")
 
+    to_remove = []
+    for i in test_dataset:
+        if i in train_dataset:
+            to_remove.append(i)
+
+    for i in to_remove:
+        test_dataset.pop(i)
+
+    if to_remove != []:
+        print(f"found {len(to_remove)} overlapping instances in train and test set, removed those from test set. New size of test set: {len(test_dataset)}")
+
+
     source_tokenizer = BertTokenizerFast.from_pretrained(args.source_model)
     source_tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
     target_tokenizer = PreTrainedArsenalTokenizer(target_vocab=target_vocab)
@@ -303,10 +325,14 @@ def build_dataset(args):
     # source_tokenizer.save_pretrained(os.path.join(out_dir, "source_tokenizer"))
     # target_tokenizer.save_pretrained((os.path.join(out_dir, "target_tokenizer")))
 
+    splits = {"train": train_dataset}
+
     if build_val:
-        splits = {"train": train_dataset, "val": val_dataset}
-    else:
-        splits = {"train": train_dataset}
+        splits["val"] = val_dataset
+
+    if build_test:
+        splits["test"] = test_dataset
+        
 
     # this is highly inefficient because all data is tokenized twice:
     # - first to determine max token sequence length
@@ -334,12 +360,20 @@ def build_dataset(args):
             val_input_lengths = []
             val_output_lengths = []
 
+        if build_test:
+            test_input_lengths = list(map(lambda x: len(source_tokenizer(x).input_ids), tqdm(test_dataset.keys())))
+            test_output_lengths = list(map(lambda x: len(target_tokenizer(x).input_ids), tqdm(test_dataset.values())))
+        else:
+            test_input_lengths = []
+            test_output_lengths = []
+
+
         # print(f"max train input: {max(train_input_lengths)}, max val input: {max(val_input_lengths)}")
         # print(f"max train output: {max(train_output_lengths)}, max val output: {max(val_output_lengths)}")
-        encoder_max_length = max(train_input_lengths + val_input_lengths)
-        decoder_max_length = max(train_output_lengths + val_output_lengths)
-        encoder_min_length = min(train_input_lengths + val_input_lengths)
-        decoder_min_length = min(train_output_lengths + val_output_lengths)
+        encoder_max_length = max(train_input_lengths + val_input_lengths + test_input_lengths)
+        decoder_max_length = max(train_output_lengths + val_output_lengths + test_output_lengths)
+        encoder_min_length = min(train_input_lengths + val_input_lengths + test_input_lengths)
+        decoder_min_length = min(train_output_lengths + val_output_lengths + test_output_lengths)
 
         print(f"max input length: {encoder_max_length}, max output length: {decoder_max_length}")
         print(f"min input length: {encoder_min_length}, min output length: {decoder_min_length}")

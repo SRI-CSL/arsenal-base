@@ -20,8 +20,8 @@ def generate_predictions(args):
 
     model_dir = os.path.join(args.model_root_dir, args.run_id, args.translation_model_name)
     print(f"model dir: {model_dir}")
-    val_data_path = os.path.join(args.data_out_dir, args.val_dataset_name)
-    print(f"using model from {model_dir} and test data from {val_data_path} to generate predictions")
+    test_data_path = os.path.join(args.data_out_dir, args.test_dataset_name)
+    print(f"using model from {model_dir} and test data from {test_data_path} to generate predictions")
 
     dataset_properties = json.load(open(os.path.join(model_dir, "dataset_properties.json")))
     special_tokens = dataset_properties["special_tokens"]
@@ -33,7 +33,7 @@ def generate_predictions(args):
 
     bert2arsenal = EncoderDecoderModel.from_pretrained(model_dir)
 
-    val_data = datasets.load_from_disk(val_data_path)
+    test_data = datasets.load_from_disk(test_data_path)
 
     outfile = open(os.path.join(Path(model_dir).parent, f"predictions_{args.run_id}.txt"), "w")
 
@@ -41,11 +41,11 @@ def generate_predictions(args):
     bert2arsenal.to(torch_device)
 
     batch_size = args.batch_size
-    num_batches = int(val_data.num_rows / batch_size)
+    num_batches = int(test_data.num_rows / batch_size)
 
     type_forcing_vocab = target_tokenizer.id2vocab if args.type_forcing else None
 
-    val_data.set_format(
+    test_data.set_format(
         type="torch", 
         columns=["input_ids", "attention_mask"],
     )
@@ -63,7 +63,7 @@ def generate_predictions(args):
     for i in tqdm(range(num_batches)):
 
         batch_range = range(i*batch_size, (i+1)*batch_size)
-        batch = val_data.select(list(batch_range))
+        batch = test_data.select(list(batch_range))
 
         batch_ids = batch["input_ids"].to(device=torch_device)
         batch_masks = batch["attention_mask"].to(device=torch_device)

@@ -15,8 +15,10 @@ def parse_arguments(input_args):
     parser.add_argument("-data_out_dir",            type=str,                               help="location for the generated datasets (relative to data_root_dir, if none is provided, data_dir is used")
     parser.add_argument("-train_file",              type=str,   default="eng-pn.train.txt", help="name of iput training data file")
     parser.add_argument("-val_file",                type=str,   default="eng-pn.val.txt",   help="name of input validation data file")
+    parser.add_argument("-test_file",               type=str,   default="eng-pn.test.txt",  help="name of input test data file")
     parser.add_argument("-train_dataset_name",      type=str,   default="arsenal_train",    help="name of the generated training dataset")
     parser.add_argument("-val_dataset_name",        type=str,   default="arsenal_val",      help="name of the generated validation dataset")
+    parser.add_argument("-test_dataset_name",        type=str,   default="arsenal_test",      help="name of the generated test dataset")
     parser.add_argument("-model_root_dir",          type=str,   default="../../../large_files/models/transformers",
                                                                                             help="root location of all generated models")
     parser.add_argument("-run_id",                  type=str,                               help="name of the folder below root dir (the dir in which "
