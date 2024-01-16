@@ -103,9 +103,10 @@ def train_translationmodel(args):
 
     train_data = datasets.Dataset.load_from_disk(os.path.join(args.data_dir, args.train_dataset_name))
 
-    train_data.set_format(
-        type="torch", columns=["input_ids", "attention_mask", "decoder_input_ids", "decoder_attention_mask", "labels"],
-    )
+    # transformers 4.12 changed handling of EncoderDecoderModels. These columns were required in earlier versions
+    # but MUST be removed with transformers >= 4.12 otherwise training will produce nonsense results (repeating the 
+    # same token forever with a loss of 0.0).
+    train_data = train_data.remove_columns(["attention_mask", "decoder_input_ids", "decoder_attention_mask"])
 
     trainer = Seq2SeqTrainer(
         model=bert2arsenal,
