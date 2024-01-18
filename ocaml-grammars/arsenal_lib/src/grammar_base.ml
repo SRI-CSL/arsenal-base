@@ -49,11 +49,11 @@ type 'a qualif = Qualif of {
 (* Quantities *)
 
               
-type 'q range = Exact of 'q [@weight 5]
+type 'q range = Exact of 'q [@weight 5] 
       | MoreThan of 'q      [@weight 4]
       | LessThan of 'q      [@weight 4]
       | Approximately of 'q [@weight 3]
-      | Between of 'q*'q    [@weight 2]
+      | Between of {lower_bound: 'q; upper_bound: 'q}    [@weight 2]
 [@@deriving arsenal]
 
 type fraction = Half | Third | Quarter
@@ -74,6 +74,6 @@ type proportion =
 type time_unit = Second | Minute | Hour | Day | Week | Month | Year
 [@@deriving show { with_path = false }, arsenal]
 
-type time = Time of integer * time_unit [@@deriving arsenal]
+type time = Time of {number: integer; unit: time_unit} [@@deriving arsenal]
 
 type q_time  = QT of time range [@@deriving arsenal]

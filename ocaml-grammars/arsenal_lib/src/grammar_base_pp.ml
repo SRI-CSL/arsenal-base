@@ -216,8 +216,8 @@ let pp_range print_arg = function
       F "about %t" // print_arg q,3;
       F "roughly %t" // print_arg q,1;
     ]
-  | Between(q1,q2) -> !?[
-      F "between %t and %t" // print_arg q1 // print_arg q2;
+  | Between{lower_bound; upper_bound} -> !?[
+      F "between %t and %t" // print_arg lower_bound // print_arg upper_bound;
     ]
 
 let pp_fraction = function
@@ -255,6 +255,6 @@ let pp_time_unit state = function
   | Year   -> !![ agree state "year" ]
 
 let pp_range_aux pp_arg =
-  pp_range (fun (Time(i,a)) -> F "%t %t" // pp_integer i // pp_arg a |> print)
+  pp_range (fun (Time{number;unit}) -> F "%t %t" // pp_integer number // pp_arg unit |> print)
     
 let pp_q_time (QT range) = pp_range_aux (pp_time_unit Plural) range
