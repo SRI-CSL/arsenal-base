@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-
-import argparse
+import shutil
 import json
 import sys
 from datetime import datetime
@@ -10,7 +9,7 @@ from pathlib import Path
 import datasets
 import torch
 from tabulate import tabulate
-from transformers import EncoderDecoderModel, BertTokenizerFast, Seq2SeqTrainingArguments, Seq2SeqTrainer
+from transformers import EncoderDecoderModel, BertTokenizerFast, Seq2SeqTrainingArguments, Seq2SeqTrainer, EarlyStoppingCallback, IntervalStrategy
 from transformers.trainer_utils import get_last_checkpoint
 
 from args import parse_arguments
@@ -30,7 +29,21 @@ def train_translationmodel(args):
     output_dir = os.path.join(args.model_root_dir, args.run_id, args.translation_model_name)
     logging_dir = os.path.join(output_dir, "logs")
     if args.resume == False:
+        
         checkpoint = None
+
+        if os.path.exists(output_dir):
+            choice = None
+            while True:
+                choice = "y" if args.y else input(f"output dir {output_dir} already exists. Delete? (y/n)")
+                if choice.lower() == "y":
+                    shutil.rmtree(output_dir)
+                    break
+                elif choice.lower() == "n":
+                    sys.exit(0)
+                else:
+                    print("unrecognized input")
+
         os.mkdir(output_dir)
         # copy info about dataset b/c we'll need that when running the dockerized model (among others, it contains the target vocab)
         copyfile(os.path.join(args.data_dir, "dataset_properties.json"), os.path.join(output_dir, "dataset_properties.json"))
@@ -82,6 +95,12 @@ def train_translationmodel(args):
 
     print(f"model config:\n{bert2arsenal.config}")
 
+    training_args = {}
+    if args.do_validation:
+        training_args["evaluation_strategy"] = IntervalStrategy.STEPS
+        training_args["eval_steps"] = args.eval_steps
+        training_args["load_best_model_at_end"] = True
+
     training_args = Seq2SeqTrainingArguments(
         predict_with_generate=True,
         per_device_train_batch_size=args.batch_size,
@@ -90,11 +109,13 @@ def train_translationmodel(args):
         output_dir=output_dir,
         logging_dir=logging_dir,
         logging_steps=args.logging_steps,
-        save_strategy="epoch",
-        save_total_limit=args.save_total_limit,
         warmup_steps=args.warmup_steps,  # number of warmup steps for learning rate scheduler
         weight_decay=args.weight_decay,  # strength of weight decay
         num_train_epochs=args.translation_epochs,
+        save_strategy=IntervalStrategy.STEPS,
+        save_steps=args.eval_steps, # saving steps need to match eval steps s.t. best model can be loaded at the end
+        save_total_limit=args.save_total_limit,
+        **training_args
     )
 
     bert2arsenal.config.to_json_file(os.path.join(output_dir, "model_config.json"))
@@ -102,18 +123,28 @@ def train_translationmodel(args):
         f.write(str(training_args.to_json_string()))
 
     train_data = datasets.Dataset.load_from_disk(os.path.join(args.data_dir, args.train_dataset_name))
+    
 
     # transformers 4.12 changed handling of EncoderDecoderModels. These columns were required in earlier versions
     # but MUST be removed with transformers >= 4.12 otherwise training will produce nonsense results (repeating the 
     # same token forever with a loss of 0.0).
     train_data = train_data.remove_columns(["attention_mask", "decoder_input_ids", "decoder_attention_mask"])
 
+    trainer_args = {}
+
+    if args.do_validation:
+        val_data = datasets.Dataset.load_from_disk(os.path.join(args.data_dir, args.val_dataset_name))
+        trainer_args["eval_dataset"] = val_data
+        trainer_args["callbacks"] = [EarlyStoppingCallback(early_stopping_patience=3)]
     trainer = Seq2SeqTrainer(
         model=bert2arsenal,
         args=training_args,
         train_dataset=train_data,
-        tokenizer=source_tokenizer
+        tokenizer=source_tokenizer,
+        **trainer_args
+
     )
+
     print(f"start training at {datetime.now().strftime('%b%d_%H-%M-%S')}")
     trainer.train(resume_from_checkpoint=checkpoint)
     trainer.save_model()

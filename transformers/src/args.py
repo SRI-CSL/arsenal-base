@@ -48,6 +48,8 @@ def parse_arguments(input_args):
     parser.add_argument("-warmup_steps",            type=int,   default=500,                help="number of warmup steps for learning rate scheduler")
     parser.add_argument("-weight_decay",            type=float, default=0.01,               help="strength of weight decay")
     parser.add_argument("-logging_steps",           type=int,   default=100,                help="step interval to log progress")
+    parser.add_argument("-do_validation",           action="store_true",                    help="evaluate training progress on validation set")
+    parser.add_argument("-eval_steps",              type=int,   default=100,                help="step interval to evaluate on validation set" )
     parser.add_argument("-save_total_limit",        type=int,   default=10,                 help="number of checkpoints to keep")
     parser.add_argument("-target_epochs",           type=int,   default=1,                  help="number of training epochs for target LM")
     parser.add_argument("-translation_epochs",      type=int,   default=2,                  help="number of training epochs for translation model")
