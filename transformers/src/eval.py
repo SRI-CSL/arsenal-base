@@ -15,7 +15,7 @@ np.set_printoptions(threshold=sys.maxsize, suppress=True)
 
 from arsenal_tokenizer import PreTrainedArsenalTokenizer
 
-def evaluate_predictions(args):
+def evaluate_predictions(args, prediction_file=None):
     model_dir = os.path.join(args.model_root_dir, args.run_id, args.translation_model_name)
     out_dir = os.path.join(args.model_root_dir, args.run_id) # The graphs will show up in the translation model's directory
     source_model = args.source_model
@@ -23,13 +23,15 @@ def evaluate_predictions(args):
     for (_, _, files) in os.walk(Path(model_dir).parent):
         break
 
-    prediction_file = None
-    for file in files:
-        if file.startswith("prediction"):
-            prediction_file = os.path.join(Path(model_dir).parent, file)
-            break
-    if prediction_file is None:
-        raise FileNotFoundError("no prediction file")
+    if prediction_file is not None:
+        prediction_file = os.path.join(Path(model_dir).parent, prediction_file)
+    else:
+        for file in files:
+            if file.startswith("prediction"):
+                prediction_file = os.path.join(Path(model_dir).parent, file)
+                break
+        if prediction_file is None:
+            raise FileNotFoundError("no prediction file")
 
     print(f"loading predictions from {prediction_file}")
 
