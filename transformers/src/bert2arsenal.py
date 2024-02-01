@@ -128,7 +128,7 @@ def train_translationmodel(args):
     # transformers 4.12 changed handling of EncoderDecoderModels. These columns were required in earlier versions
     # but MUST be removed with transformers >= 4.12 otherwise training will produce nonsense results (repeating the 
     # same token forever with a loss of 0.0).
-    train_data = train_data.remove_columns(["attention_mask", "decoder_input_ids", "decoder_attention_mask"])
+    # train_data = train_data.remove_columns(["attention_mask", "decoder_input_ids", "decoder_attention_mask"])
 
     trainer_args = {}
 

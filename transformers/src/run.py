@@ -58,10 +58,10 @@ if __name__ == "__main__":
     with open(os.path.join(Path(out_dir), "args.txt"), "w") as f:
         print(tabulate(vars(args).items(), headers={"parameter", "value"}), file=f)
 
-    with open (os.path.join(Path(out_dir), "env_info.txt"), "w") as f:
-        f.write(f"python: {sys.version.split()[0]}\n\n")
-        for x in (importlib.metadata.distributions()):
-            f.write(f"{x.name}=={x.version}\n")
+    # with open (os.path.join(Path(out_dir), "env_info.txt"), "w") as f:
+    #     f.write(f"python: {sys.version.split()[0]}\n\n")
+    #     for x in (importlib.metadata.distributions()):
+    #             f.write(f"{x.name}=={x.version}\n")
 
     t0 = time.time()
 
