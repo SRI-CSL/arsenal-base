@@ -56,6 +56,8 @@ def parse_arguments(input_args):
     parser.add_argument("-skip_databuild",                      action='store_true',        help="skip the dataset building step")
     parser.add_argument("-resume",                              action='store_true',        help="resume training of the translation model  from last checkpoint (automatically skips data build and target LM training)")
     parser.add_argument("-skip_eval",                           action='store_true',        help="skip the automatic evaluation on synthetic data")
+    parser.add_argument("-early_stopping",                      action='store_true',        help="whether to stop training early if validation loss doesn't improve (also sets -do_validation)")
+    parser.add_argument("-early_stopping_patience", type=int,   default=3,                  help="number of validation iterations w/o improvements to stop early")
 
 
     # translation generation configuration (can be changed without changing anything to trained models)

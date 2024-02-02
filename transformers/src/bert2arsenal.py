@@ -95,11 +95,15 @@ def train_translationmodel(args):
 
     print(f"model config:\n{bert2arsenal.config}")
 
+    if args.early_stopping:
+        args.do_validation = True
+
     training_args = {}
     if args.do_validation:
         training_args["evaluation_strategy"] = IntervalStrategy.STEPS
         training_args["eval_steps"] = args.eval_steps
-        training_args["load_best_model_at_end"] = True
+        if args.early_stopping:
+            training_args["load_best_model_at_end"] = True
 
     training_args = Seq2SeqTrainingArguments(
         predict_with_generate=True,
@@ -147,7 +151,9 @@ def train_translationmodel(args):
         val_data = val_data.remove_columns(["decoder_input_ids", "decoder_attention_mask"])
         val_data = val_data.map(remove_start_label)
         trainer_args["eval_dataset"] = val_data
-        trainer_args["callbacks"] = [EarlyStoppingCallback(early_stopping_patience=3)]
+        if args.early_stopping:
+            trainer_args["callbacks"] = [EarlyStoppingCallback(early_stopping_patience=args.early_stopping_patience)]
+    
     trainer = Seq2SeqTrainer(
         model=bert2arsenal,
         args=training_args,
