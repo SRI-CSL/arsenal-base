@@ -124,16 +124,28 @@ def train_translationmodel(args):
 
     train_data = datasets.Dataset.load_from_disk(os.path.join(args.data_dir, args.train_dataset_name))
     
+    # transformers 4.12 changed handling of EncoderDecoderModels. 
+    # - `decoder_input_ids` and `decoder_attention_mask` were required in earlier versions but MUST be removed with
+    #    transformers >= 4.12 otherwise training will produce nonsense results (repeating the same token forever with
+    #    a loss of 0.0).
+    # - `the first token of the labels (sequence start token) must be removed from the labels, because a built-in 
+    #    function within `forward` automatically prepends this token. So the actual model inputs and outputs still
+    #    contain this token. Hence, training and validation data needs to be stripped of this token, test data (where
+    #    the expected result is not fed through the forward loop) need to keep it.
+    train_data = train_data.remove_columns(["decoder_input_ids", "decoder_attention_mask"])
 
-    # transformers 4.12 changed handling of EncoderDecoderModels. These columns were required in earlier versions
-    # but MUST be removed with transformers >= 4.12 otherwise training will produce nonsense results (repeating the 
-    # same token forever with a loss of 0.0).
-    train_data = train_data.remove_columns(["attention_mask", "decoder_input_ids", "decoder_attention_mask"])
+    def remove_start_label(x):
+        x["labels"] = x["labels"][1:]
+        return x
+
+    train_data = train_data.map(remove_start_label)
 
     trainer_args = {}
 
     if args.do_validation:
         val_data = datasets.Dataset.load_from_disk(os.path.join(args.data_dir, args.val_dataset_name))
+        val_data = val_data.remove_columns(["decoder_input_ids", "decoder_attention_mask"])
+        val_data = val_data.map(remove_start_label)
         trainer_args["eval_dataset"] = val_data
         trainer_args["callbacks"] = [EarlyStoppingCallback(early_stopping_patience=3)]
     trainer = Seq2SeqTrainer(
