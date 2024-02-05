@@ -50,16 +50,6 @@ def generate_predictions(args):
         columns=["input_ids", "attention_mask"],
     )
 
-    generation_config = GenerationConfig(
-        num_beams=args.num_beams,
-        num_return_sequences=args.num_outputs,
-        no_repeat_ngram_size=0,
-        decoder_start_token_id=target_tokenizer.cls_token_id,
-        eos_token_id=bert2arsenal.config.eos_token_id,
-        pad_token_id=bert2arsenal.config.pad_token_id,
-        max_new_tokens=bert2arsenal.config.max_length
-    )
-
     for i in tqdm(range(num_batches)):
 
         batch_range = range(i*batch_size, (i+1)*batch_size)
@@ -79,7 +69,7 @@ def generate_predictions(args):
         if args.type_forcing:
             generate_args["type_forcing_vocab"] = type_forcing_vocab
 
-        outputs = bert2arsenal.generate(input_ids=batch_ids, attention_mask=batch_masks, generation_config=generation_config)
+        outputs = bert2arsenal.generate(input_ids=batch_ids, attention_mask=batch_masks)
 
         # apparently batch instances and return sequences per instance are stacked along a single dimension
         for j in range(batch_size):

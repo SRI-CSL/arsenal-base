@@ -9,7 +9,7 @@ from pathlib import Path
 import datasets
 import torch
 from tabulate import tabulate
-from transformers import EncoderDecoderModel, BertTokenizerFast, Seq2SeqTrainingArguments, Seq2SeqTrainer, EarlyStoppingCallback, IntervalStrategy
+from transformers import EncoderDecoderModel, BertTokenizerFast, Seq2SeqTrainingArguments, Seq2SeqTrainer, EarlyStoppingCallback, IntervalStrategy, GenerationConfig
 from transformers.trainer_utils import get_last_checkpoint
 
 from args import parse_arguments
@@ -78,20 +78,27 @@ def train_translationmodel(args):
     bert2arsenal.config.vocab_size = bert2arsenal.encoder.vocab_size
     bert2arsenal.config.encoder.vocab_size = bert2arsenal.encoder.vocab_size
 
-    # the model has min/max length settings in three places: for the main moder (EncoderDecoder) and both encoder
-    # and decoder as submodels. Settings in the latter two parts seem to be completely irrelevant (unless one would
-    # try to use the trained encoder or decoder parts from the translation model in isolation).
-    bert2arsenal.config.max_length = dataset_properties["decoder_max_len"]
-    bert2arsenal.config.min_length = dataset_properties["decoder_min_len"]
+    # Don't prevent any n-gram repetitions! This would have a significant negative influence on
+    # the translations (especially for longer sentences), because the correct CSTs may contain n-gram repetitions
+    bert2arsenal.config.no_repeat_ngram_size = 0
+
 
     # Don't prevent any n-gram repetitions! This would have a significant negative influence on
     # the translations (especially for longer sentences), because the correct CSTs may contain n-gram repetitions
     bert2arsenal.config.no_repeat_ngram_size = 0
-    bert2arsenal.config.early_stopping = True
-    bert2arsenal.config.length_penalty = 2.0
-    bert2arsenal.config.num_beams = 4
-    # bert2arsenal.config.add_cross_attention
-    # bert2arsenal.config.num_return_sequences = 5 # this can be used to set the number of return sequences
+
+    generation_config = GenerationConfig(
+        num_beams=args.num_beams,
+        num_return_sequences=args.num_outputs,
+        no_repeat_ngram_size=0,
+        decoder_start_token_id=target_tokenizer.cls_token_id,
+        eos_token_id=bert2arsenal.config.eos_token_id,
+        pad_token_id=bert2arsenal.config.pad_token_id,
+        min_length = dataset_properties["decoder_min_len"],
+        max_length = dataset_properties["decoder_max_len"],
+        max_new_tokens = dataset_properties["decoder_max_len"],
+    )
+    bert2arsenal.generation_config = generation_config
 
     print(f"model config:\n{bert2arsenal.config}")
 
