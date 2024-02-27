@@ -238,11 +238,17 @@ def process():
 
     args = req["args"]
 
-    noop_ep = False if "noop_ep" not in args else args["noop_ep"]
-    include_full_scores = False if "include_full_scores" not in args else args["include_full_scores"]
-    namespace = "http://www.sri.com/arsenal#" if "namespace" not in args else args["namespace"]
-    include_raw = False if "include_raw" not in args else args["include_raw"]
-    include_scores = True if "include_scores" not in args else args["include_scores"]
+    # noop_ep = False if "noop_ep" not in args else args["noop_ep"]
+    # include_full_scores = False if "include_full_scores" not in args else args["include_full_scores"]
+    # namespace = "http://www.sri.com/arsenal#" if "namespace" not in args else args["namespace"]
+    # include_raw = False if "include_raw" not in args else args["include_raw"]
+    # include_scores = True if "include_scores" not in args else args["include_scores"]
+
+    noop_ep = False if args["noop_ep"] == "False" else True
+    include_full_scores = False
+    namespace = "http://www.sri.com/arsenal/dh#"
+    include_raw = False
+    include_scores = True
 
 
     sentence_data = SentenceDataFromList(req["sentence_data"])
@@ -280,7 +286,9 @@ def process():
     for e in ep_result:
         e.pop("cst-id")
 
-    return {"entities": ep_result, "raw_csts": raw_csts, "final_csts": final_csts}
+    results = {"entities": ep_result, "raw_csts": raw_csts, "final_csts": final_csts}
+    results = json.dumps(results, indent=3)
+    return str(results)
 
 #allow a command line argument to set the port (precedence over environment variable)
 if __name__ == "__main__":
