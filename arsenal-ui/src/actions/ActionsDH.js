@@ -150,10 +150,10 @@ function entityProcessorUrl(state){
 // BH: method added to account for Process Entities checkbox
 function noopStateChecked(state){
     if (state.noopEntity){
-        return 'True'
+        return true
     }
     else {
-        return 'False'
+        return false
     }
 }
 
