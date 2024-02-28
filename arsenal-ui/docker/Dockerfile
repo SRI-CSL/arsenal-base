@@ -4,9 +4,11 @@ RUN apk add --update nodejs npm yarn
 ADD /package.json /opt/arsenal/
 ADD /yarn.lock    /opt/arsenal/
 WORKDIR /opt/arsenal
+RUN yarn config set strict-ssl false
 RUN yarn -y install
 ADD /public       /opt/arsenal/public
 ADD /src          /opt/arsenal/src
+RUN yarn cache clean
 RUN yarn build
 
 # Second stage, copy the build files to a fresh nginx image

@@ -7,7 +7,7 @@ import ImprovedCSTPanel from './ImprovedCSTPanel';
 import { Button, Row, Col, Navbar, NavbarBrand, Container, Label, Input, 
          Nav, NavItem, NavLink, TabContent, TabPane } from 'reactstrap';
 import { connect } from 'react-redux';
-import { hideApiError, generateModel, setRealEP, setNoOpEP } from '../actions/Actions';
+import { hideApiError, generateModel, setRealEP, setNoOpEP } from '../actions/ActionsDH';
 import classnames from 'classnames';
 
 class Home extends React.Component {
@@ -49,10 +49,12 @@ class Home extends React.Component {
 
   toggleProcessEntities = () => {
     if (this.props.noopEntity){
+      // alert('checked');
         this.props.setRealEP();
     }
     else {
         this.props.setNoOpEP();
+        // alert('not checked');
     }
   }
 
