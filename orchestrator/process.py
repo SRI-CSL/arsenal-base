@@ -240,7 +240,7 @@ def process():
 
     noop_ep = False if "noop_ep" not in args else args["noop_ep"]
     include_full_scores = False if "include_full_scores" not in args else args["include_full_scores"]
-    namespace = "http://www.sri.com/arsenal/dh#" if "namespace" not in args else args["namespace"]
+    namespace = "http://www.sri.com/arsenal#" if "namespace" not in args else args["namespace"]
     include_raw = False if "include_raw" not in args else args["include_raw"]
     include_scores = True if "include_scores" not in args else args["include_scores"]
 
