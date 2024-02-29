@@ -244,7 +244,6 @@ def process():
     include_raw = False if "include_raw" not in args else args["include_raw"]
     include_scores = True if "include_scores" not in args else args["include_scores"]
 
-
     sentence_data = SentenceDataFromList(req["sentence_data"])
     ep_result = callEntityProcessor(sentence_data, noop_ep)
     ep_result = clean_sentences(ep_result)
@@ -280,7 +279,9 @@ def process():
     for e in ep_result:
         e.pop("cst-id")
 
-    return {"entities": ep_result, "raw_csts": raw_csts, "final_csts": final_csts}
+    results = {"entities": ep_result, "raw_csts": raw_csts, "final_csts": final_csts}
+    results = json.dumps(results, indent=3)
+    return str(results)
 
 #allow a command line argument to set the port (precedence over environment variable)
 if __name__ == "__main__":

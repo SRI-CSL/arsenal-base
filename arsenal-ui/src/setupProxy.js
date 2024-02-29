@@ -33,6 +33,14 @@ module.exports = function(app) {
     }
   }))
 
+  // Orchestrator proxy
+  app.use(proxy('/orchestrator', {
+    target: 'http://localhost:8040/',
+    pathRewrite: {
+      '^/orchestrator': ''
+    }
+  }))
+
   // Reformulate proxy
   app.use(proxy('/reformulate', {
     target: 'http://localhost:8090/',
